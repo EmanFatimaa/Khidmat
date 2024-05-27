@@ -45,7 +45,6 @@ if choice == "Login":
     UserType = form.selectbox("User Type", [
         "Admin", 
         "Finance Manager",
-        "Healthy In Lower Portion",
         "Social Media Manager",
         "Vet"
     ])
@@ -94,7 +93,6 @@ elif choice == "Sign Up":
     UserType = form.selectbox("User Type", [
         "Admin", 
         "Finance Manager",
-        "Healthy In Lower Portion",
         "Social Media Manager",
         "Vet"
     ])
