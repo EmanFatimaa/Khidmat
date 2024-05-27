@@ -2,8 +2,24 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px # for pie chart
 
-st.write("# DashBoard!")
+# st.write("# DashBoard!")
 
+# Custom CSS for centering text
+st.markdown(
+    """
+    <style>
+    .center-text {
+        text-align: center;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Using HTML within st.markdown to center-align text
+st.markdown("<h1 class='center-text'>DashBoard</h1>", unsafe_allow_html=True)
+
+###############################
 # Read the cleaned CSV data
 df = pd.read_csv('Donations.csv')
 # st.write(df)

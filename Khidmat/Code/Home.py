@@ -2,9 +2,26 @@ import streamlit as st
 import pandas as pd
 from PIL import Image
 
-st.write("# Home Page!")
-st.write("## Paws Rescue DataBase Management System!")
+# st.write("# Home Page!")
+# st.write("## Paws Rescue DataBase Management System!")
 
+# Custom CSS for centering text
+st.markdown(
+    """
+    <style>
+    .center-text {
+        text-align: center;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Using HTML within st.markdown to center-align text
+st.markdown("<h1 class='center-text'>Home Page!</h1>", unsafe_allow_html=True)
+st.markdown("<h2 class='center-text'>Paws Rescue DataBase Management System!</h2>", unsafe_allow_html=True)
+
+#############################################
 # # Write text using Markdown syntax
 # st.markdown("""
 #     ## The Objective of Our Khidmat Project
@@ -50,7 +67,7 @@ if choice == "Login":
     ])
 
     # Cage number text input
-    password = form.text_input("Password", placeholder= "xxxxxxxxxx")
+    password = form.text_input("Password",type="password" ,placeholder= "••••••••••")
 
     # Arrange buttons horizontally & to shift to the right side -- hardcoded I guess, need to figure out some way to make sure hardcoding is not needed. This was one of the ways to do this
     col1, col2, col3, col4, col5, col6, col7 = form.columns(7)
@@ -98,8 +115,8 @@ elif choice == "Sign Up":
     ])
 
     # Cage number text input
-    password = form.text_input("Password", placeholder= "xxxxxxxxxx")
-    confirmPassword = form.text_input("Confirm Password", placeholder= "xxxxxxxxxx")
+    password = form.text_input("Password", type="password", placeholder= "••••••••••")
+    confirmPassword = form.text_input("Confirm Password", type="password", placeholder= "••••••••••")
 
     # Arrange buttons horizontally & to shift to the right side -- hardcoded I guess, need to figure out some way to make sure hardcoding is not needed. This was one of the ways to do this
     col1, col2, col3, col4, col5, col6, col7 = form.columns(7)
