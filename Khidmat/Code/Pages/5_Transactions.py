@@ -39,7 +39,7 @@ modeOfPayment = form.selectbox("Mode of Payment", [
 dateOfProcessing = form.date_input("Date of processing payment")
 
 # Arrange buttons horizontally & to shift to the right side -- hardcoded I guess, need to figure out some way to make sure hardcoding is not needed. This was one of the ways to do this
-col1, col2, col3, col4, col5, col6, col7 = form.columns(7)
+col1, col2, col3, col4, col5, col6, col7 = form.columns([1,1,1,2,5,3,2])
 with col6:
     submitted = col6.form_submit_button("Add Transaction")
 with col7:
