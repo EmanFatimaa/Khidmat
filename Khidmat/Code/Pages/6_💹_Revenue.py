@@ -1,6 +1,11 @@
 import streamlit as st
 
 st.write("## Displaying all of the Revenue related forms here:")
+
+#LOGO GOES HERE -- sidebar..
+from PIL import Image
+img= Image.open("logo.png")
+st.logo(img )
 ###################
 ##ADD 
 

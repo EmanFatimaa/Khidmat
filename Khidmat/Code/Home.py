@@ -1,43 +1,40 @@
 import streamlit as st
 import pandas as pd
+#for image..
 from PIL import Image
 
-# st.write("# Home Page!")
-# st.write("## Paws Rescue DataBase Management System!")
 
-# Custom CSS for centering text
-st.markdown(
-    """
-    <style>
-    .center-text {
-        text-align: center;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
+st.set_page_config(
+    page_title="Paw Rescue Database Management System", 
+    page_icon="👋 ", # to be replace with their logo
 )
 
-# Using HTML within st.markdown to center-align text
-st.markdown("<h1 class='center-text'>Home Page!</h1>", unsafe_allow_html=True)
-st.markdown("<h2 class='center-text'>Paws Rescue DataBase Management System!</h2>", unsafe_allow_html=True)
 
-#############################################
-# # Write text using Markdown syntax
-# st.markdown("""
-#     ## The Objective of Our Khidmat Project
+#Adding a new member button
+st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
 
-#     The objective of our Khidmat project is to develop a comprehensive database system for Paws Rescue's: Shelter Management System (SMS), designed to streamline their animal rescue and care facility's operations. This database will serve as a centralized platform for managing critical aspects of shelter management, including treatment logs, animal monitoring, inventory management, and patient data. 
 
-#     By implementing this database, we aim to enhance the efficiency, accuracy, and effectiveness of our shelter operations, ultimately improving animal health and welfare, operational efficiency, resource management, and overall shelter effectiveness. 
-
-#     This project will significantly bolster our mission to rescue, rehabilitate, and rehome cats, ensuring that each animal receives the highest standard of care.
-# """)
-###############
-#LOGO GOES HERE
-img= Image.open("Poster.jpg")
-st.image(img , caption= "Paw Rescue Poster")
+#LOGO GOES HERE -- sidebar..
+img= Image.open("logo.png")
+st.logo(img ) #, caption= "Paw Rescue Poster"
 ####################
+st.image(img) #, caption= "Paw Rescue
+####################
+# # Custom CSS for centering text
+# st.markdown(
+#     """
+#     <style>
+#     .center-text {
+#         text-align: center;
+#     }
+#     </style>
+#     """,
+#     unsafe_allow_html=True
+# )
 
+# Using HTML within st.markdown to center-align text
+# st.markdown("<h2 class='center-text'>Paws Rescue DataBase Management System!</h2>", unsafe_allow_html=True)
+###################
 # USER CHOICE:
 
 # Add a radio button to let the user choose between Login and Sign Up
@@ -139,3 +136,22 @@ elif choice == "Sign Up":
     elif cancelled:
         # Handle cancel button click (optional)
         st.warning("Form submission cancelled.")
+
+# def jumpToPage():
+#     st.switch_page("Pages\7_👥_Team.py")
+# with st.sidebar():
+# if st.sidebar.button('**👥Team Member**'):
+#     jumpToPage()
+        
+# st.sidebar.button('**🔒Log out**')
+
+# # if team:
+# #     jumpToPage()
+
+# # else:
+# #     st.write("Watever")
+
+# with st.sidebar:
+if st.sidebar.button('**👥Team Member**'):
+    st.switch_page("Pages\7_👥_Team.py")
+    # elif st.button('**🔒Log out**'):
