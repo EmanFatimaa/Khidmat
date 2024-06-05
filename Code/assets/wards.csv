@@ -1,0 +1,11 @@
+Cage ID,Cat ID,Cat Name,Date,Status
+GW-C02,PA-0001,Whiskers,2024-05-01,vacant
+GW-C02,PA-0002,Fluffy,2024-05-02,occupied
+GW-C03,PA-0003,Mittens,2024-05-03,vacant
+GW-C04,PA-0004,Smokey,2024-05-04,vacant
+GW-C04,PA-0005,Felix,2024-05-05,occupied
+GW-C05,PA-0006,Luna,2024-05-06,vacant
+GW-C05,PA-0007,Oreo,2024-05-07,vacant
+GW-C06,PA-0008,Simba,2024-05-08,occupied
+GW-C07,PA-0009,Bella,2024-05-09,vacant
+GW-C08,PA-0010,Max,2024-05-10,occupied

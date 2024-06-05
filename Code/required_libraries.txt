@@ -1,0 +1,7 @@
+python
+streamlit
+st_pages
+sqlalchemy
+pandas
+PIL
+plotly

@@ -1,11 +1,31 @@
 import streamlit as st
 from PIL import Image
+from st_pages import Page, show_pages, add_page_title, hide_pages
+
+# logo
+logo = Image.open("assets/logo.png")
+st.logo(logo)
 
 #Title
 st.write("## Team")
 
 # Button Styling
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
+
+hide_pages(["Login", "Teams"])
+
+st.sidebar.markdown("""
+    <style>
+        .sidebar-content > div:nth-child(1) > div > div {color: white}
+        .sidebar-content > div:nth-child(1) > div > div > span {color: #FFA500}
+    </style>
+""", unsafe_allow_html=True)
+
+# if st.sidebar.button("👥 Team"):
+#     st.switch_page("pages/Teams.py")
+            
+if st.sidebar.button("🔓 Logout"):
+    st.switch_page("LoginScreen.py")
 
 #Creating columns
 col0, col01, col02, col03 = st.columns(4)

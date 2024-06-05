@@ -1,11 +1,45 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px # for pie chart
-
-#LOGO GOES HERE -- sidebar..
+from st_pages import Page, show_pages, add_page_title, hide_pages
 from PIL import Image
-img= Image.open("logo.png")
-st.logo(img )
+
+st.set_page_config(page_title="Dashboard", page_icon="🐈", layout="wide", initial_sidebar_state="expanded")
+
+# Button Styling
+st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
+
+st.sidebar.markdown("""
+    <style>
+        .sidebar-content > div:nth-child(1) > div > div {color: white}
+        .sidebar-content > div:nth-child(1) > div > div > span {color: #FFA500}
+    </style>
+""", unsafe_allow_html=True)
+
+if st.sidebar.button("👥 Team"):
+    st.switch_page("pages/Teams.py")
+            
+if st.sidebar.button("🔓 Logout"):
+    st.switch_page("LoginScreen.py")
+
+show_pages(
+    [
+        Page("pages/01_Dashboard.py", "Dashboard", "📊"),
+        Page("pages/02_Cats.py", "Cats", "🐾"),
+        Page("pages/03_Treatments.py", "Treatments", "💊"),
+        Page("pages/04_Wards.py", "Wards", "🛏️"),
+        Page("pages/05_Finances.py", "Finances", "💰"),
+        Page("pages/Connectivity.py", "Connection Test", ":books:"),
+        Page("LoginScreen.py", "Login", "🔐"),
+        Page("pages/Teams.py", "Teams", "👥"),
+    ]
+)
+
+hide_pages(["Login", "Teams"])
+
+# logo
+logo = Image.open("assets/logo.png")
+st.logo(logo)
 
 # Custom CSS for centering text
 st.markdown(
@@ -22,10 +56,10 @@ st.markdown(
 # Using HTML within st.markdown to center-align text
 st.markdown("<h1 class='center-text'>Dashboard</h1>", unsafe_allow_html=True)
 
-###############################
-#Boxes
+# Boxes
+
 # Read the CSV file
-df = pd.read_csv('Cats IDs.csv')
+df = pd.read_csv('assets/Cats_IDs.csv')
 
 # Count the number of cats by status
 status_counts = df['Status'].value_counts().to_dict()
@@ -56,82 +90,7 @@ with col4:
     with st.container(border= True):
         st.metric(label="Discharged", value=f"{discharged:,}")
 
-
-# # Display the dataframe for verification (optional)
-# st.write("## Data Preview")
-# st.dataframe(df)
-
-###############################
-## BAR GRAPH
-# # Read the cleaned CSV data
-# df = pd.read_csv('Donations.csv')
-# # st.write(df)
-# # Convert 'Date' column to datetime format
-# df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y')
-
-# # Extract month from 'Date' column
-# df['Month'] = df['Date'].dt.strftime('%b')
-
-# # Group by month and sum the donations
-# monthly_donations = df.groupby('Month')['Amount'].sum().reset_index()
-
-# # Display bar chart
-# st.write("## Donations Received Monthly")
-# st.bar_chart(monthly_donations.set_index('Month')['Amount'])
-########################
-
-##PIE CHART
-# st.write("## Donations Received Monthly")
-
-# # Read the cleaned CSV data
-# df = pd.read_csv('Donations.csv')
-
-# # Convert 'Date' column to datetime format
-# df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y')
-
-# # Extract month from 'Date' column
-# df['Month'] = df['Date'].dt.strftime('%b')
-
-# # Group by month and sum the donations
-# monthly_donations = df.groupby('Month')['Amount'].sum().reset_index()
-
-# # Create a pie chart using Plotly Express
-# fig = px.pie(monthly_donations, values='Amount', names='Month')
-
-# # Customize the layout
-# fig.update_traces(textinfo='percent+label')  # Add percentage labels to the pie chart
-
-# # Display the pie chart in Streamlit
-# st.plotly_chart(fig)
-
-############################
-
-# # Filter the DataFrame to show only "Expired" cats
-# expired_count = status_counts[status_counts['Status'] == 'Expired']['Count'].values[0]
-
-# # Display the dataframe for verification (optional)
-# st.write("## Data Preview")
-# st.write(f"❃Number of cats who got expired: {expired_count}")
-
-# ############
-
-# # Count the number of cats by status
-# status_counts = df['Status'].value_counts().reset_index()
-# status_counts.columns = ['Status', 'Count']
-
-# # Display the counts for each status
-# for index, row in status_counts.iterrows():
-#     st.write(f"❃{row['Status']}: {row['Count']}")
-
-# # Create a bar chart using Plotly
-# fig = px.bar(status_counts, x='Status', y='Count', title='Cats Status Distribution', text='Count')
-
-# # Display the bar chart in Streamlit
-# st.plotly_chart(fig)
-
-
-###########################
-##DONATION GRAPH":
+# Donation graph
 
 # Example data
 data = {
@@ -171,11 +130,11 @@ with st.container(border = True,height= 500):
     st.plotly_chart(fig)
 
 col5, col6 = st.columns(2)
-###########################
-# CATS PIE CHART
+
+# Cats pie chart
 
 # Read the CSV file
-df = pd.read_csv('Cats IDs.csv')
+df = pd.read_csv('assets/Cats_IDs.csv')
 
 # Count the number of cats by status
 status_counts = df['Status'].value_counts().reset_index()
@@ -193,11 +152,10 @@ with st.container(border= True, height= 500):
     # Display the pie chart in Streamlit
     st.plotly_chart(fig)
 
-############
-#TOP REPORTER:
+# top reporter
 
 # Load the CSV file
-df = pd.read_csv('Cats IDs.csv')
+df = pd.read_csv('assets/Cats_IDs.csv')
 
 # Group the data by Owner name and count the number of cats
 owner_counts = df['Owner name'].value_counts().reset_index()
@@ -210,4 +168,3 @@ top_owners = owner_counts.head(5)
 with st.container(border= True):
     st.write("#### Top 5 Owners/ Reporters")
     st.dataframe(top_owners,hide_index = True, width= 700)
-

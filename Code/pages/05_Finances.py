@@ -1,7 +1,31 @@
 import streamlit as st
 import pandas as pd
 import datetime
-    
+from st_pages import Page, show_pages, add_page_title, hide_pages
+from PIL import Image
+# logo
+logo = Image.open("assets/logo.png")
+st.logo(logo)
+
+# TODO: fix the dialog thingy coming again and again
+
+# Button Styling
+st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
+
+st.sidebar.markdown("""
+    <style>
+        .sidebar-content > div:nth-child(1) > div > div {color: white}
+        .sidebar-content > div:nth-child(1) > div > div > span {color: #FFA500}
+    </style>
+""", unsafe_allow_html=True)
+
+if st.sidebar.button("👥 Team"):
+    st.switch_page("pages/Teams.py")
+            
+if st.sidebar.button("🔓 Logout"):
+    st.switch_page("LoginScreen.py")
+
+hide_pages(["Login", "Teams"])
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
@@ -20,7 +44,7 @@ with col4:
     with st.container(border=True):
         st.metric(label="Remaining Balance", value="5,100 PKR", delta="-5.5%")
 
-tab1, tab2, tab3 = st.tabs(["💷 Donations", "💶 Revenue", "💵 Transactions"])
+tab1, tab2, tab3 = st.tabs(["📦 Donations", "💹 Revenue", "💰 Transactions"])
 
 with tab1:
     st.header("Donations")
@@ -46,7 +70,7 @@ with tab1:
         
         with col2:
             donor_ID = st.text_input("Donation ID", placeholder="Enter Donation ID e.g D-0001")
-            amount = st.number_input("Amount Donated", value=500, step=500, format="%d", min_value=0)
+            amount = st.number_input("Amount Donated", value=0, step=500, format="%d", min_value=0)
             
         col3, col4 = st.columns(2)
         
@@ -62,7 +86,7 @@ with tab1:
             new_row = pd.DataFrame({"Donation ID": [donor_ID], "Donor Name": [donor_name], "Contact": [contact], "Amount": [amount], "Mode": [mode], "Date": [date]})
             st.session_state.donations_df = pd.concat([st.session_state.donations_df, new_row], ignore_index=True)
             st.session_state.show_add_donation_dialog = False
-            st.rerun()
+            st.experimental_rerun()
 
         st.caption('_:orange[Press Esc to Cancel]_')
 
@@ -80,7 +104,7 @@ with tab1:
         if 'edit_index' in st.session_state and st.session_state.edit_index == index:
             del st.session_state['edit_index']
         st.session_state.show_add_donation_dialog = False
-        # st.rerun()
+        # st.experimental_rerun()
 
     def save_changes(index):
         st.session_state.donations_df.at[index, "Donor Name"] = st.session_state.new_name
@@ -90,7 +114,7 @@ with tab1:
         st.session_state.donations_df.at[index, "Mode"] = st.session_state.new_mode
         st.session_state.donations_df.at[index, "Date"] = st.session_state.new_date
         st.session_state.edit_index = None
-        st.rerun()
+        st.experimental_rerun()
 
     donations_df = st.session_state.donations_df
 
@@ -186,7 +210,7 @@ with tab2:
             new_row = pd.DataFrame({"Name": [rev_name], "ID": [rev_ID], "contact": [rev_contact], "amount": [rev_amount], "remarks": [rev_remarks], "mode": [rev_mode], "date": [rev_date]})
             st.session_state.revenue_df = pd.concat([st.session_state.revenue_df, new_row], ignore_index=True)
             st.session_state.show_add_revenue_dialog = False
-            st.rerun()
+            st.experimental_rerun()
 
         st.caption('_:orange[Press Esc to Cancel]_')
 
@@ -204,7 +228,7 @@ with tab2:
         if 'edit_index1' in st.session_state and st.session_state.edit_index == index1:
             del st.session_state['edit_index1']
         st.session_state.show_add_revenue_dialog = False
-        # st.rerun()
+        # st.experimental_rerun()
 
     def save_changes(index1):
         st.session_state.revenue_df.at[index1, "Name"] = st.session_state.new_rev_name
@@ -215,7 +239,7 @@ with tab2:
         st.session_state.revenue_df.at[index1, "remarks"] = st.session_state.new_rev_remarks
         st.session_state.revenue_df.at[index1, "date"] = st.session_state.new_rev_date
         st.session_state.edit_index = None
-        st.rerun()
+        st.experimental_rerun()
 
     revenue_df = st.session_state.revenue_df
 
@@ -310,7 +334,7 @@ with tab3:
             new_row = pd.DataFrame({"t_name": [tran_name], "t_ID": [tran_ID], "t_amount": [tran_amount], "t_remarks": [tran_remarks], "t_mode": [tran_mode], "t_date": [tran_date]})
             st.session_state.transaction_df = pd.concat([st.session_state.transaction_df, new_row], ignore_index=True)
             st.session_state.show_add_transaction_dialog = False
-            st.rerun()
+            st.experimental_rerun()
 
         st.caption('_:orange[Press Esc to Cancel]_')
     
@@ -328,7 +352,7 @@ with tab3:
         if 'edit_index2' in st.session_state and st.session_state.edit_index == index2:
             del st.session_state['edit_index2']
         st.session_state.show_add_transaction_dialog = False
-        # st.rerun()
+        # st.experimental_rerun()
 
     def save_changes(index2):
         st.session_state.transaction_df.at[index2, "t_name"] = st.session_state.new_tran_name
@@ -338,7 +362,7 @@ with tab3:
         st.session_state.transaction_df.at[index2, "t_remarks"] = st.session_state.new_tran_remarks
         st.session_state.transaction_df.at[index2, "t_date"] = st.session_state.new_tran_date
         st.session_state.edit_index = None
-        st.rerun()
+        st.experimental_rerun()
 
     transaction_df = st.session_state.transaction_df
 
@@ -390,6 +414,3 @@ with tab3:
                     if st.button("Delete", key=f"delete_transaction{index2}", on_click=lambda i=index2: delete_transaction(i)):
                         pass
                 st.write("")
-
-
-
