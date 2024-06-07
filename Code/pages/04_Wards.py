@@ -3,6 +3,7 @@ import pandas as pd
 import datetime
 from st_pages import Page, show_pages, add_page_title, hide_pages
 from PIL import Image
+
 # logo
 logo = Image.open("assets/logo.png")
 st.logo(logo)
@@ -95,11 +96,15 @@ def edit_ward(index):
     st.session_state.edit_index = index
 
 def delete_ward(index):
-    st.session_state.wards_df = st.session_state.wards_df.drop(index)
-    # Optionally clear any session state related to the deleted ward
-    if 'edit_index' in st.session_state and st.session_state.edit_index == index:
-        del st.session_state['edit_index']
-    st.session_state.show_add_ward_dialog = False  # Close any open dialogs
+        st.write("You need to delete the cages of this ward from the Cats data first in order to delete this ward.")
+        st.warning('This is a warning', icon="⚠️")
+        if st.button("Okay", key=f"confirm_delete_{index}"):
+            st.session_state.wards_df = st.session_state.wards_df.drop(index).reset_index(drop=True)
+            # Optionally clear any session state related to the deleted ward
+            if 'edit_index' in st.session_state and st.session_state.edit_index == index:
+                del st.session_state['edit_index']
+            st.session_state.show_add_ward_dialog = False  # Close any open dialogs
+            st.experimental_rerun()  # Refresh the app to reflect changes
 
 def save_changes(index):
     st.session_state.wards_df.at[index, "total_cages"] = st.session_state.new_total_cages
@@ -128,7 +133,9 @@ for index, row in wards_df.iterrows():
                     st.write(f"Code: {row['code']}")
             with col3:
                 if st.session_state.get('edit_index') == index:
-                    st.session_state.new_total_cages = st.number_input("Total Cages", value=row['total_cages'], step=1, format="%d")
+                    original_total_cages = row['total_cages'] 
+                    st.session_state.new_total_cages = st.number_input("Total Cages", value=row['total_cages'], min_value=original_total_cages, step=1, format="%d")
+                    st.write("⚠ To reduce the number of cages, you need to first delete them from Cats' Data ")
                 else:
                     st.write(f"Total Cages: {row['total_cages']}")
             with col4:
@@ -151,5 +158,5 @@ for index, row in wards_df.iterrows():
                         if st.button(f"Edit {index}", key=f"Edit {index}", on_click=lambda i=index: edit_ward(i)):
                             pass
                         if st.button(f"Delete {index}", key=f"Delete {index}", on_click=lambda i=index: delete_ward(i)):
-                            pass
+                         pass
             st.write("")
