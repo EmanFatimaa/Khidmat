@@ -1,6 +1,7 @@
 import streamlit as st
 from st_pages import Page, show_pages, add_page_title, hide_pages
 from PIL import Image
+import time
 
 @st.experimental_dialog("Reset Your Password")
 def reset_pass_dialog():
@@ -44,7 +45,7 @@ st.markdown("""
         }
         .header {
             text-align: center;
-            margin-bottom: 20px; /* Adjust the margin as needed */
+            
         }
     </style>
 """, unsafe_allow_html=True)
@@ -63,8 +64,8 @@ with login:
     #         <span style='color: white;'>RESCUE</span>
     #     </h2>
     # """, unsafe_allow_html=True)
-
-    st.image("assets/logo.png", use_column_width=True)
+    st.write("# ")
+    st.image("assets/logo.png", width= 350)
     st.markdown("## Login")
 
     buff, col3, buff2 = st.columns([1,3,1])
@@ -75,8 +76,11 @@ with login:
     
     if email and password:
         if col5.button("Login"):
-            col5.write("Logging in...")
-            st.switch_page("pages/01_Dashboard.py")
+
+            with st.spinner('Logging in...'):
+                time.sleep(2)
+                # st.success('Logged in successfully')
+                st.switch_page("pages/01_Dashboard.py")
     else:
         col5.button("Login", disabled=True)
 

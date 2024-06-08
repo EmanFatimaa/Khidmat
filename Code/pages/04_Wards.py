@@ -4,6 +4,8 @@ import datetime
 from st_pages import Page, show_pages, add_page_title, hide_pages
 from PIL import Image
 
+st.set_page_config(page_title="Wards", page_icon="🛏️", initial_sidebar_state="expanded")
+
 # logo
 logo = Image.open("assets/logo.png")
 st.logo(logo)
@@ -26,7 +28,7 @@ if st.sidebar.button("🔓 Logout"):
 
 hide_pages(["Login", "Teams"])
 
-st.write("Need to do a lot of things!")
+# st.write("Need to do a lot of things!")
 
 # Code below used to be in tab4
 

@@ -4,7 +4,7 @@ import plotly.express as px # for pie chart
 from st_pages import Page, show_pages, add_page_title, hide_pages
 from PIL import Image
 
-st.set_page_config(page_title="Dashboard", page_icon="🐈", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Dashboard", page_icon="📊", initial_sidebar_state="expanded")
 
 # Button Styling
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
@@ -41,20 +41,23 @@ hide_pages(["Login", "Teams"])
 logo = Image.open("assets/logo.png")
 st.logo(logo)
 
+#title
+st.header("Dashboard")
+
 # Custom CSS for centering text
-st.markdown(
-    """
-    <style>
-    .center-text {
-        text-align: center;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+# st.markdown(
+#     """
+#     <style>
+#     .center-text {
+#         text-align: center;
+#     }
+#     </style>
+#     """,
+#     unsafe_allow_html=True
+# )
 
 # Using HTML within st.markdown to center-align text
-st.markdown("<h1 class='center-text'>Dashboard</h1>", unsafe_allow_html=True)
+# st.markdown("<h1 class='center-text'>Dashboard</h1>", unsafe_allow_html=True)
 
 # Boxes
 
@@ -105,7 +108,7 @@ df = pd.DataFrame(data)
 with st.container(border = True,height= 500):
     
     # Title of the Streamlit app
-    st.write("#### Donations Receive Monthly")
+    st.write("#### Donations Received Monthly")
     # Create a line chart using Plotly
     fig = px.line(
         df,

@@ -3,6 +3,9 @@ import pandas as pd
 import datetime
 from st_pages import Page, show_pages, add_page_title, hide_pages
 from PIL import Image
+
+st.set_page_config(page_title="Finances", page_icon="💰", layout= "wide",initial_sidebar_state="expanded")
+
 # logo
 logo = Image.open("assets/logo.png")
 st.logo(logo)

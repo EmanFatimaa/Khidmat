@@ -2,6 +2,8 @@ import streamlit as st
 from PIL import Image
 from st_pages import Page, show_pages, add_page_title, hide_pages
 
+st.set_page_config(page_title="Teams", page_icon="👥", initial_sidebar_state="expanded")
+
 # logo
 logo = Image.open("assets/logo.png")
 st.logo(logo)

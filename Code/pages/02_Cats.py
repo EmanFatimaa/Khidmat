@@ -32,7 +32,7 @@ col1, col2, col3, col4 = st.columns(4)
 
 #Title
 with col1:
-    st.write("## Cats")
+    st.header("Cats")
 
 # ADD DIALOGE EMAN:)
 @st.experimental_dialog("Add a New Cat")
