@@ -30,8 +30,8 @@ if st.sidebar.button("👥 Team"):
 if st.sidebar.button("🔓 Logout"):
     st.switch_page("LoginScreen.py")
 
-server = 'DESKTOP-B3MBPDD\\FONTAINE'  # Note the double backslashes
-database = 'PawRescue'
+server = 'DESKTOP-HT3NB74' # IBAD : 'DESKTOP-B3MBPDD\\FONTAINE'  # Note the double backslashes
+database = 'Khidmat' #IBAD: 'PawRescue'
 
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 
@@ -41,7 +41,8 @@ engine = create_engine(connection_url)
 
 # everything indented is communicating with the database ; closes automatically
 with engine.begin() as conn:
-    employee_table = pd.read_sql_query(sa.text("select donationID, name, mode, amount, date from Donations, Externals, Mode where donorID = externalID and Mode.modeID = Donations.modeID"), conn)
+    # employee_table = pd.read_sql_query(sa.text("select donationID, name, mode, amount, date from Donations, Externals, Mode where donorID = externalID and Mode.modeID = Donations.modeID"), conn)
+    employee_table = pd.read_sql_query(sa.text("select * from users"), conn)
 
 selected_info = st.dataframe(employee_table, on_select = "rerun", selection_mode = "single-row", hide_index = True, width=1000, height=500)
 
