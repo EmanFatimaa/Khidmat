@@ -123,7 +123,7 @@ with tab1:
                 insert into Donations
                 values (:donor_ID, (select externalID from Externals where name = :name), (select modeID from Mode where mode = :mode), :amount, :date)
                 """), {"name": donor_name, "name": donor_name, "contact": contact, "donor_ID": donor_ID, "name": donor_name, "mode": mode, "amount": amount, "date": date})
-            st.experimental_rerun()
+            st.rerun()
 
         st.session_state.show_add_donation_dialog = False
         st.caption('_:orange[Press Esc to Cancel]_')
@@ -215,7 +215,7 @@ with tab2:
                     insert into Revenue
                     values (:rev_ID, (select externalID from Externals where name = :name), (select modeID from Mode where mode = :mode), :date, :amount, :remarks)
                     """), {"name": rev_name, "name": rev_name, "contact": contact, "rev_ID": rev_ID, "name": rev_name, "mode": mode, "date": date, "amount": amount, "remarks": remarks})
-            st.experimental_rerun()
+            st.rerun()
 
         st.session_state.show_add_revenue_dialog = False
         st.caption('_:orange[Press Esc to Cancel]_')
@@ -293,7 +293,7 @@ with tab3:
 insert into Transactions
 values (:trans_ID, (select modeID from Mode where mode = :mode), :amount, :billFor, :date, :remarks)
                                      """), {"trans_ID":trans_ID, "mode": mode, "amount": amount, "billFor": billFor, "date": date, "remarks": remarks})
-            st.experimental_rerun()
+            st.rerun()
         
         st.session_state.show_add_transaction_dialog = False
         st.caption('_:orange[Press Esc to Cancel]_')
