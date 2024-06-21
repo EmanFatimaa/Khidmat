@@ -30,13 +30,10 @@ if st.sidebar.button("👥 Team"):
 if st.sidebar.button("🔓 Logout"):
     st.switch_page("LoginScreen.py")
 
-server = 'DESKTOP-HT3NB74' # IBAD : 'DESKTOP-B3MBPDD\\FONTAINE'  # Note the double backslashes
-database = 'Khidmat' #IBAD: 'PawRescue'
-
+server = 'DESKTOP-B3MBPDD\\FONTAINE' # 'DESKTOP-HT3NB74'
+database = 'PawRescue' # 'Khidmat
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
-
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
-
 engine = create_engine(connection_url)
 
 # everything indented is communicating with the database ; closes automatically
@@ -44,7 +41,9 @@ with engine.begin() as conn:
     # employee_table = pd.read_sql_query(sa.text("select donationID, name, mode, amount, date from Donations, Externals, Mode where donorID = externalID and Mode.modeID = Donations.modeID"), conn)
     employee_table = pd.read_sql_query(sa.text("select * from users"), conn)
 
-selected_info = st.dataframe(employee_table, on_select = "rerun", selection_mode = "single-row", hide_index = True, width=1000, height=500)
+    # another way is the conn.execute() method and then fetchall() method
+
+selected_info = st.dataframe(employee_table, height = 1600, width = 1500, on_select = "rerun", selection_mode = "single-row", hide_index = True)
 
 # # If a row is selected
 # if len(selected_info["selection"]["rows"]) == 1:
