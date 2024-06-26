@@ -10,7 +10,7 @@ from st_pages import Page, show_pages, add_page_title, hide_pages
 from PIL import Image
 
 # database information ; will change when db hosting
-server = 'DESKTOP-B3MBPDD\\FONTAINE' # 'DESKTOP-HT3NB74' # Note the double backslashes
+server = 'DESKTOP-HPUUN98\SPARTA' # 'DESKTOP-HT3NB74' 'DESKTOP-B3MBPDD\\FONTAINE'# Note the double backslashes
 database = 'PawRescue' # 'Khidmat'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})

@@ -3,6 +3,16 @@ import pandas as pd
 import datetime
 from st_pages import Page, show_pages, add_page_title, hide_pages
 from PIL import Image
+import sqlalchemy as sa
+from millify import prettify
+from sqlalchemy.engine import URL
+from sqlalchemy import create_engine
+
+server = 'DESKTOP-HPUUN98\SPARTA' # 'DESKTOP-HT3NB74' 'DESKTOP-B3MBPDD\\FONTAINE'# Note the double backslashes
+database = 'PawRescue' # 'Khidmat'
+connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
+connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
+engine = create_engine(connection_url)
 
 st.set_page_config(page_title="Wards", page_icon="🛏️", initial_sidebar_state="expanded")
 
@@ -58,19 +68,33 @@ def Details():
     with col2:
         st.button("Status")
 
-    data = pd.read_csv("assets/wards.csv")
-    
-    selected_info = st.dataframe(data, on_select="rerun", selection_mode="single-row", hide_index=True)
-    selected_row = selected_info["selection"]["rows"]
+    with engine.begin() as conn:
+        wards_table = pd.read_sql_query(sa.text("""
+                SELECT 
+                Cage.cageID,
+                Cats.catID,
+                Cats.catName,
+                cageStatus.cageStatus,
+                Cage.date
+            FROM 
+                Cage
+            JOIN 
+                Ward ON Cage.wardID = Ward.wardID
+            JOIN 
+                cageStatus ON Cage.cageStatusID = cageStatus.cageStatusID
+            JOIN 
+                Cats ON Cage.cageID = Cats.cageID WHERE Cage.wardID = Ward.wardID;"""), conn)
+        
+    st.dataframe(wards_table, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
 
-    # Doctor_ID = selected_row[0] + 1
 
-    st.write("")
-    edited_data = st.data_editor(data, key="data_editor", height=400, use_container_width=True, hide_index=True)
     st.caption('_:orange[Press Esc to Close]_')
 
 @st.experimental_dialog("Add New Ward")
 def add_ward():
+    with engine.begin() as conn:
+            current_wardid = int(pd.read_sql_query(sa.text("select top 1 wardID from Ward order by wardID desc"), conn).iloc[0][0]) + 1
+    new_id = st.text_input("Ward ID", value = current_wardid, disabled=True)
     new_name = st.text_input("Ward Name", placeholder="Enter Ward Name")
     new_code = st.text_input("Ward Cage Code", placeholder="Enter Code for Cage e.g GW")
     new_cage = st.number_input("Total Cages", value=0, step=1, format="%d", min_value=0)
@@ -80,10 +104,16 @@ def add_ward():
     # cancel_ward_button = st.button("Cancel")
 
     if add_ward_button:
+        with engine.begin() as conn:
+            conn.execute(sa.text("""
+                insert into Ward (wardID, name, code, CapacityCages)
+                values (:wardID, :name, :code, :CapacityCages)
+            """), {"wardID": new_id, "name": new_name, "code": new_code, "CapacityCages": new_cage})
+
         new_row = pd.DataFrame({"code": [new_code], "total_cages": [new_cage], "free_cages": [new_free_cage]}, index=[new_name])
         st.session_state.wards_df = pd.concat([st.session_state.wards_df, new_row])
         st.session_state.show_add_ward_dialog = False
-        st.experimental_rerun()
+        st.rerun()
 
     st.caption('_:orange[Press Esc to Cancel]_')
 
@@ -158,7 +188,7 @@ for index, row in wards_df.iterrows():
                         if st.button(f"{index} Details"):
                             Details()
                         if st.button(f"Edit {index}", key=f"Edit {index}", on_click=lambda i=index: edit_ward(i)):
-                            pass
+                                pass
                         if st.button(f"Delete {index}", key=f"Delete {index}", on_click=lambda i=index: delete_ward(i)):
                          pass
             st.write("")
