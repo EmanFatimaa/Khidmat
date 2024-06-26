@@ -1,6 +1,5 @@
 python
-streamlit
-st_pages
+streamlit 1.36.0
 sqlalchemy
 pandas
 PIL
