@@ -1,12 +1,12 @@
 USE [master]
 GO
-/****** Object:  Database [PawRescue]    Script Date: 24-Jun-24 6:28:01 PM ******/
+/****** Object:  Database [PawRescue]    Script Date: 26/06/2024 5:16:43 pm ******/
 CREATE DATABASE [PawRescue]
  CONTAINMENT = NONE
  ON  PRIMARY 
-( NAME = N'PawRescue', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.FONTAINE\MSSQL\DATA\PawRescue.mdf' , SIZE = 8192KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
+( NAME = N'PawRescue', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\DATA\PawRescue.mdf' , SIZE = 8192KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
  LOG ON 
-( NAME = N'PawRescue_log', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.FONTAINE\MSSQL\DATA\PawRescue_log.ldf' , SIZE = 8192KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
+( NAME = N'PawRescue_log', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\DATA\PawRescue_log.ldf' , SIZE = 8192KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
  WITH CATALOG_COLLATION = DATABASE_DEFAULT, LEDGER = OFF
 GO
 ALTER DATABASE [PawRescue] SET COMPATIBILITY_LEVEL = 160
@@ -84,7 +84,7 @@ ALTER DATABASE [PawRescue] SET QUERY_STORE (OPERATION_MODE = READ_WRITE, CLEANUP
 GO
 USE [PawRescue]
 GO
-/****** Object:  Table [dbo].[Cage]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Table [dbo].[Cage]    Script Date: 26/06/2024 5:16:43 pm ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -100,7 +100,7 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[cageStatus]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Table [dbo].[cageStatus]    Script Date: 26/06/2024 5:16:43 pm ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -114,7 +114,7 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Cats]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Table [dbo].[Cats]    Script Date: 26/06/2024 5:16:43 pm ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -122,7 +122,7 @@ GO
 CREATE TABLE [dbo].[Cats](
 	[catID] [nvarchar](20) NOT NULL,
 	[catName] [nvarchar](max) NOT NULL,
-	[age] [int] NOT NULL,
+	[age] [decimal](3, 2) NULL,
 	[genderID] [int] NOT NULL,
 	[typeID] [int] NOT NULL,
 	[cageID] [int] NULL,
@@ -135,7 +135,7 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[CatStatus]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Table [dbo].[CatStatus]    Script Date: 26/06/2024 5:16:43 pm ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -149,7 +149,7 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Donations]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Table [dbo].[Donations]    Script Date: 26/06/2024 5:16:43 pm ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -166,21 +166,7 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[ExternalRole]    Script Date: 24-Jun-24 6:28:02 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[ExternalRole](
-	[externalRoleID] [int] NOT NULL,
-	[roleDesc] [nvarchar](max) NOT NULL,
-PRIMARY KEY CLUSTERED 
-(
-	[externalRoleID] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[Externals]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Table [dbo].[Externals]    Script Date: 26/06/2024 5:16:43 pm ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -190,14 +176,13 @@ CREATE TABLE [dbo].[Externals](
 	[name] [nvarchar](max) NOT NULL,
 	[contactNum] [nvarchar](max) NOT NULL,
 	[address] [nvarchar](max) NULL,
-	[externalRoleID] [int] NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[externalID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Gender]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Table [dbo].[Gender]    Script Date: 26/06/2024 5:16:43 pm ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -211,7 +196,7 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[InternalRole]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Table [dbo].[InternalRole]    Script Date: 26/06/2024 5:16:43 pm ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -225,7 +210,7 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Mode]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Table [dbo].[Mode]    Script Date: 26/06/2024 5:16:43 pm ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -239,7 +224,7 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Revenue]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Table [dbo].[Revenue]    Script Date: 26/06/2024 5:16:43 pm ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -257,7 +242,7 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Transactions]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Table [dbo].[Transactions]    Script Date: 26/06/2024 5:16:43 pm ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -275,7 +260,7 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Treatment]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Table [dbo].[Treatment]    Script Date: 26/06/2024 5:16:43 pm ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -293,7 +278,7 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Type]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Table [dbo].[Type]    Script Date: 26/06/2024 5:16:43 pm ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -307,7 +292,7 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Users]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Table [dbo].[Users]    Script Date: 26/06/2024 5:16:43 pm ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -325,7 +310,7 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Ward]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Table [dbo].[Ward]    Script Date: 26/06/2024 5:16:43 pm ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -355,7 +340,7 @@ INSERT [dbo].[cageStatus] ([cageStatusID], [cageStatus]) VALUES (2, N'Free')
 GO
 INSERT [dbo].[cageStatus] ([cageStatusID], [cageStatus]) VALUES (3, N'Being Transferred')
 GO
-INSERT [dbo].[Cats] ([catID], [catName], [age], [genderID], [typeID], [cageID], [externalID], [statusID], [admittedOn]) VALUES (N'1', N'Teen Patti', 2, 2, 1, 1, 3, 2, CAST(N'2024-01-23' AS Date))
+INSERT [dbo].[Cats] ([catID], [catName], [age], [genderID], [typeID], [cageID], [externalID], [statusID], [admittedOn]) VALUES (N'1', N'Teen Patti', CAST(2.00 AS Decimal(3, 2)), 2, 1, 1, 3, 2, CAST(N'2024-01-23' AS Date))
 GO
 INSERT [dbo].[CatStatus] ([StatusID], [statusType]) VALUES (1, N'Expired')
 GO
@@ -387,23 +372,17 @@ INSERT [dbo].[Donations] ([donationID], [donorID], [modeID], [amount], [date]) V
 GO
 INSERT [dbo].[Donations] ([donationID], [donorID], [modeID], [amount], [date]) VALUES (4, 1, 2, CAST(2000 AS Decimal(18, 0)), CAST(N'2024-06-21' AS Date))
 GO
-INSERT [dbo].[ExternalRole] ([externalRoleID], [roleDesc]) VALUES (1, N'Owner')
+INSERT [dbo].[Externals] ([externalID], [name], [contactNum], [address]) VALUES (1, N'Muhammad Ibad', N'0305-2505689', N'Nazimabad No.1')
 GO
-INSERT [dbo].[ExternalRole] ([externalRoleID], [roleDesc]) VALUES (2, N'Buyer')
+INSERT [dbo].[Externals] ([externalID], [name], [contactNum], [address]) VALUES (2, N'Eman Fatima', N'0334-8595859', N'Lalazar')
 GO
-INSERT [dbo].[ExternalRole] ([externalRoleID], [roleDesc]) VALUES (3, N'Donor')
+INSERT [dbo].[Externals] ([externalID], [name], [contactNum], [address]) VALUES (3, N'Fakeha Faisal', N'0305-3529582', N'FTC')
 GO
-INSERT [dbo].[Externals] ([externalID], [name], [contactNum], [address], [externalRoleID]) VALUES (1, N'Muhammad Ibad', N'0305-2505689', N'Nazimabad No.1', 3)
+INSERT [dbo].[Externals] ([externalID], [name], [contactNum], [address]) VALUES (4, N'Justin Foley', N'0305-2505689', N'USA')
 GO
-INSERT [dbo].[Externals] ([externalID], [name], [contactNum], [address], [externalRoleID]) VALUES (2, N'Eman Fatima', N'0334-8595859', N'Lalazar', 2)
+INSERT [dbo].[Externals] ([externalID], [name], [contactNum], [address]) VALUES (5, N'Mudassir Ahmed', N'0312-3245678', NULL)
 GO
-INSERT [dbo].[Externals] ([externalID], [name], [contactNum], [address], [externalRoleID]) VALUES (3, N'Fakeha Faisal', N'0305-3529582', N'FTC', 1)
-GO
-INSERT [dbo].[Externals] ([externalID], [name], [contactNum], [address], [externalRoleID]) VALUES (4, N'Justin Foley', N'0305-2505689', N'USA', 3)
-GO
-INSERT [dbo].[Externals] ([externalID], [name], [contactNum], [address], [externalRoleID]) VALUES (5, N'Mudassir Ahmed', N'0312-3245678', NULL, 2)
-GO
-INSERT [dbo].[Externals] ([externalID], [name], [contactNum], [address], [externalRoleID]) VALUES (6, N'Hannah Baker', N'555-666-777', NULL, 2)
+INSERT [dbo].[Externals] ([externalID], [name], [contactNum], [address]) VALUES (6, N'Hannah Baker', N'555-666-777', NULL)
 GO
 INSERT [dbo].[Gender] ([genderID], [gender]) VALUES (1, N'Male')
 GO
@@ -457,13 +436,13 @@ INSERT [dbo].[Ward] ([wardID], [name], [code], [capacityCages]) VALUES (2, N'Lou
 GO
 INSERT [dbo].[Ward] ([wardID], [name], [code], [capacityCages]) VALUES (3, N'General Ward', N'GW', 30)
 GO
-/****** Object:  Index [UQ__Cage__883BC1074A6E2FD7]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Index [UQ__Cage__883BC1073228BC24]    Script Date: 26/06/2024 5:16:43 pm ******/
 ALTER TABLE [dbo].[Cage] ADD UNIQUE NONCLUSTERED 
 (
 	[cageID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [UQ__cageStat__6ED6D2D4961B9674]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Index [UQ__cageStat__6ED6D2D43DEDA00E]    Script Date: 26/06/2024 5:16:43 pm ******/
 ALTER TABLE [dbo].[cageStatus] ADD UNIQUE NONCLUSTERED 
 (
 	[cageStatusID] ASC
@@ -471,85 +450,79 @@ ALTER TABLE [dbo].[cageStatus] ADD UNIQUE NONCLUSTERED
 GO
 SET ANSI_PADDING ON
 GO
-/****** Object:  Index [UQ__Cats__17B6DD276DF21BDD]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Index [UQ__Cats__17B6DD27AEAFAB2E]    Script Date: 26/06/2024 5:16:43 pm ******/
 ALTER TABLE [dbo].[Cats] ADD UNIQUE NONCLUSTERED 
 (
 	[catID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [UQ__CatStatu__C8EE20425135FBA6]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Index [UQ__CatStatu__C8EE2042C33D4B68]    Script Date: 26/06/2024 5:16:43 pm ******/
 ALTER TABLE [dbo].[CatStatus] ADD UNIQUE NONCLUSTERED 
 (
 	[StatusID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [UQ__Donation__F7F4F4322257FFDC]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Index [UQ__Donation__F7F4F43239DB5254]    Script Date: 26/06/2024 5:16:43 pm ******/
 ALTER TABLE [dbo].[Donations] ADD UNIQUE NONCLUSTERED 
 (
 	[donationID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [UQ__External__5DC2E6EE4C97FD78]    Script Date: 24-Jun-24 6:28:02 PM ******/
-ALTER TABLE [dbo].[ExternalRole] ADD UNIQUE NONCLUSTERED 
-(
-	[externalRoleID] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-GO
-/****** Object:  Index [UQ__External__C796AB4E5FB38425]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Index [UQ__External__C796AB4E7ABD77E0]    Script Date: 26/06/2024 5:16:43 pm ******/
 ALTER TABLE [dbo].[Externals] ADD UNIQUE NONCLUSTERED 
 (
 	[externalID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [UQ__Gender__306E2221FC986802]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Index [UQ__Gender__306E22212D7D053C]    Script Date: 26/06/2024 5:16:43 pm ******/
 ALTER TABLE [dbo].[Gender] ADD UNIQUE NONCLUSTERED 
 (
 	[genderID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [UQ__Internal__3500FB48067DB6E5]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Index [UQ__Internal__3500FB487786E981]    Script Date: 26/06/2024 5:16:43 pm ******/
 ALTER TABLE [dbo].[InternalRole] ADD UNIQUE NONCLUSTERED 
 (
 	[internalRoleID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [UQ__Mode__68A26F7F2EB0EA0E]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Index [UQ__Mode__68A26F7FFA1393D9]    Script Date: 26/06/2024 5:16:43 pm ******/
 ALTER TABLE [dbo].[Mode] ADD UNIQUE NONCLUSTERED 
 (
 	[modeID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [UQ__Revenue__966DC6C7BF4AFD65]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Index [UQ__Revenue__966DC6C7C70B984A]    Script Date: 26/06/2024 5:16:43 pm ******/
 ALTER TABLE [dbo].[Revenue] ADD UNIQUE NONCLUSTERED 
 (
 	[revenueID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [UQ__Transact__9B57CF533BDBFF5E]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Index [UQ__Transact__9B57CF530C33FAE0]    Script Date: 26/06/2024 5:16:43 pm ******/
 ALTER TABLE [dbo].[Transactions] ADD UNIQUE NONCLUSTERED 
 (
 	[transactionID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [UQ__Treatmen__D7AA5889AE628FC8]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Index [UQ__Treatmen__D7AA5889D19417E7]    Script Date: 26/06/2024 5:16:43 pm ******/
 ALTER TABLE [dbo].[Treatment] ADD UNIQUE NONCLUSTERED 
 (
 	[treatmentID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [UQ__Type__F04DF11B6D17C169]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Index [UQ__Type__F04DF11B14FA623A]    Script Date: 26/06/2024 5:16:43 pm ******/
 ALTER TABLE [dbo].[Type] ADD UNIQUE NONCLUSTERED 
 (
 	[typeID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [UQ__Users__CB9A1CDE8D7AC420]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Index [UQ__Users__CB9A1CDE49112E75]    Script Date: 26/06/2024 5:16:43 pm ******/
 ALTER TABLE [dbo].[Users] ADD UNIQUE NONCLUSTERED 
 (
 	[userID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [UQ__Ward__A14E2C71BBB2EDB4]    Script Date: 24-Jun-24 6:28:02 PM ******/
+/****** Object:  Index [UQ__Ward__A14E2C71D341D41A]    Script Date: 26/06/2024 5:16:43 pm ******/
 ALTER TABLE [dbo].[Ward] ADD UNIQUE NONCLUSTERED 
 (
 	[wardID] ASC
@@ -599,11 +572,6 @@ ALTER TABLE [dbo].[Donations]  WITH CHECK ADD  CONSTRAINT [Donations_fk2] FOREIG
 REFERENCES [dbo].[Mode] ([modeID])
 GO
 ALTER TABLE [dbo].[Donations] CHECK CONSTRAINT [Donations_fk2]
-GO
-ALTER TABLE [dbo].[Externals]  WITH CHECK ADD  CONSTRAINT [External_fk4] FOREIGN KEY([externalRoleID])
-REFERENCES [dbo].[ExternalRole] ([externalRoleID])
-GO
-ALTER TABLE [dbo].[Externals] CHECK CONSTRAINT [External_fk4]
 GO
 ALTER TABLE [dbo].[Revenue]  WITH CHECK ADD  CONSTRAINT [Revenue_fk1] FOREIGN KEY([buyerID])
 REFERENCES [dbo].[Externals] ([externalID])
