@@ -48,23 +48,23 @@ with col1:
         # everything indented is communicating with the database ; closes automatically
         with engine.begin() as conn:
             total_donations = pd.read_sql_query(sa.text("select sum(amount) from Donations"), conn)
-        st.metric(label="Total Donations", value = prettify(int(total_donations.iloc[0][0])) + " PKR")
+        st.metric(label="Total Donations", value = prettify(int(total_donations.iloc[0])) + " PKR")
 
 with col2:
     with st.container(border=True):
         with engine.begin() as conn:
             total_revenue = pd.read_sql_query(sa.text("select sum(amount) from Revenue"), conn)
-        st.metric(label="Total Revenue", value = prettify(int(total_revenue.iloc[0][0])) + " PKR")
+        st.metric(label="Total Revenue", value = prettify(int(total_revenue.iloc[0])) + " PKR")
 
 with col3:
     with st.container(border=True):
         with engine.begin() as conn:
             total_trans = pd.read_sql_query(sa.text("select sum(amount) from Transactions"), conn)
-        st.metric(label="Total Transactions", value = prettify(int(total_trans.iloc[0][0])) + " PKR")
+        st.metric(label="Total Transactions", value = prettify(int(total_trans.iloc[0])) + " PKR")
 
 with col4:
     with st.container(border=True):
-        st.metric(label="Remaining Balance", value= prettify(int(total_donations.iloc[0][0]) + int(total_revenue.iloc[0][0]) - int(total_trans.iloc[0][0])) + " PKR")
+        st.metric(label="Remaining Balance", value= prettify(int(total_donations.iloc[0]) + int(total_revenue.iloc[0]) - int(total_trans.iloc[0])) + " PKR")
 
 tab1, tab2, tab3 = st.tabs(["📦 Donations", "💹 Revenue", "💰 Transactions"])
 
@@ -85,7 +85,7 @@ with tab1:
             donor_name = st.text_input("Donor Name", placeholder="Enter Donor Name")
 
             with engine.begin() as conn:
-                current_donationid = int(pd.read_sql_query(sa.text("select top 1 donationID from Donations order by donationID desc"), conn).iloc[0][0]) + 1
+                current_donationid = int(pd.read_sql_query(sa.text("select top 1 donationID from Donations order by donationID desc"), conn).iloc[0]) + 1
             donor_ID = st.text_input("Donation ID", value = current_donationid, disabled = True)
         
             with engine.begin() as conn:
@@ -171,7 +171,7 @@ with tab2:
             rev_name = st.text_input("Name", placeholder="Enter Name")
 
             with engine.begin() as conn:
-                current_revenueid = int(pd.read_sql_query(sa.text("select top 1 revenueID from Revenue order by revenueID desc"), conn).iloc[0][0]) + 1
+                current_revenueid = int(pd.read_sql_query(sa.text("select top 1 revenueID from Revenue order by revenueID desc"), conn).iloc[0]) + 1
             rev_ID = st.text_input("Revenue ID", value = current_revenueid, disabled = True)
         
             with engine.begin() as conn:
@@ -269,7 +269,7 @@ with tab3:
         with col3:
             with engine.begin() as conn:
                 trans_mode = pd.read_sql_query(sa.text("select mode from Mode"), conn)
-                current_transid = int(pd.read_sql_query(sa.text("select top 1 transactionID from Transactions order by transactionID desc"), conn).iloc[0][0]) + 1
+                current_transid = int(pd.read_sql_query(sa.text("select top 1 transactionID from Transactions order by transactionID desc"), conn).iloc[0]) + 1
             mode = st.selectbox("Transaction Mode", trans_mode["mode"].tolist())
             trans_ID = st.text_input("Transaction ID", value = current_transid, disabled = True)
         
