@@ -38,25 +38,36 @@ if st.sidebar.button("🔓 Logout"):
 
 hide_pages(["Login", "Teams"])
 
-# st.write("Need to do a lot of things!")
-
-# Code below used to be in tab4
-
 st.header("Wards")
+
 # Initialize session state for ward data if not already present
 if 'wards_df' not in st.session_state:
     st.session_state.wards_df = pd.DataFrame(columns=["Name", "code", "total_cages", "free_cages"])
 
+# Fetch existing wards from the database
+with engine.begin() as conn:
+    existing_wards = pd.read_sql_query(sa.text("""SELECT name, code, CapacityCages AS total_cages, 0 AS free_cages FROM Ward"""), conn)
+
+# Combine existing wards with session state wards
+combined_wards_df = pd.concat([existing_wards, st.session_state.wards_df]).drop_duplicates(subset=["Name", "code"]).reset_index(drop=True)
+
+
+# Search functionality
+selected = st.text_input("", placeholder="🔍 Search...")
+
+if selected:
+    combined_wards_df = combined_wards_df[combined_wards_df.apply(lambda row: selected.lower() in row.astype(str).str.lower().to_string(), axis=1)]
+
 # Create a row with search icon and search bar in the first column, and the "+ Add New Ward" button in the second column
-with st.container():
-    selected = st.text_input("", placeholder="🔍 Search...")
+# with st.container():
+#     st.text_input("", placeholder="🔍 Search...")
 
     # Define the dialog for adding a new ward
-    if 'show_add_ward_dialog' not in st.session_state:
-        st.session_state.show_add_ward_dialog = False
+if 'show_add_ward_dialog' not in st.session_state:
+    st.session_state.show_add_ward_dialog = False
 
-    def add_ward_dialog():
-        st.session_state.show_add_ward_dialog = True
+def add_ward_dialog():
+    st.session_state.show_add_ward_dialog = True
 
 
 @st.experimental_dialog("Ward Details")
@@ -146,14 +157,14 @@ def save_changes(index):
     st.experimental_rerun()
 
 # Display the ward information
-wards_df = st.session_state.wards_df
+wards_df = combined_wards_df
 
 if "show_options" not in st.session_state:
     st.session_state.show_options = {}
 
 for index, row in wards_df.iterrows():
     with st.container():
-        with st.expander(f"***{index}***"):
+        with st.expander(f"***{row['name']}***"):
             # Assign unique key to the button
             col1, col2, col3, col4, col5, col6 = st.columns([0.1, 0.5, 0.7, 0.7, 0.5, 1])  # Adjusted column widths
             with col1:
@@ -185,10 +196,10 @@ for index, row in wards_df.iterrows():
             with col6:
                 if st.session_state.get('show_options', {}).get(index, False):
                     if st.session_state.get('edit_index') != index:
-                        if st.button(f"{index} Details"):
+                        if st.button(f"{row['name']} Details"):
                             Details()
-                        if st.button(f"Edit {index}", key=f"Edit {index}", on_click=lambda i=index: edit_ward(i)):
+                        if st.button(f"Edit {row['name']}", key=f"Edit {index}", on_click=lambda i=index: edit_ward(i)):
                                 pass
-                        if st.button(f"Delete {index}", key=f"Delete {index}", on_click=lambda i=index: delete_ward(i)):
+                        if st.button(f"Delete {row['name']}", key=f"Delete {index}", on_click=lambda i=index: delete_ward(i)):
                          pass
             st.write("")
