@@ -10,8 +10,8 @@ from st_pages import Page, show_pages, add_page_title, hide_pages
 from PIL import Image
 
 # database information ; will change when db hosting
-server = 'DESKTOP-HPUUN98\SPARTA' # 'DESKTOP-HT3NB74' 'DESKTOP-B3MBPDD\\FONTAINE'# Note the double backslashes
-database = 'PawRescue' # 'Khidmat'
+server = 'DESKTOP-HT3NB74' # FAKEHA: 'DESKTOP-HPUUN98\SPARTA' EMAN :'DESKTOP-HT3NB74' IBAD:  'DESKTOP-B3MBPDD\\FONTAINE'# Note the double backslashes
+database = 'PawRescue' # EMAN 'Khidmat'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
 engine = create_engine(connection_url)
@@ -108,7 +108,7 @@ with tab1:
         # TODO: need to have a check as well that the user really needs to add the donation or not.
         # TODO: Filtering
 
-        add_donation_button = st.button("Add Donation")
+        add_donation_button = st.button("⊹ Add Donation")
 
         if add_donation_button:
             with engine.begin() as conn:

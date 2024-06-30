@@ -607,3 +607,5 @@ USE [master]
 GO
 ALTER DATABASE [PawRescue] SET  READ_WRITE 
 GO
+
+select * from Externals

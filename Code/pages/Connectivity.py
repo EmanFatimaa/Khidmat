@@ -30,8 +30,8 @@ if st.sidebar.button("👥 Team"):
 if st.sidebar.button("🔓 Logout"):
     st.switch_page("LoginScreen.py")
 
-server = 'DESKTOP-B3MBPDD\\FONTAINE' # 'DESKTOP-HT3NB74'
-database = 'PawRescue' # 'Khidmat
+server =  'DESKTOP-HT3NB74' # EMAN: 'DESKTOP-HT3NB74' IBAD: 'DESKTOP-B3MBPDD\\FONTAINE'
+database = 'PawRescue' # EMAN: 'Khidmat
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
 engine = create_engine(connection_url)
