@@ -102,7 +102,7 @@ with tab1:
 
             date = st.date_input("Donation Date", datetime.datetime.now(), disabled=True)
 
-            amount = st.text_input("Amount Donated", value=0)
+            amount = st.text_input("Amount Donated", value = 0)
 
         # TODO: add a check if all the fields are filled or not and are the correct type or not.
         # TODO: need to have a check as well that the user really needs to add the donation or not.
@@ -117,7 +117,7 @@ with tab1:
                     begin 
                         insert into Externals values
                             ((select top 1 externalID from Externals order by externalID desc) + 1, 
-                            :name, :contact, Null,(select externalRoleID from ExternalRole where roleDesc = 'Donor'))
+                            :name, :contact, Null)
                     end
 
                 insert into Donations

@@ -51,53 +51,47 @@ with col1:
 @st.experimental_dialog("Add a New Cat")
 def open_dialog():
 
+    st.write("Cat related details")
     # Creating columns for better formatting -- dk if better way of doing 
     col1, col2= st.columns(2)
 
     with col1:
-        # Name field
-        name = st.text_input("Cat Name", placeholder= "Enter Cat's Name")
-
-    with col2:
+        
+        #Cat ID Field
+        with engine.begin()as conn:
+            currentCatID = int(pd.read_sql_query(sa.text("select top 1 catID from Cats order by catID desc"), conn).iloc[0]) + 1
+            #TODO:
+            CatCodestr = "PA-000" + str(currentCatID) #need to fix this logic 
+        catID = st.text_input("Cat ID", value = CatCodestr, disabled= True)
         # Age field
         age = st.number_input("Age (in years)", step=0.5, value=1.0)
 
-    with col1:
+        # Type field
+        with engine.begin() as conn:
+            typeSelection = pd.read_sql_query(sa.text("Select type from Type"), conn)
+        type = st.selectbox("Type", typeSelection["type"].tolist())
+
+       
+    with col2:
+
+        # Name field
+        name = st.text_input("Cat Name", placeholder= "Enter Cat's Name")
+
         # Gender field
         with engine.begin() as conn:
             genderSelection = pd.read_sql_query(sa.text("Select gender from Gender"), conn)
         gender = st.selectbox("Gender", genderSelection["gender"].tolist())
 
-    with col2:
-        # Type field
-        with engine.begin() as conn:
-            typeSelection = pd.read_sql_query(sa.text("Select type from Type"), conn)
-        type = st.selectbox("Type", typeSelection["type"].tollist())
-
-    with col1:
         # Cage no field
-        cageNum = st.text_input("Cage Number", placeholder="Please select a cage number")
+        cageNum = st.text_input("Cage Number", placeholder="Enter the cage number")
 
-    with col2:
-        with engine.begin() as conn:
-            statusSelection = pd.read_sql_query(sa.text("Select statusType from CatStatus"), conn)
-        status = st.selectbox("Status", statusSelection["statusType"].tollist())	
-
-        # # Status dropdown with new options
-        # status = st.selectbox("Status", [
-        #     "Adopted",
-        #     "Discharged",
-        #     "Expired",
-        #     "Fostered",
-        #     "Healthy In Lower Portion",
-        #     "Missing",
-        #     "Moved To Healthy Area",
-        #     "Ready To Be Moved To Healthy Area",
-        #     "Ready To Discharge",
-        #     "Under Observation",
-        #     "Under Treatment"
-        # ])
-
+    with engine.begin() as conn:
+        statusSelection = pd.read_sql_query(sa.text("Select statusType from CatStatus"), conn)
+    status = st.selectbox("Status", statusSelection["statusType"].tolist())	
+    st.write("Owner related details")
+  
+    col1, col2= st.columns(2) #redefining to enter owner related details after cats details
+    
     with col1:
         # Owner name text input
         ownerName = st.text_input("Owner's Name", placeholder="Enter Owner's Name")
@@ -111,20 +105,24 @@ def open_dialog():
         # Owner contact text input
         ownerContact = st.text_input("Owner's Contact", value = contactFromDB, placeholder="xxxx-xxxxxxx")
 
-    # with col1:
-    # Date input
+    #date
     date = st.date_input('Date', value=datetime.date.today(), disabled= True)
 
-    # with col2:
     # address text area
     address = st.text_area("Address", placeholder="Enter Address")
-
+    
     # Submit and Cancel buttons
     submitted = st.button("Add Pet")
-    
-    # cancelled = st.form_submit_button("Cancel")
-    
+    st.caption(':orange[*Press Esc to Cancel*]') #st.write("Note: Upon clicking Cancel, the form will be closed")
+
+    #Logic for inserting the data
     if submitted:
+        print("submitted")
+        # Check if any of the fields are left unfilled
+        if not (catID and age and type and name and gender and cageNum and status and ownerName and  ownerContact and date and address ):
+            st.error("Please fill in all fields before submitting.")
+
+        
         with engine.begin() as conn:
             conn.execute(sa.text("""
             if not exists(select externalID from Externals where name = :name)
@@ -132,24 +130,20 @@ def open_dialog():
                     insert into Externals
                     values
                     ((select top 1 externalID from Externals  order by externalID desc) +1,
-                    :name, :contact, Null, (select externalRoleID from ExternalRole where roleDesc = 'Owner'))
+                    :name, :contactNum, :address)
 
                 end
 
                 insert into Cats
-                values () """),
-                {"name" : ownerName, "contact" : ownerContact, "Type": type,})
+                values (:catID, :catName, :age , (select genderID from gender where gender = :gender),(select typeID from type where type = :type), (select top 1 cageID from Cage order by cageID desc) + 1, (select externalID from Externals where name = :name) , (select statusID from Status where status = :status) , :admittedOn)
+                """),
+                {"name": ownerName, "contactNum": ownerContact, "address": address, "catID": catID, "catName": name,
+                "age": age, "gender": gender, "type":type, "status": status, "admittedOn" : date })
+        print("wohoo")
         st.rerun()
-        st.caption(':orange[*Press Esc to Cancel*]') #st.write("Note: Upon clicking Cancel, the form will be closed")
-
-        # # Check if any of the fields are left unfilled
-        # if not (name and age and gender and type and cageNum and status and ownerName and ownerContact and address and date):
-        #     st.error("Please fill in all fields before submitting.")
-        # else:
-        #     # Add logic to process form data here
-        #     st.success(f"Pet {name} added successfully!")
-        #     st.balloons()
-                
+        # st.success(f"Pet {name} added successfully!")
+        # st.balloons()
+           
 #Add a new cat button
 with col3:    
     addCat = st.button("⊹ Add a New Cat")#, on_click= open_dialog -- doesnt work dky..
