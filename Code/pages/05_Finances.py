@@ -148,7 +148,12 @@ with tab1:
 	                      date as 'Date' 
                     from Donations, Externals where Donations.donorID = Externals.externalID"""), conn)
         
-    st.dataframe(donation_table, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
+    ibad = st.dataframe(donation_table, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
+    
+    # catch:
+    #     print(ibad['selection']['rows'][0]+1) # +1 because ID starts from 1 as well.
+    # except:
+
 
     # TODO: we can have update and delete any donations but only for admin
 
