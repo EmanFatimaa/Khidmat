@@ -8,7 +8,7 @@ from millify import prettify
 from sqlalchemy.engine import URL
 from sqlalchemy import create_engine
 
-server = 'DESKTOP-HT3NB74' # FAKEHA: 'DESKTOP-HPUUN98\SPARTA'   EMAN: 'DESKTOP-HT3NB74' IBAD: 'DESKTOP-B3MBPDD\\FONTAINE'# Note the double backslashes
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA: 'DESKTOP-HPUUN98\SPARTA'   EMAN: 'DESKTOP-HT3NB74' IBAD: 'DESKTOP-B3MBPDD\\FONTAINE'# Note the double backslashes
 database = 'PawRescue' # EMAN :'Khidmat'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
@@ -137,6 +137,14 @@ if st.session_state.show_add_ward_dialog:
 
 def edit_ward(index):
     st.session_state.edit_index = index
+    st.session_state.edit_code = combined_wards_df.at[index, "code"]
+    st.session_state.edit_total_cages = int(combined_wards_df.at[index, "total_cages"])
+    print("yvjhvv vhvjhvh vjhv hjvhjvhjvhjvjhvjhvhvjhvjhvjhvvhjvjhvhjvjvjhvjv")
+    # print(type(combined_wards_df.columns))
+    # print(combined_wards_df.at[index, 'name'])
+    st.session_state.edit_name = combined_wards_df.at[index, "name"]
+    # st.session_state.edit_free_cages = combined_wards_df.at[index, "free_cages"]
+
 
 def delete_ward(index):
         st.write("You need to delete the cages of this ward from the Cats data first in order to delete this ward.")
@@ -150,11 +158,24 @@ def delete_ward(index):
             st.experimental_rerun()  # Refresh the app to reflect changes
 
 def save_changes(index):
+    new_decided_name = st.session_state.edit_name
+    new_code = st.session_state.edit_code
+    new_total_cages = st.session_state.edit_total_cages
+    print("sdnajsndkjasndjkansdkjnasjdna kjsndkjasnd jkansdkjna jkdnsa jkdnasjkd naknsd kjasndkja")
+    print(new_decided_name, new_code, new_total_cages)
+
+    with engine.begin() as conn:
+        conn.execute(sa.text("""
+            UPDATE Ward
+            SET code = :code, CapacityCages = :total_cages
+            WHERE name = :Name
+        """), {"code": new_code, "total_cages": new_total_cages, "Name": new_decided_name})
+
     st.session_state.wards_df.at[index, "total_cages"] = st.session_state.new_total_cages
     st.session_state.wards_df.at[index, "free_cages"] = st.session_state.new_free_cages
     st.session_state.wards_df.at[index, "code"] = st.session_state.new_code
     st.session_state.edit_index = None
-    st.experimental_rerun()
+    st.rerun()
 
 # Display the ward information
 wards_df = combined_wards_df
@@ -189,6 +210,7 @@ for index, row in wards_df.iterrows():
             with col5:
                 if st.session_state.get('edit_index') == index:
                     if st.button("Save"):
+                        print('save ka button dabaya')
                         save_changes(index)
                 else:
                     if st.button("⋮", key={index}):
@@ -199,7 +221,7 @@ for index, row in wards_df.iterrows():
                         if st.button(f"{row['name']} Details"):
                             Details()
                         if st.button(f"Edit {row['name']}", key=f"Edit {index}", on_click=lambda i=index: edit_ward(i)):
-                                pass
+                            pass
                         if st.button(f"Delete {row['name']}", key=f"Delete {index}", on_click=lambda i=index: delete_ward(i)):
-                         pass
+                            pass
             st.write("")
