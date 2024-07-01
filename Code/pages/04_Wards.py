@@ -72,8 +72,8 @@ def add_ward_dialog():
 
 @st.experimental_dialog("Ward Details")
 def Details():
-    st.write("_Filter By_:")
-    col1, col2 = st.columns([1, 5.5])  # Adjust the ratio as needed
+    st.write("Filter By:")
+    col1, col2 = st.columns([1,5.8])  # Adjust the ratio as needed
     with col1:
         st.button("Date")
     with col2:
