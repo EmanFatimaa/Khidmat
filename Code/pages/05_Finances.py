@@ -69,7 +69,7 @@ with col4:
     with st.container(border=True):
         st.metric(label="Remaining Balance", value= prettify(int(total_donations.iat[0,0]) + int(total_revenue.iat[0,0]) - int(total_trans.iat[0,0])) + " PKR")
 
-Donations, tab2, tab3 = st.tabs(["📦 Donations", "💹 Revenue", "💰 Transactions"])
+Donations, Revenue, Transactions = st.tabs(["📦 Donations", "💹 Revenue", "💰 Transactions"])
 
 with Donations:
 
@@ -257,23 +257,38 @@ with Donations:
         delete_button = col5.button("Delete Donation", on_click = delete_donation_dialog)
 
         if st.session_state.show_update_donation_dialog:
-            # print('hello')
             update_donation(row_selected)
+
         if st.session_state.show_delete_donation_dialog:
             delete_donation(row_selected)
     else:
+
         print("No row selected")
 
-# ---------------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------------- #
 
-with tab2:
-    if 'show_add_revenue_dialog' not in st.session_state:
-        st.session_state.show_add_revenue_dialog = False
+with Revenue:
 
     def add_revenue_dialog():
             st.session_state.show_add_transaction_dialog = False
             st.session_state.show_add_revenue_dialog = True
             st.session_state.show_add_donation_dialog = False  # Close donation dialog if open
+            st.session_state.show_update_revenue_dialog = False
+            st.session_state.show_delete_revenue_dialog = False
+    
+    def update_revenue_dialog():
+            st.session_state.show_add_transaction_dialog = False
+            st.session_state.show_add_revenue_dialog = False
+            st.session_state.show_add_donation_dialog = False
+            st.session_state.show_update_revenue_dialog = True
+            st.session_state.show_delete_revenue_dialog = False
+    
+    def delete_revenue_dialog():
+            st.session_state.show_add_transaction_dialog = False
+            st.session_state.show_add_revenue_dialog = False
+            st.session_state.show_add_donation_dialog = False
+            st.session_state.show_update_revenue_dialog = False
+            st.session_state.show_delete_revenue_dialog = True
 
     @st.experimental_dialog("Add New Revenue")
     def add_revenue():
@@ -299,7 +314,7 @@ with tab2:
                     contact_from_db = row[0]
             contact = st.text_input("Contact", value = contact_from_db, placeholder="0324-2059215")
 
-            date = st.date_input("Revenue Date", datetime.datetime.now(), disabled=True)
+            date = st.date_input("Revenue Date", datetime.datetime.now(), disabled=False)
 
             amount = st.text_input("Amount", value=0)
 
@@ -331,19 +346,107 @@ with tab2:
 
         st.session_state.show_add_revenue_dialog = False
         st.caption('_:orange[Press Esc to Cancel]_')
+        
+    @st.experimental_dialog("Update Revenue")
+    def update_revenue(id_to_update):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            with engine.begin() as conn:
+                name_value = conn.execute(sa.text("select name from Externals where externalID = (select buyerID from Revenue where revenueID = :revenueID)"), {"revenueID": id_to_update}).fetchall()[0][0]
+            rev_name = st.text_input("Name", placeholder="Enter Name", value = name_value)
 
-    col1, col2 = st.columns([6,1])
+            rev_ID = st.text_input("Revenue ID", value = id_to_update, disabled = True)
+
+            with engine.begin() as conn:
+                revenue_mode = pd.read_sql_query(sa.text("select mode from Mode"), conn)
+                mode_value = conn.execute(sa.text("select mode from Mode where modeID = (select modeID from Revenue where revenueID = :revenueID)"), {"revenueID": id_to_update}).fetchall()[0][0]
+                final_mode_value = 1 if mode_value == 'Cash' else 0
+            mode = st.selectbox("Revenue Mode", revenue_mode["mode"].tolist(), index = final_mode_value)
+
+        with col2:
+            with engine.begin() as conn:
+                contact_value = conn.execute(sa.text("select contactNum from Externals where name = :name"), {"name": name_value}).fetchall()[0][0]
+            contact = st.text_input("Contact", value = contact_value, placeholder="0324-2059215")
+
+            with engine.begin() as conn:
+                date_value = conn.execute(sa.text("select date from Revenue where revenueID = :revenueID"), {"revenueID": id_to_update}).fetchall()[0][0]
+            date = st.date_input("Revenue Date", date_value, disabled=False)
+
+            with engine.begin() as conn:
+                amount_value = conn.execute(sa.text("select amount from Revenue where revenueID = :revenueID"), {"revenueID": id_to_update}).fetchall()[0][0]
+            amount = st.text_input("Amount", value = amount_value)
+
+        col5, col6 = st.columns([1,0.000000000000001])
+
+        with col5:
+            with engine.begin() as conn:
+                remarks_value = conn.execute(sa.text("select remarks from Revenue where revenueID = :revenueID"), {"revenueID": id_to_update}).fetchall()[0][0]
+            remarks = st.text_area("Remarks", placeholder="", value = remarks_value)
+        
+        # TODO: add a check if all the fields are filled or not and are the correct type or not.
+        # TODO: need to have a check as well that the user really needs to add the revenue thingy or not.
+        # TODO: Filtering
+
+        update_rev_button = st.button("Update Revenue", key = 'update_revenue')
+
+        if update_rev_button:
+            with engine.begin() as conn:
+                conn.execute(sa.text(""" 
+                    update Externals
+                    set name = :name, contactNum = :contact
+                    where externalID = (select buyerID from Revenue where revenueID = :revenueID)
+
+                    update Revenue
+                    set modeID = (select modeID from Mode where mode = :mode), date = :date, amount = :amount, remarks = :remarks
+                    where revenueID = :revenueID
+                    """), {"name": rev_name, "contact": contact, "revenueID": id_to_update, "mode": mode, "date": date, "amount": amount, "remarks": remarks, "revenueID": id_to_update})
+            st.rerun()
+        
+        st.session_state.show_update_revenue_dialog = False
+        st.caption('_:orange[Press Esc to Cancel]_')
+    
+    @st.experimental_dialog("Delete Revenue")
+    def delete_revenue(id_to_delete):
+        st.write('Are you sure you want to delete revenue of ID:', id_to_delete, '?')
+
+        col1, col2 = st.columns(2)
+
+        if col1.button("Yes", key = 'yes_revenue_delete'):
+            with engine.begin() as conn:
+                # we cannot actually delete any revenue but rather just set it to Null and amount to 0.
+                # when showing the revenue we will filter out the ones with buyerID = Null
+                conn.execute(sa.text("update Revenue set buyerID = NULL, modeID = NULL, amount = 0, date = NULL, remarks = NULL where revenueID = :revenueID"), {"revenueID": id_to_delete})
+            st.rerun()
+        
+        if col2.button("No", key = 'no_revenue_delete'):
+            st.rerun()
+        
+        st.session_state.show_delete_revenue_dialog = False
+
+    if 'show_add_revenue_dialog' not in st.session_state:
+        st.session_state.show_add_revenue_dialog = False
+    
+    if 'show_update_revenue_dialog' not in st.session_state:
+        st.session_state.show_update_revenue_dialog = False
+    
+    if 'show_delete_revenue_dialog' not in st.session_state:
+        st.session_state.show_delete_revenue_dialog = False
+
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
+
     col1.write("Filtering Remains.")
+    
     # Add a New Revenue Button
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    new_revenue = col2.button("⊹ Add New Revenue", on_click=add_revenue_dialog, key = "add_revenue")
+    new_revenue = col6.button("⊹ Add New Revenue", on_click=add_revenue_dialog, key = "add_revenue")
 
     if st.session_state.show_add_revenue_dialog:
         add_revenue()
     
     # Table for Revenue
     with engine.begin() as conn:
-        revenue_table = pd.read_sql_query(sa.text("""
+        revenue_table_df = pd.read_sql_query(sa.text("""
         select revenueID as 'Revenue ID', 
         name as 'Name', 
         contactNum as 'Contact Number', 
@@ -353,20 +456,49 @@ with tab2:
         date as 'Date' 
         from Revenue, Externals where Revenue.buyerID = Externals.externalID"""), conn)
         
-    st.dataframe(revenue_table, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row")
+    revenue_table = st.dataframe(revenue_table_df, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row")
 
-    # TODO: we can have update and delete any revenue but only for admin
-    
-# -----------------------------------------------------------------------------------------------------------------------------
+    # Update and Delete Buttons (Only for Admin though)
+    if revenue_table["selection"]["rows"]: # if a row is selected
 
-with tab3:
-    if 'show_add_transaction_dialog' not in st.session_state:
-        st.session_state.show_add_transaction_dialog = False
+        row_selected = int(revenue_table_df.iat[revenue_table['selection']['rows'][0], 0])
+
+        update_button = col4.button("Update Revenue", on_click = update_revenue_dialog)
+        delete_button = col5.button("Delete Revenue", on_click = delete_revenue_dialog)
+
+        if st.session_state.show_update_revenue_dialog:
+            update_revenue(row_selected)
+        
+        if st.session_state.show_delete_revenue_dialog:
+            delete_revenue(row_selected)
+
+    else:
+        print("No row selected")
+
+# ----------------------------------------------------------------------------------------------------------------------------- #
+
+with Transactions:
 
     def add_transaction_dialog():
-            st.session_state.show_add_transaction_dialog = True #only transaction will be open
-            st.session_state.show_add_revenue_dialog = False #close revenue dialgog if open
-            st.session_state.show_add_donation_dialog = False  # Close donation dialog if open
+        st.session_state.show_add_transaction_dialog = True #only transaction will be open
+        st.session_state.show_add_revenue_dialog = False #close revenue dialgog if open
+        st.session_state.show_add_donation_dialog = False  # Close donation dialog if open
+        st.session_state.show_update_transaction_dialog = False
+        st.session_state.show_delete_transaction_dialog = False
+    
+    def update_transaction_dialog():
+        st.session_state.show_add_transaction_dialog = False
+        st.session_state.show_add_revenue_dialog = False
+        st.session_state.show_add_donation_dialog = False
+        st.session_state.show_update_transaction_dialog = True
+        st.session_state.show_delete_transaction_dialog = False
+
+    def delete_transaction_dialog():
+        st.session_state.show_add_transaction_dialog = False
+        st.session_state.show_add_revenue_dialog = False
+        st.session_state.show_add_donation_dialog = False
+        st.session_state.show_update_transaction_dialog = False
+        st.session_state.show_delete_transaction_dialog = True
 
     @st.experimental_dialog("Add New Transaction")
     def add_transaction():
@@ -402,29 +534,125 @@ with tab3:
         if add_tran_button:
             with engine.begin() as conn:
                 conn.execute(sa.text(""" 
-insert into Transactions
-values (:trans_ID, (select modeID from Mode where mode = :mode), :amount, :billFor, :date, :remarks)
+                                    insert into Transactions
+                                    values (:trans_ID, (select modeID from Mode where mode = :mode), :amount, :billFor, :date, :remarks)
                                      """), {"trans_ID":trans_ID, "mode": mode, "amount": amount, "billFor": billFor, "date": date, "remarks": remarks})
             st.rerun()
         
         st.session_state.show_add_transaction_dialog = False
         st.caption('_:orange[Press Esc to Cancel]_')
     
-    col1, col2 = st.columns([6,1])
+    @st.experimental_dialog("Update Transaction")
+    def update_transaction(id_to_update):
+
+        col1, col2 = st.columns([1,0.000000000000001])
+        
+        with col1:
+            with engine.begin() as conn:
+                billFor_value = conn.execute(sa.text("select billFor from Transactions where transactionID = :transactionID"), {"transactionID": id_to_update}).fetchall()[0][0]
+            billFor = st.text_area("Bill For", placeholder="Enter bill for", value = billFor_value)
+
+        col3, col4 = st.columns(2)
+
+        with col3:
+            with engine.begin() as conn:
+                trans_mode = pd.read_sql_query(sa.text("select mode from Mode"), conn)
+                mode_value = conn.execute(sa.text("select mode from Mode where modeID = (select modeID from Transactions where transactionID = :transactionID)"), {"transactionID": id_to_update}).fetchall()[0][0]
+            final_mode_value = 1 if mode_value == 'Cash' else 0
+            mode = st.selectbox("Transaction Mode", trans_mode["mode"].tolist(), index = final_mode_value)
+            trans_ID = st.text_input("Transaction ID", value = id_to_update, disabled = True)
+        
+        with col4:
+            with engine.begin() as conn:
+                amount_value = conn.execute(sa.text("select amount from Transactions where transactionID = :transactionID"), {"transactionID": id_to_update}).fetchall()[0][0]
+                date_value = conn.execute(sa.text("select date from Transactions where transactionID = :transactionID"), {"transactionID": id_to_update}).fetchall()[0][0]
+            amount = st.text_input("Amount", value = amount_value)
+            date = st.date_input("Transaction Date", date_value, disabled=False)
+        
+        col5, col6 = st.columns([1,0.000000000000001])
+
+        with col5:
+            with engine.begin() as conn:
+                remarks_value = conn.execute(sa.text("select remarks from Transactions where transactionID = :transactionID"), {"transactionID": id_to_update}).fetchall()[0][0]
+            remarks = st.text_area("Remarks", placeholder="", value = remarks_value)
+        
+        # TODO: add a check if all the fields are filled or not and are the correct type or not.
+        # TODO: need to have a check as well that the user really needs to add the Transaction or not.
+        # TODO: Filtering
+
+        update_tran_button = st.button("Update Transaction", key = 'update_transaction')
+
+        if update_tran_button:
+            with engine.begin() as conn:
+                conn.execute(sa.text(""" 
+                update Transactions
+                set modeID = (select modeID from Mode where mode = :mode), amount = :amount, billFor = :billFor, date = :date, remarks = :remarks
+                where transactionID = :transactionID
+                """), {"mode": mode, "amount": amount, "billFor": billFor, "date": date, "remarks": remarks, "transactionID": id_to_update})
+            st.rerun()
+        
+        st.session_state.show_update_transaction_dialog = False
+        st.caption('_:orange[Press Esc to Cancel]_')
+    
+    @st.experimental_dialog("Delete Transaction")
+    def delete_transaction(id_to_delete):
+        st.write('Are you sure you want to delete transaction of ID:', id_to_delete, '?')
+
+        col1, col2 = st.columns(2)
+
+        if col1.button("Yes", key = 'yes_transaction_delete'):
+            with engine.begin() as conn:
+                # we cannot actually delete any transactions but rather just set it to Null and amount to 0.
+                # when showing the transactions we will filter out the ones with transactionID = Null
+                conn.execute(sa.text("update Transactions set modeID = NULL, amount = 0, billFor = NULL, date = NULL, remarks = NULL where transactionID = :transactionID"), {"transactionID": id_to_delete})
+            st.rerun()
+        
+        if col2.button("No", key = 'no_transaction_delete'):
+            st.rerun()
+        
+        st.session_state.show_delete_transaction_dialog = False
+    
+    if 'show_add_transaction_dialog' not in st.session_state:
+        st.session_state.show_add_transaction_dialog = False
+
+    if 'show_update_transaction_dialog' not in st.session_state:
+        st.session_state.show_update_transaction_dialog = False
+    
+    if 'show_delete_transaction_dialog' not in st.session_state:
+        st.session_state.show_delete_transaction_dialog = False
+
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
+
     col1.write("Filtering Remains.")
+    
     # Add a New Transaction Button
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    new_transaction = col2.button("⊹ Add Transaction", on_click=add_transaction_dialog , key = "add_transaction")
+    new_transaction = col6.button("⊹ Add Transaction", on_click=add_transaction_dialog , key = "add_transaction")
 
     if st.session_state.show_add_transaction_dialog:
         add_transaction()
 
     # Table for Transactions
     with engine.begin() as conn:
-        transaction_table = pd.read_sql_query(sa.text("""
-select transactionID as 'Transaction ID', billFor as 'Bill For', amount as 'Amount', 
-(select mode from Mode where Mode.modeID = Transactions.modeID) as 'Mode', remarks as 'Remarks', date as 'Date' from Transactions"""), conn)
+        transaction_table_df = pd.read_sql_query(sa.text("""
+                        select transactionID as 'Transaction ID', billFor as 'Bill For', amount as 'Amount', 
+                        (select mode from Mode where Mode.modeID = Transactions.modeID) as 'Mode', remarks as 'Remarks', date as 'Date' from Transactions where modeID is not NULL"""), conn)
     
-    st.dataframe(transaction_table, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
+    transaction_table = st.dataframe(transaction_table_df, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
 
-    # TODO: we can have update and delete any donations but only for admin
+    # Update and Delete Buttons (Only for Admin though)
+    if transaction_table["selection"]["rows"]: # if a row is selected
+
+        row_selected = int(transaction_table_df.iat[transaction_table['selection']['rows'][0], 0])
+
+        update_button = col4.button("Update Transaction", on_click = update_transaction_dialog)
+        delete_button = col5.button("Delete Transaction", on_click = delete_transaction_dialog)
+
+        if st.session_state.show_update_transaction_dialog:
+            update_transaction(row_selected)
+
+        if st.session_state.show_delete_transaction_dialog:
+            delete_transaction(row_selected)
+
+    else:
+        print("No row selected")
