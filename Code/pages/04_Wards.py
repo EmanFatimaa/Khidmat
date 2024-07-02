@@ -8,7 +8,9 @@ from millify import prettify
 from sqlalchemy.engine import URL
 from sqlalchemy import create_engine
 
-server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA: 'DESKTOP-HPUUN98\SPARTA'   EMAN: 'DESKTOP-HT3NB74' IBAD: 'DESKTOP-B3MBPDD\\FONTAINE'# Note the double backslashes
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+server = 'DESKTOP-HT3NB74' # EMAN
+# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 database = 'PawRescue' # EMAN :'Khidmat'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
