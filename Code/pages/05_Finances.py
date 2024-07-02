@@ -10,8 +10,10 @@ from st_pages import Page, show_pages, add_page_title, hide_pages
 from PIL import Image
 
 # database information ; will change when db hosting
-server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA: 'DESKTOP-HPUUN98\SPARTA' EMAN :'DESKTOP-HT3NB74' IBAD:  'DESKTOP-B3MBPDD\\FONTAINE'# Note the double backslashes
-database = 'PawRescue' # EMAN 'Khidmat'
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-HT3NB74' # EMAN
+# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+database = 'PawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
 engine = create_engine(connection_url)
@@ -43,39 +45,54 @@ hide_pages(["Login", "Teams"])
 st.header("Finances")
 
 col1, col2, col3, col4 = st.columns(4)
+
 with col1:
     with st.container(border=True):
         # everything indented is communicating with the database ; closes automatically
         with engine.begin() as conn:
             total_donations = pd.read_sql_query(sa.text("select sum(amount) from Donations"), conn)
-        st.metric(label="Total Donations", value = prettify(int(total_donations.iloc[0])) + " PKR")
+        st.metric(label="Total Donations", value = prettify(int(total_donations.iat[0,0])) + " PKR")
 
 with col2:
     with st.container(border=True):
         with engine.begin() as conn:
             total_revenue = pd.read_sql_query(sa.text("select sum(amount) from Revenue"), conn)
-        st.metric(label="Total Revenue", value = prettify(int(total_revenue.iloc[0])) + " PKR")
+        st.metric(label="Total Revenue", value = prettify(int(total_revenue.iat[0,0])) + " PKR")
 
 with col3:
     with st.container(border=True):
         with engine.begin() as conn:
             total_trans = pd.read_sql_query(sa.text("select sum(amount) from Transactions"), conn)
-        st.metric(label="Total Transactions", value = prettify(int(total_trans.iloc[0])) + " PKR")
+        st.metric(label="Total Transactions", value = prettify(int(total_trans.iat[0,0])) + " PKR")
 
 with col4:
     with st.container(border=True):
-        st.metric(label="Remaining Balance", value= prettify(int(total_donations.iloc[0]) + int(total_revenue.iloc[0]) - int(total_trans.iloc[0])) + " PKR")
+        st.metric(label="Remaining Balance", value= prettify(int(total_donations.iat[0,0]) + int(total_revenue.iat[0,0]) - int(total_trans.iat[0,0])) + " PKR")
 
-tab1, tab2, tab3 = st.tabs(["📦 Donations", "💹 Revenue", "💰 Transactions"])
+Donations, tab2, tab3 = st.tabs(["📦 Donations", "💹 Revenue", "💰 Transactions"])
 
-with tab1:
-    if 'show_add_donation_dialog' not in st.session_state:
-        st.session_state.show_add_donation_dialog = False
+with Donations:
 
     def add_donation_dialog():
             st.session_state.show_add_transaction_dialog = False
             st.session_state.show_add_donation_dialog = True
             st.session_state.show_add_revenue_dialog = False  # Close revenue dialog if open
+            st.session_state.show_update_donation_dialog = False
+            st.session_state.show_delete_donation_dialog = False
+    
+    def update_donation_dialog():
+            st.session_state.show_add_transaction_dialog = False
+            st.session_state.show_add_donation_dialog = False
+            st.session_state.show_add_revenue_dialog = False
+            st.session_state.show_update_donation_dialog = True
+            st.session_state.show_delete_donation_dialog = False
+    
+    def delete_donation_dialog():
+            st.session_state.show_add_transaction_dialog = False
+            st.session_state.show_add_donation_dialog = False
+            st.session_state.show_add_revenue_dialog = False
+            st.session_state.show_update_donation_dialog = False
+            st.session_state.show_delete_donation_dialog = True
 
     @st.experimental_dialog("Add New Donation")
     def add_donation():
@@ -85,7 +102,7 @@ with tab1:
             donor_name = st.text_input("Donor Name", placeholder="Enter Donor Name")
 
             with engine.begin() as conn:
-                current_donationid = int(pd.read_sql_query(sa.text("select top 1 donationID from Donations order by donationID desc"), conn).iloc[0]) + 1
+                current_donationid = int(pd.read_sql_query(sa.text("select top 1 donationID from Donations order by donationID desc"), conn).iat[0,0]) + 1
             donor_ID = st.text_input("Donation ID", value = current_donationid, disabled = True)
         
             with engine.begin() as conn:
@@ -100,7 +117,7 @@ with tab1:
                     contact_from_db = row[0]
             contact = st.text_input("Donor Contact", value = contact_from_db, placeholder="0324-2059215")
 
-            date = st.date_input("Donation Date", datetime.datetime.now(), disabled=True)
+            date = st.date_input("Donation Date", datetime.datetime.now(), disabled = False)
 
             amount = st.text_input("Amount Donated", value = 0)
 
@@ -127,19 +144,100 @@ with tab1:
 
         st.session_state.show_add_donation_dialog = False
         st.caption('_:orange[Press Esc to Cancel]_')
+    
+    @st.experimental_dialog("Update Donation")
+    def update_donation(id_to_update):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            with engine.begin() as conn:
+                name_value = conn.execute(sa.text("select name from Externals where externalID = (select donorID from Donations where donationID = :donationID)"), {"donationID": id_to_update}).fetchall()[0][0]
+            donor_name = st.text_input("Donor Name", placeholder="Enter Donor Name", value = name_value)
 
-    col1, col2 = st.columns([6,1])
+            donor_ID = st.text_input("Donation ID", value = id_to_update, disabled = True)
+
+            with engine.begin() as conn:
+                donation_mode = pd.read_sql_query(sa.text("select mode from Mode"), conn)
+                mode_value = conn.execute(sa.text("select mode from Mode where modeID = (select modeID from Donations where donationID = :donationID)"), {"donationID": id_to_update}).fetchall()[0][0]
+                final_mode_value = 1 if mode_value == 'Cash' else 0
+            mode = st.selectbox("Donation Mode", donation_mode["mode"].tolist(), index = final_mode_value)
+
+        with col2:
+            with engine.begin() as conn:
+                contact_value = conn.execute(sa.text("select contactNum from Externals where name = :name"), {"name": name_value}).fetchall()[0][0]
+            contact = st.text_input("Donor Contact", value = contact_value, placeholder="0324-2059215")
+
+            with engine.begin() as conn:
+                date_value = conn.execute(sa.text("select date from Donations where donationID = :donationID"), {"donationID": id_to_update}).fetchall()[0][0]
+            date = st.date_input("Donation Date", date_value, disabled=False)
+
+            with engine.begin() as conn:
+                amount_value = conn.execute(sa.text("select amount from Donations where donationID = :donationID"), {"donationID": id_to_update}).fetchall()[0][0]
+            amount = st.text_input("Amount Donated", value = amount_value)
+
+        # TODO: add a check if all the fields are filled or not and are the correct type or not.
+        # TODO: need to have a check as well that the user really needs to add the donation or not.
+        # TODO: Filtering
+
+        update_donation_button = st.button("Update Donation", key = 'update_donation')
+
+        if update_donation_button:
+            with engine.begin() as conn:
+                conn.execute(sa.text(""" 
+                update Externals
+                set name = :name, contactNum = :contact
+                where externalID = (select donorID from Donations where donationID = :donationID)
+
+                update Donations
+                set modeID = (select modeID from Mode where mode = :mode), amount = :amount, date = :date
+                where donationID = :donationID
+                """), {"name": donor_name, "contact": contact, "donationID": id_to_update, "mode": mode, "amount": amount, "date": date, "donationID": id_to_update})
+            st.rerun()
+        
+        st.session_state.show_update_donation_dialog = False       
+        st.caption('_:orange[Press Esc to Cancel]_') 
+
+    @st.experimental_dialog("Delete Donation")
+    def delete_donation(id_to_delete):
+        st.write('Are you sure you want to delete donation of ID:', id_to_delete, '?')
+
+        col1, col2 = st.columns(2)
+
+        if col1.button("Yes"):
+            with engine.begin() as conn:
+                # we cannot actually delete any donations but rather just set it to Null and amount to 0.
+                # when showing the donations we will filter out the ones with donorID = Null
+                conn.execute(sa.text("update Donations set donorID = NULL, modeID = NULL, amount = 0, date = NULL where donationID = :donationID"), {"donationID": id_to_delete})
+            st.rerun()
+        
+        if col2.button("No", key = 'no'):
+            st.rerun()
+        
+        st.session_state.show_delete_donation_dialog = False
+
+    if 'show_add_donation_dialog' not in st.session_state:
+        st.session_state.show_add_donation_dialog = False
+
+    if 'show_update_donation_dialog' not in st.session_state:
+        st.session_state.show_update_donation_dialog = False
+
+    if 'show_delete_donation_dialog' not in st.session_state:
+        st.session_state.show_delete_donation_dialog = False
+
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
+
     col1.write("Filtering Remains.")
+
     # Add a New Donation Button
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    new_donation = col2.button("⊹ Add New Donation", on_click=add_donation_dialog)
+    new_donation = col6.button("⊹ Add New Donation", on_click = add_donation_dialog)
 
     if st.session_state.show_add_donation_dialog:
         add_donation()
 
     # Table for Donations
     with engine.begin() as conn:
-        donation_table = pd.read_sql_query(
+        donation_table_df = pd.read_sql_query(
         sa.text("""select donationID as 'Donation ID', 
 	                      name as 'Donor Name', 
 	                      contactNum as 'Contact Number', 
@@ -148,14 +246,23 @@ with tab1:
 	                      date as 'Date' 
                     from Donations, Externals where Donations.donorID = Externals.externalID"""), conn)
         
-    bla = st.dataframe(donation_table, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
+    donation_table = st.dataframe(donation_table_df, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
     
-    # catch:
-    #     print(ibad['selection']['rows'][0]+1) # +1 because ID starts from 1 as well.
-    # except:
+    # Update and Delete Buttons (Only for Admin though)
+    if donation_table["selection"]["rows"]: # if a row is selected
+        
+        row_selected = int(donation_table_df.iat[donation_table['selection']['rows'][0], 0])
 
+        update_button = col4.button("Update Donation", on_click = update_donation_dialog)
+        delete_button = col5.button("Delete Donation", on_click = delete_donation_dialog)
 
-    # TODO: we can have update and delete any donations but only for admin
+        if st.session_state.show_update_donation_dialog:
+            # print('hello')
+            update_donation(row_selected)
+        if st.session_state.show_delete_donation_dialog:
+            delete_donation(row_selected)
+    else:
+        print("No row selected")
 
 # ---------------------------------------------------------------------------------------------------------------------------
 
@@ -176,7 +283,7 @@ with tab2:
             rev_name = st.text_input("Name", placeholder="Enter Name")
 
             with engine.begin() as conn:
-                current_revenueid = int(pd.read_sql_query(sa.text("select top 1 revenueID from Revenue order by revenueID desc"), conn).iloc[0]) + 1
+                current_revenueid = int(pd.read_sql_query(sa.text("select top 1 revenueID from Revenue order by revenueID desc"), conn).iat[0,0]) + 1
             rev_ID = st.text_input("Revenue ID", value = current_revenueid, disabled = True)
         
             with engine.begin() as conn:
@@ -229,7 +336,7 @@ with tab2:
     col1.write("Filtering Remains.")
     # Add a New Revenue Button
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    new_revenue = col2.button("⊹ Add New Revenue", on_click=add_revenue_dialog)
+    new_revenue = col2.button("⊹ Add New Revenue", on_click=add_revenue_dialog, key = "add_revenue")
 
     if st.session_state.show_add_revenue_dialog:
         add_revenue()
@@ -274,7 +381,7 @@ with tab3:
         with col3:
             with engine.begin() as conn:
                 trans_mode = pd.read_sql_query(sa.text("select mode from Mode"), conn)
-                current_transid = int(pd.read_sql_query(sa.text("select top 1 transactionID from Transactions order by transactionID desc"), conn).iloc[0]) + 1
+                current_transid = int(pd.read_sql_query(sa.text("select top 1 transactionID from Transactions order by transactionID desc"), conn).iat[0,0]) + 1
             mode = st.selectbox("Transaction Mode", trans_mode["mode"].tolist())
             trans_ID = st.text_input("Transaction ID", value = current_transid, disabled = True)
         
@@ -307,7 +414,7 @@ values (:trans_ID, (select modeID from Mode where mode = :mode), :amount, :billF
     col1.write("Filtering Remains.")
     # Add a New Transaction Button
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    new_transaction = col2.button("⊹ Add Transaction", on_click=add_transaction_dialog)
+    new_transaction = col2.button("⊹ Add Transaction", on_click=add_transaction_dialog , key = "add_transaction")
 
     if st.session_state.show_add_transaction_dialog:
         add_transaction()
