@@ -152,7 +152,7 @@ with Donations:
 
             # Check if the contact number is valid
             try:
-                if len(contact) != 12 and contact[4] != '-': # maybe check if contact is a number as well but idk?
+                if len(contact) != 12 and contact[4] != '-' and all(x.isnumeric() or x == '-' for x in contact):
                     st.error("Please enter a valid contact number. (include - after 4th digit)")
                 else:
                     valid_contact = True
@@ -239,7 +239,7 @@ with Donations:
 
             # Check if the contact number is valid
             try:
-                if len(contact) != 12 and contact[4] != '-': # maybe check if contact is a number as well but idk?
+                if len(contact) != 12 and contact[4] != '-' and all(x.isnumeric() or x == '-' for x in contact):
                     st.error("Please enter a valid contact number. (include - after 4th digit)")
                 else:
                     valid_contact = True
@@ -425,7 +425,7 @@ with Revenue:
 
             # Check if the contact number is valid
             try:
-                if len(contact) != 12 and contact[4] != '-': # maybe check if contact is a number as well but idk?
+                if len(contact) != 12 and contact[4] != '-' and all(x.isnumeric() or x == '-' for x in contact):
                     st.error("Please enter a valid contact number. (include - after 4th digit)")
                 else:
                     valid_contact = True
@@ -439,7 +439,7 @@ with Revenue:
                 valid_amount = True
             
             # Check if the remarks are valid
-            if all(x.isalpha() or x.isspace() for x in remarks):
+            if all(x.isalpha() or x.isspace() or x.isnumeric() for x in remarks):
                 valid_remarks = True
             else:
                 st.error("Please enter a valid remark.")
@@ -526,7 +526,7 @@ with Revenue:
 
             # Check if the contact number is valid
             try:
-                if len(contact) != 12 and contact[4] != '-': # maybe check if contact is a number as well but idk?
+                if len(contact) != 12 and contact[4] != '-' and all(x.isnumeric() or x == '-' for x in contact):
                     st.error("Please enter a valid contact number. (include - after 4th digit)")
                 else:
                     valid_contact = True
@@ -540,7 +540,7 @@ with Revenue:
                 valid_amount = True
             
             # Check if the remarks are valid
-            if all(x.isalpha() or x.isspace() for x in remarks):
+            if all(x.isalpha() or x.isspace() or x.isnumeric() for x in remarks):
                 valid_remarks = True
             else:
                 st.error("Please enter a valid remark.")
@@ -701,7 +701,7 @@ with Transactions:
                 everything_filled = True
             
             # Check if the billFor is valid
-            if all(x.isalpha() or x.isspace() for x in billFor):
+            if all(x.isalpha() or x.isspace() or x.isnumeric() for x in billFor):
                 valid_billFor = True
             else:
                 st.error("Please enter a valid bill for.")
@@ -713,7 +713,7 @@ with Transactions:
                 valid_amount = True
             
             # Check if the remarks are valid
-            if all(x.isalpha() or x.isspace() for x in remarks):
+            if all(x.isalpha() or x.isspace() or x.isnumeric() for x in remarks):
                 valid_remarks = True
             else:
                 st.error("Please enter a valid remark.")
@@ -782,7 +782,7 @@ with Transactions:
                 everything_filled = True
             
             # Check if the billFor is valid
-            if all(x.isalpha() or x.isspace() for x in billFor):
+            if all(x.isalpha() or x.isspace() or x.isnumeric() for x in billFor):
                 valid_billFor = True
             else:
                 st.error("Please enter a valid bill for.")
@@ -794,7 +794,7 @@ with Transactions:
                 valid_amount = True
             
             # Check if the remarks are valid
-            if all(x.isalpha() or x.isspace() for x in remarks):
+            if all(x.isalpha() or x.isspace() or x.isnumeric() for x in remarks):
                 valid_remarks = True
             else:
                 st.error("Please enter a valid remark.")
