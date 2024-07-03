@@ -5,3 +5,4 @@ pandas
 PIL
 plotly
 millify
+streamlit_dynamic_filters

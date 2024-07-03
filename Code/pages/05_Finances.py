@@ -1,17 +1,24 @@
-import streamlit as st
-import pandas as pd
+# standard imports
 import datetime
-import sqlalchemy as sa
-from millify import prettify
-
-from sqlalchemy.engine import URL
-from sqlalchemy import create_engine
-from st_pages import Page, show_pages, add_page_title, hide_pages
 from PIL import Image
 
+# popular imports
+import pandas as pd
+import sqlalchemy as sa
+import streamlit as st
+
+# custom imports
+from millify import prettify
+from sqlalchemy.engine import URL
+from sqlalchemy import create_engine
+
+# custom streamlit imports
+from st_pages import Page, show_pages, add_page_title, hide_pages
+from streamlit_dynamic_filters import DynamicFilters
+
 # database information ; will change when db hosting
-# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 database = 'PawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -119,28 +126,61 @@ with Donations:
 
             date = st.date_input("Donation Date", datetime.datetime.now(), disabled = False)
 
-            amount = st.text_input("Amount Donated", value = 0)
-
-        # TODO: add a check if all the fields are filled or not and are the correct type or not.
-        # TODO: need to have a check as well that the user really needs to add the donation or not.
-        # TODO: Filtering
+            amount = st.text_input("Amount Donated")
 
         add_donation_button = st.button("⊹ Add Donation")
 
         if add_donation_button:
-            with engine.begin() as conn:
-                conn.execute(sa.text(""" 
-                if not exists(select externalID from Externals where name = :name)
-                    begin 
-                        insert into Externals values
-                            ((select top 1 externalID from Externals order by externalID desc) + 1, 
-                            :name, :contact, Null)
-                    end
 
-                insert into Donations
-                values (:donor_ID, (select externalID from Externals where name = :name), (select modeID from Mode where mode = :mode), :amount, :date)
-                """), {"name": donor_name, "name": donor_name, "contact": contact, "donor_ID": donor_ID, "name": donor_name, "mode": mode, "amount": amount, "date": date})
-            st.rerun()
+            # Checks
+            everything_filled = False
+            valid_name = False
+            valid_contact = False
+            valid_amount = False
+
+            # Check if any of the fields are left unfilled
+            if not (donor_name and contact and donor_ID and mode and amount and date):
+                st.error("Please fill in all fields before submitting.")
+            else:
+                everything_filled = True
+
+            # Check if the name is valid
+            if all(x.isalpha() or x.isspace() for x in donor_name):
+                valid_name = True
+            else:
+                st.error("Please enter a valid name.")
+
+            # Check if the contact number is valid
+            try:
+                if len(contact) != 12 and contact[4] != '-': # maybe check if contact is a number as well but idk?
+                    st.error("Please enter a valid contact number. (include - after 4th digit)")
+                else:
+                    valid_contact = True
+            except:
+                st.error("Please enter a valid contact number. (include - after 4th digit)")
+            
+            # Check if the donation ID is valid
+            if amount.isnumeric() == False:
+                st.error("Please enter a valid amount.")
+            else:
+                valid_amount = True
+            
+            # There shouldn't be error with date, mode and donor_ID as they are selected from the dropdowns or automatically filled.
+
+            if everything_filled and valid_name and valid_contact and valid_amount:
+                with engine.begin() as conn:
+                    conn.execute(sa.text(""" 
+                    if not exists(select externalID from Externals where name = :name)
+                        begin 
+                            insert into Externals values
+                                ((select top 1 externalID from Externals order by externalID desc) + 1, 
+                                :name, :contact, Null)
+                        end
+
+                    insert into Donations
+                    values (:donor_ID, (select externalID from Externals where name = :name), (select modeID from Mode where mode = :mode), :amount, :date)
+                    """), {"name": donor_name, "name": donor_name, "contact": contact, "donor_ID": donor_ID, "name": donor_name, "mode": mode, "amount": amount, "date": date})
+                st.rerun()
 
         st.session_state.show_add_donation_dialog = False
         st.caption('_:orange[Press Esc to Cancel]_')
@@ -175,24 +215,57 @@ with Donations:
                 amount_value = conn.execute(sa.text("select amount from Donations where donationID = :donationID"), {"donationID": id_to_update}).fetchall()[0][0]
             amount = st.text_input("Amount Donated", value = amount_value)
 
-        # TODO: add a check if all the fields are filled or not and are the correct type or not.
-        # TODO: need to have a check as well that the user really needs to add the donation or not.
-        # TODO: Filtering
-
         update_donation_button = st.button("Update Donation", key = 'update_donation')
 
         if update_donation_button:
-            with engine.begin() as conn:
-                conn.execute(sa.text(""" 
-                update Externals
-                set name = :name, contactNum = :contact
-                where externalID = (select donorID from Donations where donationID = :donationID)
 
-                update Donations
-                set modeID = (select modeID from Mode where mode = :mode), amount = :amount, date = :date
-                where donationID = :donationID
-                """), {"name": donor_name, "contact": contact, "donationID": id_to_update, "mode": mode, "amount": amount, "date": date, "donationID": id_to_update})
-            st.rerun()
+            # Checks
+            everything_filled = False
+            valid_name = False
+            valid_contact = False
+            valid_amount = False
+
+            # Check if any of the fields are left unfilled
+            if not (donor_name and contact and donor_ID and mode and amount and date):
+                st.error("Please fill in all fields before submitting.")
+            else:
+                everything_filled = True
+
+            # Check if the name is valid
+            if all(x.isalpha() or x.isspace() for x in donor_name):
+                valid_name = True
+            else:
+                st.error("Please enter a valid name.")
+
+            # Check if the contact number is valid
+            try:
+                if len(contact) != 12 and contact[4] != '-': # maybe check if contact is a number as well but idk?
+                    st.error("Please enter a valid contact number. (include - after 4th digit)")
+                else:
+                    valid_contact = True
+            except:
+                st.error("Please enter a valid contact number. (include - after 4th digit)")
+            
+            # Check if the donation ID is valid
+            if amount.isnumeric() == False:
+                st.error("Please enter a valid amount.")
+            else:
+                valid_amount = True
+            
+            # There shouldn't be error with date, mode and donor_ID as they are selected from the dropdowns or automatically filled.
+
+            if everything_filled and valid_name and valid_contact and valid_amount:
+                with engine.begin() as conn:
+                    conn.execute(sa.text(""" 
+                    update Externals
+                    set name = :name, contactNum = :contact
+                    where externalID = (select donorID from Donations where donationID = :donationID)
+
+                    update Donations
+                    set modeID = (select modeID from Mode where mode = :mode), amount = :amount, date = :date
+                    where donationID = :donationID
+                    """), {"name": donor_name, "contact": contact, "donationID": id_to_update, "mode": mode, "amount": amount, "date": date, "donationID": id_to_update})
+                st.rerun()
         
         st.session_state.show_update_donation_dialog = False       
         st.caption('_:orange[Press Esc to Cancel]_') 
@@ -214,26 +287,15 @@ with Donations:
             st.rerun()
         
         st.session_state.show_delete_donation_dialog = False
-
+        st.caption('_:orange[Press Esc to Cancel]_') 
+    
+    # Check if the session state exists or not
     if 'show_add_donation_dialog' not in st.session_state:
         st.session_state.show_add_donation_dialog = False
-
     if 'show_update_donation_dialog' not in st.session_state:
         st.session_state.show_update_donation_dialog = False
-
     if 'show_delete_donation_dialog' not in st.session_state:
         st.session_state.show_delete_donation_dialog = False
-
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
-
-    col1.write("Filtering Remains.")
-
-    # Add a New Donation Button
-    st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    new_donation = col6.button("⊹ Add New Donation", on_click = add_donation_dialog)
-
-    if st.session_state.show_add_donation_dialog:
-        add_donation()
 
     # Table for Donations
     with engine.begin() as conn:
@@ -245,13 +307,29 @@ with Donations:
 	                      (select mode from Mode where Mode.modeID = Donations.modeID) as 'Mode', 
 	                      date as 'Date' 
                     from Donations, Externals where Donations.donorID = Externals.externalID"""), conn)
-        
-    donation_table = st.dataframe(donation_table_df, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
     
+    # Filtering and Final Table
+    st.write("Filters")
+    dynamic_filters = DynamicFilters(donation_table_df, filters = ["Mode", "Date"])
+    dynamic_filters.display_filters(location = 'columns', num_columns=2, gap='large')
+    donation_table_df_final = dynamic_filters.filter_df()
+    
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
+    
+    # Add a New Donation Button
+    st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
+    new_donation = col6.button("⊹ Add New Donation", on_click = add_donation_dialog)
+
+    if st.session_state.show_add_donation_dialog:
+        add_donation()
+
+    # Display the Table
+    donation_table = st.dataframe(donation_table_df_final, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
+
     # Update and Delete Buttons (Only for Admin though)
     if donation_table["selection"]["rows"]: # if a row is selected
         
-        row_selected = int(donation_table_df.iat[donation_table['selection']['rows'][0], 0])
+        row_selected = int(donation_table_df_final.iat[donation_table['selection']['rows'][0], 0])
 
         update_button = col4.button("Update Donation", on_click = update_donation_dialog)
         delete_button = col5.button("Delete Donation", on_click = delete_donation_dialog)
@@ -261,8 +339,8 @@ with Donations:
 
         if st.session_state.show_delete_donation_dialog:
             delete_donation(row_selected)
-    else:
 
+    else:
         print("No row selected")
 
 # --------------------------------------------------------------------------------------------------------------------------- #
@@ -306,7 +384,6 @@ with Revenue:
             mode = st.selectbox("Revenue Mode", revenue_mode["mode"].tolist())
             
         with col2:
-            
             with engine.begin() as conn: # if user already in the database then automatically fill the contact number.
                 fetchall = conn.execute(sa.text("select contactNum from Externals where name = :name"), {"name": rev_name}).fetchall()
                 contact_from_db = ''
@@ -323,26 +400,66 @@ with Revenue:
         with col5:
             remarks = st.text_area("Remarks", placeholder="Bought a collar")
 
-        # TODO: add a check if all the fields are filled or not and are the correct type or not.
-        # TODO: need to have a check as well that the user really needs to add the donation or not.
-        # TODO: Filtering
-
         add_rev_button = st.button("Add Revenue")
 
         if add_rev_button:
-            with engine.begin() as conn:
-                conn.execute(sa.text(""" 
-                    if not exists(select externalID from Externals where name = :name)
-                        begin 
-                            insert into Externals values
-                                ((select top 1 externalID from Externals order by externalID desc) + 1, 
-                                :name, :contact, Null,(select externalRoleID from ExternalRole where roleDesc = 'Buyer'))
-                        end
 
-                    insert into Revenue
-                    values (:rev_ID, (select externalID from Externals where name = :name), (select modeID from Mode where mode = :mode), :date, :amount, :remarks)
-                    """), {"name": rev_name, "name": rev_name, "contact": contact, "rev_ID": rev_ID, "name": rev_name, "mode": mode, "date": date, "amount": amount, "remarks": remarks})
-            st.rerun()
+            # Checks
+            everything_filled = False
+            valid_name = False
+            valid_contact = False
+            valid_amount = False
+            valid_remarks = False
+
+            # Check if any of the fields are left unfilled
+            if not (rev_name and contact and rev_ID and mode and amount and date and remarks):
+                st.error("Please fill in all fields before submitting.")
+            else:
+                everything_filled = True
+
+            # Check if the name is valid
+            if all(x.isalpha() or x.isspace() for x in rev_name):
+                valid_name = True
+            else:
+                st.error("Please enter a valid name.")
+
+            # Check if the contact number is valid
+            try:
+                if len(contact) != 12 and contact[4] != '-': # maybe check if contact is a number as well but idk?
+                    st.error("Please enter a valid contact number. (include - after 4th digit)")
+                else:
+                    valid_contact = True
+            except:
+                st.error("Please enter a valid contact number. (include - after 4th digit)")
+            
+            # Check if the revenue ID is valid
+            if amount.isnumeric() == False:
+                st.error("Please enter a valid amount.")
+            else:
+                valid_amount = True
+            
+            # Check if the remarks are valid
+            if all(x.isalpha() or x.isspace() for x in remarks):
+                valid_remarks = True
+            else:
+                st.error("Please enter a valid remark.")
+            
+            # There shouldn't be error with date, mode and donor_ID as they are selected from the dropdowns or automatically filled.
+
+            if everything_filled and valid_name and valid_contact and valid_amount and valid_remarks:
+                with engine.begin() as conn:
+                    conn.execute(sa.text(""" 
+                        if not exists(select externalID from Externals where name = :name)
+                            begin 
+                                insert into Externals values
+                                    ((select top 1 externalID from Externals order by externalID desc) + 1, 
+                                    :name, :contact, Null,(select externalRoleID from ExternalRole where roleDesc = 'Buyer'))
+                            end
+
+                        insert into Revenue
+                        values (:rev_ID, (select externalID from Externals where name = :name), (select modeID from Mode where mode = :mode), :date, :amount, :remarks)
+                        """), {"name": rev_name, "name": rev_name, "contact": contact, "rev_ID": rev_ID, "name": rev_name, "mode": mode, "date": date, "amount": amount, "remarks": remarks})
+                st.rerun()
 
         st.session_state.show_add_revenue_dialog = False
         st.caption('_:orange[Press Esc to Cancel]_')
@@ -384,24 +501,64 @@ with Revenue:
                 remarks_value = conn.execute(sa.text("select remarks from Revenue where revenueID = :revenueID"), {"revenueID": id_to_update}).fetchall()[0][0]
             remarks = st.text_area("Remarks", placeholder="", value = remarks_value)
         
-        # TODO: add a check if all the fields are filled or not and are the correct type or not.
-        # TODO: need to have a check as well that the user really needs to add the revenue thingy or not.
-        # TODO: Filtering
-
         update_rev_button = st.button("Update Revenue", key = 'update_revenue')
 
         if update_rev_button:
-            with engine.begin() as conn:
-                conn.execute(sa.text(""" 
-                    update Externals
-                    set name = :name, contactNum = :contact
-                    where externalID = (select buyerID from Revenue where revenueID = :revenueID)
 
-                    update Revenue
-                    set modeID = (select modeID from Mode where mode = :mode), date = :date, amount = :amount, remarks = :remarks
-                    where revenueID = :revenueID
-                    """), {"name": rev_name, "contact": contact, "revenueID": id_to_update, "mode": mode, "date": date, "amount": amount, "remarks": remarks, "revenueID": id_to_update})
-            st.rerun()
+            # Checks
+            everything_filled = False
+            valid_name = False
+            valid_contact = False
+            valid_amount = False
+            valid_remarks = False
+
+            # Check if any of the fields are left unfilled
+            if not (rev_name and contact and rev_ID and mode and amount and date and remarks):
+                st.error("Please fill in all fields before submitting.")
+            else:
+                everything_filled = True
+
+            # Check if the name is valid
+            if all(x.isalpha() or x.isspace() for x in rev_name):
+                valid_name = True
+            else:
+                st.error("Please enter a valid name.")
+
+            # Check if the contact number is valid
+            try:
+                if len(contact) != 12 and contact[4] != '-': # maybe check if contact is a number as well but idk?
+                    st.error("Please enter a valid contact number. (include - after 4th digit)")
+                else:
+                    valid_contact = True
+            except:
+                st.error("Please enter a valid contact number. (include - after 4th digit)")
+            
+            # Check if the revenue ID is valid
+            if amount.isnumeric() == False:
+                st.error("Please enter a valid amount.")
+            else:
+                valid_amount = True
+            
+            # Check if the remarks are valid
+            if all(x.isalpha() or x.isspace() for x in remarks):
+                valid_remarks = True
+            else:
+                st.error("Please enter a valid remark.")
+            
+            # There shouldn't be error with date, mode and donor_ID as they are selected from the dropdowns or automatically filled.
+
+            if everything_filled and valid_name and valid_contact and valid_amount and valid_remarks:
+                with engine.begin() as conn:
+                    conn.execute(sa.text(""" 
+                        update Externals
+                        set name = :name, contactNum = :contact
+                        where externalID = (select buyerID from Revenue where revenueID = :revenueID)
+
+                        update Revenue
+                        set modeID = (select modeID from Mode where mode = :mode), date = :date, amount = :amount, remarks = :remarks
+                        where revenueID = :revenueID
+                        """), {"name": rev_name, "contact": contact, "revenueID": id_to_update, "mode": mode, "date": date, "amount": amount, "remarks": remarks, "revenueID": id_to_update})
+                st.rerun()
         
         st.session_state.show_update_revenue_dialog = False
         st.caption('_:orange[Press Esc to Cancel]_')
@@ -423,27 +580,16 @@ with Revenue:
             st.rerun()
         
         st.session_state.show_delete_revenue_dialog = False
+        st.caption('_:orange[Press Esc to Cancel]_') 
 
+    # Check if the session state exists or not
     if 'show_add_revenue_dialog' not in st.session_state:
         st.session_state.show_add_revenue_dialog = False
-    
     if 'show_update_revenue_dialog' not in st.session_state:
         st.session_state.show_update_revenue_dialog = False
-    
     if 'show_delete_revenue_dialog' not in st.session_state:
         st.session_state.show_delete_revenue_dialog = False
 
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
-
-    col1.write("Filtering Remains.")
-    
-    # Add a New Revenue Button
-    st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    new_revenue = col6.button("⊹ Add New Revenue", on_click=add_revenue_dialog, key = "add_revenue")
-
-    if st.session_state.show_add_revenue_dialog:
-        add_revenue()
-    
     # Table for Revenue
     with engine.begin() as conn:
         revenue_table_df = pd.read_sql_query(sa.text("""
@@ -455,7 +601,20 @@ with Revenue:
         remarks as 'Remark',
         date as 'Date' 
         from Revenue, Externals where Revenue.buyerID = Externals.externalID"""), conn)
-        
+    
+    # Filtering and Final Table
+    st.write("Filtering remains for this tab.")
+
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
+    
+    # Add a New Revenue Button
+    st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
+    new_revenue = col6.button("⊹ Add New Revenue", on_click=add_revenue_dialog, key = "add_revenue")
+
+    if st.session_state.show_add_revenue_dialog:
+        add_revenue()
+    
+    # Display the Table
     revenue_table = st.dataframe(revenue_table_df, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row")
 
     # Update and Delete Buttons (Only for Admin though)
@@ -525,19 +684,49 @@ with Transactions:
         with col5:
             remarks = st.text_area("Remarks", placeholder="")
 
-        # TODO: add a check if all the fields are filled or not and are the correct type or not.
-        # TODO: need to have a check as well that the user really needs to add the donation or not.
-        # TODO: Filtering
-
         add_tran_button = st.button("Add New Transaction")
 
         if add_tran_button:
-            with engine.begin() as conn:
-                conn.execute(sa.text(""" 
-                                    insert into Transactions
-                                    values (:trans_ID, (select modeID from Mode where mode = :mode), :amount, :billFor, :date, :remarks)
-                                     """), {"trans_ID":trans_ID, "mode": mode, "amount": amount, "billFor": billFor, "date": date, "remarks": remarks})
-            st.rerun()
+
+            # Checks
+            everything_filled = False
+            valid_billFor = False
+            valid_amount = False
+            valid_remarks = False
+
+            # Check if any of the fields are left unfilled
+            if not (billFor and trans_ID and mode and amount and date and remarks):
+                st.error("Please fill in all fields before submitting.")
+            else:
+                everything_filled = True
+            
+            # Check if the billFor is valid
+            if all(x.isalpha() or x.isspace() for x in billFor):
+                valid_billFor = True
+            else:
+                st.error("Please enter a valid bill for.")
+            
+            # Check if the amount is valid
+            if amount.isnumeric() == False:
+                st.error("Please enter a valid amount.")
+            else:
+                valid_amount = True
+            
+            # Check if the remarks are valid
+            if all(x.isalpha() or x.isspace() for x in remarks):
+                valid_remarks = True
+            else:
+                st.error("Please enter a valid remark.")
+            
+            # There shouldn't be error with date, mode and trans_ID as they are selected from the dropdowns or automatically filled.
+
+            if everything_filled and valid_billFor and valid_amount and valid_remarks:
+                with engine.begin() as conn:
+                    conn.execute(sa.text(""" 
+                                        insert into Transactions
+                                        values (:trans_ID, (select modeID from Mode where mode = :mode), :amount, :billFor, :date, :remarks)
+                                        """), {"trans_ID":trans_ID, "mode": mode, "amount": amount, "billFor": billFor, "date": date, "remarks": remarks})
+                st.rerun()
         
         st.session_state.show_add_transaction_dialog = False
         st.caption('_:orange[Press Esc to Cancel]_')
@@ -575,21 +764,51 @@ with Transactions:
             with engine.begin() as conn:
                 remarks_value = conn.execute(sa.text("select remarks from Transactions where transactionID = :transactionID"), {"transactionID": id_to_update}).fetchall()[0][0]
             remarks = st.text_area("Remarks", placeholder="", value = remarks_value)
-        
-        # TODO: add a check if all the fields are filled or not and are the correct type or not.
-        # TODO: need to have a check as well that the user really needs to add the Transaction or not.
-        # TODO: Filtering
 
         update_tran_button = st.button("Update Transaction", key = 'update_transaction')
 
         if update_tran_button:
-            with engine.begin() as conn:
-                conn.execute(sa.text(""" 
-                update Transactions
-                set modeID = (select modeID from Mode where mode = :mode), amount = :amount, billFor = :billFor, date = :date, remarks = :remarks
-                where transactionID = :transactionID
-                """), {"mode": mode, "amount": amount, "billFor": billFor, "date": date, "remarks": remarks, "transactionID": id_to_update})
-            st.rerun()
+            
+            # Checks
+            everything_filled = False
+            valid_billFor = False
+            valid_amount = False
+            valid_remarks = False
+
+            # Check if any of the fields are left unfilled
+            if not (billFor and trans_ID and mode and amount and date and remarks):
+                st.error("Please fill in all fields before submitting.")
+            else:
+                everything_filled = True
+            
+            # Check if the billFor is valid
+            if all(x.isalpha() or x.isspace() for x in billFor):
+                valid_billFor = True
+            else:
+                st.error("Please enter a valid bill for.")
+            
+            # Check if the amount is valid
+            if amount.isnumeric() == False:
+                st.error("Please enter a valid amount.")
+            else:
+                valid_amount = True
+            
+            # Check if the remarks are valid
+            if all(x.isalpha() or x.isspace() for x in remarks):
+                valid_remarks = True
+            else:
+                st.error("Please enter a valid remark.")
+            
+            # There shouldn't be error with date, mode and trans_ID as they are selected from the dropdowns or automatically filled.
+
+            if everything_filled and valid_billFor and valid_amount and valid_remarks:
+                with engine.begin() as conn:
+                    conn.execute(sa.text(""" 
+                    update Transactions
+                    set modeID = (select modeID from Mode where mode = :mode), amount = :amount, billFor = :billFor, date = :date, remarks = :remarks
+                    where transactionID = :transactionID
+                    """), {"mode": mode, "amount": amount, "billFor": billFor, "date": date, "remarks": remarks, "transactionID": id_to_update})
+                st.rerun()
         
         st.session_state.show_update_transaction_dialog = False
         st.caption('_:orange[Press Esc to Cancel]_')
@@ -611,33 +830,35 @@ with Transactions:
             st.rerun()
         
         st.session_state.show_delete_transaction_dialog = False
+        st.caption('_:orange[Press Esc to Cancel]_') 
     
+    # Check if the session state exists or not
     if 'show_add_transaction_dialog' not in st.session_state:
         st.session_state.show_add_transaction_dialog = False
-
     if 'show_update_transaction_dialog' not in st.session_state:
         st.session_state.show_update_transaction_dialog = False
-    
     if 'show_delete_transaction_dialog' not in st.session_state:
         st.session_state.show_delete_transaction_dialog = False
-
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
-
-    col1.write("Filtering Remains.")
-    
-    # Add a New Transaction Button
-    st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    new_transaction = col6.button("⊹ Add Transaction", on_click=add_transaction_dialog , key = "add_transaction")
-
-    if st.session_state.show_add_transaction_dialog:
-        add_transaction()
 
     # Table for Transactions
     with engine.begin() as conn:
         transaction_table_df = pd.read_sql_query(sa.text("""
                         select transactionID as 'Transaction ID', billFor as 'Bill For', amount as 'Amount', 
                         (select mode from Mode where Mode.modeID = Transactions.modeID) as 'Mode', remarks as 'Remarks', date as 'Date' from Transactions where modeID is not NULL"""), conn)
+        
+    # Filtering and Final Table
+    st.write("Filtering remains for this tab.")
     
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
+
+    # Add a New Transaction Button
+    st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
+    new_transaction = col6.button("⊹ Add Transaction", on_click=add_transaction_dialog , key = "add_transaction")
+
+    if st.session_state.show_add_transaction_dialog:
+        add_transaction()
+    
+    # Display the Table
     transaction_table = st.dataframe(transaction_table_df, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
 
     # Update and Delete Buttons (Only for Admin though)
