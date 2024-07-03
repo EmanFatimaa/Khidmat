@@ -17,9 +17,9 @@ from st_pages import Page, show_pages, add_page_title, hide_pages
 from streamlit_dynamic_filters import DynamicFilters
 
 # database information ; will change when db hosting
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 database = 'PawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
@@ -330,6 +330,7 @@ with Donations:
     if donation_table["selection"]["rows"]: # if a row is selected
         
         row_selected = int(donation_table_df_final.iat[donation_table['selection']['rows'][0], 0])
+        # print([donation_table['selection']['rows'][0], 0])
 
         update_button = col4.button("Update Donation", on_click = update_donation_dialog)
         delete_button = col5.button("Delete Donation", on_click = delete_donation_dialog)

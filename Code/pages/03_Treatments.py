@@ -1,5 +1,5 @@
 # standard imports 
-import datetime
+import datetime 
 from PIL import Image
 
 # third party imports
@@ -16,9 +16,9 @@ from sqlalchemy import create_engine
 from st_pages import Page, show_pages, add_page_title, hide_pages
 from streamlit_dynamic_filters import DynamicFilters
 
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA # Note the double backslashes
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA # Note the double backslashes
 database = 'PawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
@@ -64,6 +64,18 @@ with col2:
 
 def add_treatment_dialog():
     st.session_state.show_add_treatment_dialog = True
+    st.session_state.show_update_treatment_dialog = False
+    st.session_state.show_delete_treatment_dialog = False
+
+def update_treatment_dialog():
+    st.session_state.show_add_treatment_dialog = False
+    st.session_state.show_update_treatment_dialog = True
+    st.session_state.show_delete_treatment_dialog = False
+
+def delete_treatment_dialog():
+    st.session_state.show_add_treatment_dialog = False
+    st.session_state.show_update_treatment_dialog = False
+    st.session_state.show_delete_treatment_dialog = True
 
 @st.experimental_dialog("Add Treatment")
 def add_treatment():
@@ -72,7 +84,12 @@ def add_treatment():
         treatmentid = int(pd.read_sql_query(sa.text("SELECT TOP 1 treatmentID FROM Treatment ORDER BY treatmentID DESC"), conn).iloc[0][0]) + 1
         df = pd.read_sql_query("SELECT CatID FROM Cats", conn)
         cat_ids = df['CatID'].tolist()
-    selected_cat_id = st.selectbox("Select Cat ID", cat_ids)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        selected_cat_id = st.selectbox("Select Cat ID", cat_ids)
+    with col2:
+        id = st.text_input("Treatment ID", value=treatmentid, disabled=True)
 
     col1, col2 = st.columns(2)
     
@@ -92,7 +109,7 @@ def add_treatment():
         # TODO: check other individual fields for errors as well.
 
         # Check if any of the fields are left unfilled
-        if not (selected_cat_id and cat_time and temperature and treatment_details):
+        if not (id and selected_cat_id and cat_time and temperature and treatment_details):
             st.error("Please fill in all fields before submitting.")
         
         with engine.begin() as conn:
@@ -117,10 +134,106 @@ def add_treatment():
 if "show_add_treatment_dialog" not in st.session_state:
     st.session_state.show_add_treatment_dialog = False
 
+@st.experimental_dialog("Update Treatment")
+def update_treatment(ID_to_update):
+    with engine.begin() as conn:
+        # treatmentid = int(pd.read_sql_query(sa.text("SELECT TOP 1 treatmentID FROM Treatment ORDER BY treatmentID DESC"), conn).iloc[0][0]) + 1
+        cat_ids = conn.execute(sa.text("""SELECT catID FROM Treatment WHERE treatmentID = :treatmentID"""), {"treatmentID": ID_to_update}).fetchall()[0][0]
+
+    col1, col2 = st.columns(2)
+    with col1:
+        treat_id =st.text_input("TreatmentID", value=ID_to_update, disabled=True)
+    with col2:
+        selected_cat_id = st.text_input("Select Cat ID", value=cat_ids, disabled=True)
+
+    with engine.begin() as conn:
+        Userid = conn.execute(sa.text("""SELECT UserID FROM Treatment WHERE CatID = :cat_id"""), {"cat_id": selected_cat_id}).fetchall()[0][0]
+
+    col1, col2 = st.columns(2)
+        
+    with col1:
+        with engine.begin() as conn:
+            time_value = conn.execute(sa.text("select dateTime from Treatment where treatmentID = :treatmentID"), {"treatmentID": ID_to_update}).fetchall()[0][0]
+        time_only = time_value.time()
+        Time = st.time_input("Time", value=time_only)
+    
+    with col2:
+        with engine.begin() as conn:
+            temp_value = conn.execute(sa.text("select temperature from Treatment where treatmentID = :treatmentID"), {"treatmentID": ID_to_update}).fetchall()[0][0]
+        temperature = st.number_input("Temperature", value=float(temp_value))
+
+    with engine.begin() as conn:
+        treatment_value = conn.execute(sa.text("select treatment from Treatment where treatmentID = :treatmentID"), {"treatmentID": ID_to_update}).fetchall()[0][0]
+    treatment = st.text_area("Treatment Details", value=treatment_value)
+
+    update_treatment_button = st.button("Update Treatment", key = 'update_treatment')
+
+    if update_treatment_button:
+        if not (treat_id and selected_cat_id and Time and temperature and treatment):
+            st.error("Please fill in all fields before submitting.")
+        else:
+            everything_filled = True
+
+        if everything_filled:
+            # print(selected_cat_id, Userid, Time, temperature, treatment, ID_to_update)
+            with engine.begin() as conn:
+                conn.execute(sa.text(""" 
+                    UPDATE Treatment
+                    SET catID = :catID, userID = :userID, dateTime = :dateTime, temperature = :temperature, treatment = :treatment
+                    WHERE treatmentID = :treatmentID
+                    """), {"catID": selected_cat_id, "userID": Userid, "dateTime": Time, "temperature": temperature, "treatment": treatment, "treatmentID": ID_to_update})
+            st.rerun()
+
+    st.session_state.show_update_treatment_dialog = False  
+    st.caption('_:orange[Press Esc to Cancel]_')
+
+
+# @st.experimental_dialog("Delete Treatment")
+# def delete_treatment(Id_to_delete):
+#     st.write('Are you sure you want to delete treatment of ID:', Id_to_delete, '?')
+
+#     col1, col2 = st.columns(2)
+#     if col1.button("Yes"):
+#         with engine.begin() as conn:
+#             # conn.execute(sa.text("update Treatment set catID = NULL, temperature = NULL, dateTime = NULL, treatment = NULL FROM Treatment where treatmentID = :treatmentID"), {"treatmentID": Id_to_delete})
+#             conn.execute(sa.text("DELETE FROM Treatment where treatmentID = :treatmentID"), {"treatmentID": Id_to_delete})
+#         st.rerun()
+
+#     if col2.button("No", key = 'no'):
+#         st.rerun()
+
+#     st.session_state.show_delete_donation_dialog = False
+#     st.caption('_:orange[Press Esc to Cancel]_') 
+
+
+
+# Filtering and Final Table
+# st.write("Filters")
+# dynamic_filters = DynamicFilters(treatment_table_df, filters=['CatID'])
+# dynamic_filters.display_filters(location = 'columns', num_columns=1, gap='large')
+# treatment_table_df_final = dynamic_filters.filter_df()
+
+col1, col2, col3, col4, col5, col6 = st.columns(6)
+    
+# Add a New Donation Button
+st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
+new_treatment = col6.button("Add Treatment", on_click = add_treatment_dialog)
+
+if 'show_add_treatment_dialog' not in st.session_state:
+        st.session_state.show_add_donation_dialog = False
+if 'show_update_treatment_dialog' not in st.session_state:
+    st.session_state.show_update_donation_dialog = False
+if 'show_delete_treatment_dialog' not in st.session_state:
+        st.session_state.show_delete_treatment_dialog = False
+
+if st.session_state.show_add_treatment_dialog:
+    add_treatment()
+
 # Table for treatments
 with engine.begin() as conn:
     treatment_table_df = pd.read_sql_query(sa.text("""
     SELECT 
+        treatmentID as TreatmentID,
         Cats.CatID, 
         Cats.CatName AS Name, 
         Cats.CageID AS CageNo, 
@@ -136,23 +249,25 @@ with engine.begin() as conn:
         Users ON Treatment.UserID = Users.UserID
     """), conn)
 
-    
-# Filtering and Final Table
-# st.write("Filters")
-# dynamic_filters = DynamicFilters(treatment_table_df, filters=['CatID'])
-# dynamic_filters.display_filters(location = 'columns', num_columns=1, gap='large')
-# treatment_table_df_final = dynamic_filters.filter_df()
-
-col1, col2, col3, col4, col5, col6 = st.columns(6)
-    
-# Add a New Donation Button
-st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-new_treatment = col6.button("Add Treatment", on_click = add_treatment_dialog)
-
-if st.session_state.show_add_treatment_dialog:
-    add_treatment()
 
 # Display the Table
-donation_table = st.dataframe(treatment_table_df, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
+treatment_table = st.dataframe(treatment_table_df, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
+
+if treatment_table["selection"]["rows"]: # if a row is selected
+        
+        row_selected = int(treatment_table_df.iat[treatment_table['selection']['rows'][0], 0])
+        # print(treatment_table_df)
+
+        update_button = col4.button("Update Treatment", on_click = update_treatment_dialog)
+        delete_button = col5.button("Delete Donation", on_click = delete_treatment_dialog)
+
+        if st.session_state.show_update_treatment_dialog:
+            update_treatment(row_selected)
+
+#         if st.session_state.show_delete_treatment_dialog:
+#             delete_treatment(row_selected)
+
+# else:
+#     print("No row selected")
 
 # Update and Delete Buttons Remaining. (check Finance.py for reference)
