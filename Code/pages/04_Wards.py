@@ -74,28 +74,21 @@ def add_ward_dialog():
 
 @st.experimental_dialog("Ward Details")
 def Details():
-    st.write("Filter By:")
-    col1, col2 = st.columns([1,5.8])  # Adjust the ratio as needed
-    with col1:
-        st.button("Date")
-    with col2:
-        st.button("Status")
-
     with engine.begin() as conn:
         wards_table = pd.read_sql_query(sa.text("""
                 SELECT 
-                Cage.cageID,
-                Cats.catID,
-                Cats.catName,
-                cageStatus.cageStatus,
-                Cage.date
+                Cage.cageID as CageID,
+                Cats.catID as CatID,
+                Cats.catName as CatName,
+                cageStatus.cageStatus as Status,
+                Cage.date as Date
             FROM 
                 Cage
-            JOIN 
+            INNER JOIN 
                 Ward ON Cage.wardID = Ward.wardID
-            JOIN 
+            INNER JOIN 
                 cageStatus ON Cage.cageStatusID = cageStatus.cageStatusID
-            JOIN 
+            INNER JOIN 
                 Cats ON Cage.cageID = Cats.cageID WHERE Cage.wardID = Ward.wardID;"""), conn)
         
     st.dataframe(wards_table, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
@@ -137,16 +130,48 @@ new_ward = st.button("⊹ Add New Ward", on_click=add_ward_dialog)
 if st.session_state.show_add_ward_dialog:
     add_ward()
 
+if 'edit_index' not in st.session_state:
+    st.session_state.edit_index = None
+if 'edit_code' not in st.session_state:
+    st.session_state.edit_code = ""
+if 'edit_total_cages' not in st.session_state:
+    st.session_state.edit_total_cages = 0
+if 'edit_free_cages' not in st.session_state:
+    st.session_state.edit_free_cages = 0
+if 'edit_name' not in st.session_state:
+    st.session_state.edit_name = ""
+
+@st.experimental_dialog("Update Ward Details")
 def edit_ward(index):
     st.session_state.edit_index = index
-    st.session_state.edit_code = combined_wards_df.at[index, "code"]
-    st.session_state.edit_total_cages = int(combined_wards_df.at[index, "total_cages"])
-    print("yvjhvv vhvjhvh vjhv hjvhjvhjvhjvjhvjhvhvjhvjhvjhvvhjvjhvhjvjvjhvjv")
-    # print(type(combined_wards_df.columns))
-    # print(combined_wards_df.at[index, 'name'])
-    st.session_state.edit_name = combined_wards_df.at[index, "name"]
-    # st.session_state.edit_free_cages = combined_wards_df.at[index, "free_cages"]
+    with engine.begin() as conn:
+        edit_code = conn.execute(sa.text("select code from Ward where wardID = :wardID"), {"wardID": index}).fetchall()[0]
+    code = st.text_input("Code", value = edit_code)
 
+    # st.session_state.edit_code = combined_wards_df.at[index, "code"]
+    # st.session_state.edit_total_cages = int(combined_wards_df.at[index, "total_cages"])
+    # st.session_state.edit_name = combined_wards_df.at[index, "name"]
+
+def save_changes(index):
+    new_name = st.session_state.edit_name
+    new_code = st.session_state.edit_code
+    new_total_cages = st.session_state.edit_total_cages
+
+    with engine.begin() as conn:
+        conn.execute(sa.text("""
+            UPDATE Ward
+            SET code = :code, capacityCages = :total_cages
+            WHERE name = :name
+        """), {"code": new_code, "total_cages": new_total_cages, "name": new_name})
+
+    # Assuming free_cages is already calculated and stored in session state
+    new_free_cages = st.session_state.edit_free_cages
+
+    st.session_state.wards_df.at[index, "code"] = new_code
+    st.session_state.wards_df.at[index, "total_cages"] = new_total_cages
+    st.session_state.wards_df.at[index, "free_cages"] = new_free_cages
+    st.session_state.edit_index = None
+    st.rerun()
 
 def delete_ward(index):
         st.write("You need to delete the cages of this ward from the Cats data first in order to delete this ward.")
@@ -159,25 +184,6 @@ def delete_ward(index):
             st.session_state.show_add_ward_dialog = False  # Close any open dialogs
             st.experimental_rerun()  # Refresh the app to reflect changes
 
-def save_changes(index):
-    new_decided_name = st.session_state.edit_name
-    new_code = st.session_state.edit_code
-    new_total_cages = st.session_state.edit_total_cages
-    print("sdnajsndkjasndjkansdkjnasjdna kjsndkjasnd jkansdkjna jkdnsa jkdnasjkd naknsd kjasndkja")
-    print(new_decided_name, new_code, new_total_cages)
-
-    with engine.begin() as conn:
-        conn.execute(sa.text("""
-            UPDATE Ward
-            SET code = :code, CapacityCages = :total_cages
-            WHERE name = :Name
-        """), {"code": new_code, "total_cages": new_total_cages, "Name": new_decided_name})
-
-    st.session_state.wards_df.at[index, "total_cages"] = st.session_state.new_total_cages
-    st.session_state.wards_df.at[index, "free_cages"] = st.session_state.new_free_cages
-    st.session_state.wards_df.at[index, "code"] = st.session_state.new_code
-    st.session_state.edit_index = None
-    st.rerun()
 
 # Display the ward information
 wards_df = combined_wards_df
@@ -212,13 +218,8 @@ for index, row in wards_df.iterrows():
             with col5:
                 if st.session_state.get('edit_index') == index:
                     if st.button("Save"):
-                        print('save ka button dabaya')
                         save_changes(index)
-                else:
-                    if st.button("⋮", key={index}):
-                        st.session_state.show_options[index] = not st.session_state.get('show_options', {}).get(index, False)
             with col6:
-                if st.session_state.get('show_options', {}).get(index, False):
                     if st.session_state.get('edit_index') != index:
                         if st.button(f"{row['name']} Details"):
                             Details()
@@ -227,3 +228,5 @@ for index, row in wards_df.iterrows():
                         if st.button(f"Delete {row['name']}", key=f"Delete {index}", on_click=lambda i=index: delete_ward(i)):
                             pass
             st.write("")
+
+# -------------------------------------------------------------------------------------------------------

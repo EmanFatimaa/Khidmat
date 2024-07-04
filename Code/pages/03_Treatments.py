@@ -138,8 +138,6 @@ if "show_add_treatment_dialog" not in st.session_state:
 @st.experimental_dialog("Update Treatment")
 def update_treatment(ID_to_update):
     with engine.begin() as conn:
-        # treatmentid = int(pd.read_sql_query(sa.text("SELECT TOP 1 treatmentID FROM Treatment ORDER BY treatmentID DESC"), conn).iloc[0][0]) + 1
-        # cat_ids = conn.execute(sa.text("""SELECT catID FROM Treatment WHERE treatmentID = :treatmentID"""), {"treatmentID": ID_to_update}).fetchall()[0][0]
         df = pd.read_sql_query("SELECT CatID FROM Cats", conn)
         cat_ids = df['CatID'].tolist()
 
