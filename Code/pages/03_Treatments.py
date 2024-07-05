@@ -105,7 +105,14 @@ def add_treatment():
 
     if add_treatment_button:
 
-        # TODO: check other individual fields for errors as well.
+        # check other individual fields for errors as well.
+        everything_filled = False
+        valid_treatment =   False
+
+        if all(x.isalpha() or x.isspace() for x in treatment_details):
+            valid_treatment = True
+        else:
+            st.error("Please enter valid treatment details.")
 
         # Check if any of the fields are left unfilled
         if not (id and selected_cat_id and treatment_time and temperature and givenby and treatment_date and treatment_details):
@@ -113,20 +120,21 @@ def add_treatment():
         else: 
             date_and_time = datetime.combine(treatment_date, treatment_time)
         
-        with engine.begin() as conn:
-            userid = conn.execute(sa.text("""SELECT UserID FROM Users WHERE userName = :userName"""), {"userName": givenby}).fetchone()[0] 
-            conn.execute(sa.text("""
-                INSERT INTO Treatment (TreatmentID, CatID, UserID, DateTime, Temperature, Treatment)
-                VALUES (:treatmentID, :CatID, :UserID, :DateTime, :Temperature, :Treatment)
-            """), {
-                "treatmentID": treatmentid,
-                "CatID": selected_cat_id,
-                "UserID" : userid,
-                "DateTime": date_and_time,
-                "Temperature": temperature,
-                "Treatment": treatment_details              
-            })
-        st.rerun()
+        if everything_filled and valid_treatment:
+            with engine.begin() as conn:
+                userid = conn.execute(sa.text("""SELECT UserID FROM Users WHERE userName = :userName"""), {"userName": givenby}).fetchone()[0] 
+                conn.execute(sa.text("""
+                    INSERT INTO Treatment (TreatmentID, CatID, UserID, DateTime, Temperature, Treatment)
+                    VALUES (:treatmentID, :CatID, :UserID, :DateTime, :Temperature, :Treatment)
+                """), {
+                    "treatmentID": treatmentid,
+                    "CatID": selected_cat_id,
+                    "UserID" : userid,
+                    "DateTime": date_and_time,
+                    "Temperature": temperature,
+                    "Treatment": treatment_details              
+                })
+            st.rerun()
     
     st.session_state.show_add_treatment_dialog = False
     st.caption('_:orange[Press Esc to Cancel]_')
@@ -183,14 +191,24 @@ def update_treatment(ID_to_update):
 
     update_treatment_button = st.button("Update Treatment", key = 'update_treatment')
 
+
     if update_treatment_button:
+        # check other individual fields for errors as well.
+        everything_filled = False
+        valid_treatment_details =   False
+        
+        if all(x.isalpha() or x.isspace() for x in treatment):
+            valid_treatment_details = True
+        else:
+            st.error("Please enter valid treatment details for updation.")
+
         if not (treat_id and selected_cat_id and Time and date and user and temperature and treatment):
             st.error("Please fill in all fields before submitting.")
         else:
             date_and_time = datetime.combine(date, Time)
             everything_filled = True
 
-        if everything_filled:
+        if everything_filled and valid_treatment_details:
             # print(selected_cat_id, Userid, Time, temperature, treatment, ID_to_update)
             with engine.begin() as conn:
                 conn.execute(sa.text(""" 
