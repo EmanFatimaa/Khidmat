@@ -23,7 +23,7 @@ logo = Image.open("assets/logo.png")
 st.logo(logo)
 
 # Button Styling
-st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
+# st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
 
 st.sidebar.markdown("""
     <style>
@@ -48,11 +48,10 @@ if 'wards_df' not in st.session_state:
 
 # Fetch existing wards from the database
 with engine.begin() as conn:
-    existing_wards = pd.read_sql_query(sa.text("""SELECT name, code, CapacityCages AS total_cages, 0 AS free_cages FROM Ward"""), conn)
+    existing_wards = pd.read_sql_query(sa.text("""SELECT name, code, CapacityCages AS total_cages, capacityCages AS free_cages FROM Ward"""), conn)
 
 # Combine existing wards with session state wards
 combined_wards_df = pd.concat([existing_wards, st.session_state.wards_df]).drop_duplicates(subset=["Name", "code"]).reset_index(drop=True)
-
 
 # Search functionality
 selected = st.text_input("", placeholder="🔍 Search...")
@@ -60,17 +59,21 @@ selected = st.text_input("", placeholder="🔍 Search...")
 if selected:
     combined_wards_df = combined_wards_df[combined_wards_df.apply(lambda row: selected.lower() in row.astype(str).str.lower().to_string(), axis=1)]
 
-# Create a row with search icon and search bar in the first column, and the "+ Add New Ward" button in the second column
-# with st.container():
-#     st.text_input("", placeholder="🔍 Search...")
-
-    # Define the dialog for adding a new ward
-if 'show_add_ward_dialog' not in st.session_state:
-    st.session_state.show_add_ward_dialog = False
-
+# Define the dialog for adding a new ward
 def add_ward_dialog():
     st.session_state.show_add_ward_dialog = True
+    st.session_state.show_update_ward_dialog = False
+    st.session_state.show_delete_ward_dialog = False
 
+def update_ward_dialog():
+    st.session_state.show_update_ward_dialog = True
+    st.session_state.show_add_ward_dialog = False
+    st.session_state.show_delete_ward_dialog = False
+
+def delete_ward_dialog():
+    st.session_state.show_update_ward_dialog = False
+    st.session_state.show_add_ward_dialog = False
+    st.session_state.show_delete_ward_dialog = True
 
 @st.experimental_dialog("Ward Details")
 def Details():
@@ -89,11 +92,9 @@ def Details():
             INNER JOIN 
                 cageStatus ON Cage.cageStatusID = cageStatus.cageStatusID
             INNER JOIN 
-                Cats ON Cage.cageID = Cats.cageID WHERE Cage.wardID = Ward.wardID;"""), conn)
+                Cats ON Cage.cageID = Cats.cageID WHERE Cats.cageID = Cage.cageID;"""), conn)
         
     st.dataframe(wards_table, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
-
-
     st.caption('_:orange[Press Esc to Close]_')
 
 @st.experimental_dialog("Add New Ward")
@@ -104,7 +105,6 @@ def add_ward():
     new_name = st.text_input("Ward Name", placeholder="Enter Ward Name")
     new_code = st.text_input("Ward Cage Code", placeholder="Enter Code for Cage e.g GW")
     new_cage = st.number_input("Total Cages", value=0, step=1, format="%d", min_value=0)
-    new_free_cage = st.number_input("Free Cages", value=0, step=1, format="%d", min_value=0, max_value=0)
 
     add_ward_button = st.button("Add Ward")
     # cancel_ward_button = st.button("Cancel")
@@ -116,117 +116,134 @@ def add_ward():
                 values (:wardID, :name, :code, :CapacityCages)
             """), {"wardID": new_id, "name": new_name, "code": new_code, "CapacityCages": new_cage})
 
-        new_row = pd.DataFrame({"code": [new_code], "total_cages": [new_cage], "free_cages": [new_free_cage]}, index=[new_name])
+        new_row = pd.DataFrame({"code": [new_code], "total_cages": [new_cage]}, index=[new_name])
         st.session_state.wards_df = pd.concat([st.session_state.wards_df, new_row])
         st.session_state.show_add_ward_dialog = False
         st.rerun()
 
     st.caption('_:orange[Press Esc to Cancel]_')
 
-# "Add Ward" button
-st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-new_ward = st.button("⊹ Add New Ward", on_click=add_ward_dialog)
+@st.experimental_dialog("Edit Ward")
+def edit_ward():
+        with engine.begin() as conn:
+            df = pd.read_sql_query("SELECT wardID FROM Ward", conn)
+            selected_index = df['wardID'].tolist()
+        index = st.selectbox("Ward ID", selected_index)
+
+        with engine.begin() as conn:
+            edit_name = conn.execute(sa.text("select name from Ward where wardID = :wardID"), {"wardID": index}).fetchall()[0][0]
+        final_name = st.text_input("Ward Name", edit_name)
+
+        with engine.begin() as conn:
+            edit_code = conn.execute(sa.text("select code from Ward where wardID = :wardID"), {"wardID": index}).fetchall()[0][0]
+        final_code = st.text_input("Ward Code", edit_code)
+
+        with engine.begin() as conn:
+            edit_total_cages = conn.execute(sa.text("select capacityCages from Ward where wardID = :wardID"), {"wardID": index}).fetchall()[0][0]
+        final_total_cages = st.number_input("Total Cages", edit_total_cages)
+
+        # print(index, final_name, final_code, final_total_cages)
+
+        if st.button("Save"):
+            # print(index, final_name, final_code, final_total_cages)
+            if (index and final_name and final_code and edit_ward and final_total_cages):
+                with engine.begin() as conn:
+                    conn.execute(sa.text("""
+                    UPDATE Ward
+                    SET name = :name, code = :code, capacityCages = :total_cages
+                    WHERE wardID  = :wardID
+                """), {"code": final_code, "total_cages": final_total_cages, "name": final_name, "wardID": index})
+                st.rerun()
+
+        st.session_state.show_update_ward_dialog = False
+        st.caption('_:orange[Press Esc to Cancel]_')
+
+@st.experimental_dialog("Delete Ward")
+def delete_ward():
+    with engine.begin() as conn:
+        df = pd.read_sql_query("SELECT name FROM Ward", conn)
+        selected_name = df['name'].tolist()
+    name = st.selectbox("Ward Name", selected_name)
+
+    if st.button("Delete Ward", key=name):
+        with engine.begin() as conn:
+            status = conn.execute(sa.text("""
+                    SELECT count(Cage.cageID) as free_cages
+                    FROM Cage
+                    inner JOIN cageStatus ON Cage.cageStatusID = cageStatus.cageStatusID
+                    inner join Ward on Ward.wardID = Cage.wardID
+                    WHERE cageStatus.cageStatusID = :cageStatusID and name = :name
+                """), {"cageStatusID": 2, "name": name}).fetchall()
+            
+        if status == 0:
+            st.warning('You need to delete the cages of this ward from the Cats data first in order to delete this ward', icon="⚠️")
+            if st.button("Okay"):
+                st.rerun()  # Refresh the app to reflect changes
+        # else:
+        #     with engine.begin() as conn:
+        #         conn.execute(sa.text("DELETE FROM Ward where name = :name"), {"name": name})
+        #     st.rerun()
+
+    st.session_state.show_delete_ward_dialog = False
+    st.caption('_:orange[Press Esc to Cancel]_')
+
+if 'show_add_ward_dialog' not in st.session_state:
+    st.session_state.show_add_ward_dialog = False
+if 'show_update_ward_dialog' not in st.session_state:
+    st.session_state.show_update_ward_dialog = False
+if 'show_delete_ward_dialog' not in st.session_state:
+    st.session_state.show_delete_ward_dialog = False
 
 if st.session_state.show_add_ward_dialog:
     add_ward()
 
-if 'edit_index' not in st.session_state:
-    st.session_state.edit_index = None
-if 'edit_code' not in st.session_state:
-    st.session_state.edit_code = ""
-if 'edit_total_cages' not in st.session_state:
-    st.session_state.edit_total_cages = 0
-if 'edit_free_cages' not in st.session_state:
-    st.session_state.edit_free_cages = 0
-if 'edit_name' not in st.session_state:
-    st.session_state.edit_name = ""
+if st.session_state.show_update_ward_dialog:
+    edit_ward()
 
-@st.experimental_dialog("Update Ward Details")
-def edit_ward(index):
-    st.session_state.edit_index = index
-    with engine.begin() as conn:
-        edit_code = conn.execute(sa.text("select code from Ward where wardID = :wardID"), {"wardID": index}).fetchall()[0]
-    code = st.text_input("Code", value = edit_code)
+if st.session_state.show_delete_ward_dialog:
+    delete_ward()
 
-    # st.session_state.edit_code = combined_wards_df.at[index, "code"]
-    # st.session_state.edit_total_cages = int(combined_wards_df.at[index, "total_cages"])
-    # st.session_state.edit_name = combined_wards_df.at[index, "name"]
-
-def save_changes(index):
-    new_name = st.session_state.edit_name
-    new_code = st.session_state.edit_code
-    new_total_cages = st.session_state.edit_total_cages
-
-    with engine.begin() as conn:
-        conn.execute(sa.text("""
-            UPDATE Ward
-            SET code = :code, capacityCages = :total_cages
-            WHERE name = :name
-        """), {"code": new_code, "total_cages": new_total_cages, "name": new_name})
-
-    # Assuming free_cages is already calculated and stored in session state
-    new_free_cages = st.session_state.edit_free_cages
-
-    st.session_state.wards_df.at[index, "code"] = new_code
-    st.session_state.wards_df.at[index, "total_cages"] = new_total_cages
-    st.session_state.wards_df.at[index, "free_cages"] = new_free_cages
-    st.session_state.edit_index = None
-    st.rerun()
-
-def delete_ward(index):
-        st.write("You need to delete the cages of this ward from the Cats data first in order to delete this ward.")
-        st.warning('This is a warning', icon="⚠️")
-        if st.button("Okay", key=f"confirm_delete_{index}"):
-            st.session_state.wards_df = st.session_state.wards_df.drop(index).reset_index(drop=True)
-            # Optionally clear any session state related to the deleted ward
-            if 'edit_index' in st.session_state and st.session_state.edit_index == index:
-                del st.session_state['edit_index']
-            st.session_state.show_add_ward_dialog = False  # Close any open dialogs
-            st.experimental_rerun()  # Refresh the app to reflect changes
+# "Add Ward" button
+col1, col2, col3 = st.columns([8.9, 2, 3])
+with col1:
+    st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
+    newWard = st.button("⊹ Add Ward", on_click=add_ward_dialog)
+with col2:
+    st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
+    updateWard = st.button("Edit Ward", on_click=update_ward_dialog)
+with col3:
+    st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
+    deleteWard = st.button("Delete Ward", on_click=delete_ward_dialog)
 
 
 # Display the ward information
 wards_df = combined_wards_df
 
-if "show_options" not in st.session_state:
-    st.session_state.show_options = {}
-
 for index, row in wards_df.iterrows():
     with st.container():
-        with st.expander(f"***{row['name']}***"):
-            # Assign unique key to the button
-            col1, col2, col3, col4, col5, col6 = st.columns([0.1, 0.5, 0.7, 0.7, 0.5, 1])  # Adjusted column widths
+        with st.expander(f"**{row['name']}**"):
+            col1, col2, col3, col4, col5, = st.columns([0.1, 0.5, 0.7, 0.7, 1])  # Adjusted column widths
             with col1:
                 st.write("")  # Placeholder for the button
             with col2:
-                if st.session_state.get('edit_index') == index:
-                    st.session_state.new_code = st.text_input("Cage Code", value=row['code'])
-                else:
-                    st.write(f"Code: {row['code']}")
+                st.write(f"Code: {row['code']}")
             with col3:
-                if st.session_state.get('edit_index') == index:
-                    original_total_cages = row['total_cages'] 
-                    st.session_state.new_total_cages = st.number_input("Total Cages", value=row['total_cages'], min_value=original_total_cages, step=1, format="%d")
-                    st.write("⚠ To reduce the number of cages, you need to first delete them from Cats' Data ")
-                else:
-                    st.write(f"Total Cages: {row['total_cages']}")
+                st.write(f"Total Cages: {row['total_cages']}")
             with col4:
-                if st.session_state.get('edit_index') == index:
-                    st.session_state.new_free_cages = st.number_input("Free Cages", value=row['free_cages'], step=1, format="%d")
-                else:
-                    st.write(f"Free Cages: {row['free_cages']}")
+                with engine.begin() as conn:
+                    freeCage = conn.execute(sa.text("""
+                        SELECT (capacityCages - COUNT(*)) AS free_cages
+                        FROM Ward
+                        JOIN Cage ON Ward.wardID = Cage.wardID
+                        WHERE code = :code
+                        GROUP BY Ward.capacityCages, Cage.wardID
+                    """), {"code": row['code']}).fetchall()
+                    if freeCage:
+                        freeCage = freeCage[0][0]
+                        st.write(f"Free Cages: {freeCage}")
+                    else:
+                        st.write(f"Free Cages: {row['total_cages']}")
             with col5:
-                if st.session_state.get('edit_index') == index:
-                    if st.button("Save"):
-                        save_changes(index)
-            with col6:
-                    if st.session_state.get('edit_index') != index:
-                        if st.button(f"{row['name']} Details"):
-                            Details()
-                        if st.button(f"Edit {row['name']}", key=f"Edit {index}", on_click=lambda i=index: edit_ward(i)):
-                            pass
-                        if st.button(f"Delete {row['name']}", key=f"Delete {index}", on_click=lambda i=index: delete_ward(i)):
-                            pass
+                if st.button(f"{row['name']} Details"):
+                    Details()
             st.write("")
-
-# -------------------------------------------------------------------------------------------------------
