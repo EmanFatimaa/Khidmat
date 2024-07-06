@@ -14,11 +14,11 @@ from sqlalchemy import create_engine
 
 # custom streamlit imports
 from st_pages import Page, show_pages, add_page_title, hide_pages
-from streamlit_dynamic_filters import DynamicFilters
+# from streamlit_dynamic_filters import DynamicFilters
 
-# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA # Note the double backslashes
+# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA # Note the double backslashes
 database = 'PawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
@@ -272,9 +272,9 @@ with engine.begin() as conn:
 
 #  Filtering and Final Table
 st.write("Filters")
-dynamic_filters = DynamicFilters(treatment_table_df, filters = ["CatID", "Date"])
-dynamic_filters.display_filters(location = 'columns', num_columns=2, gap='large')
-treatment_table_df_final = dynamic_filters.filter_df()
+# dynamic_filters = DynamicFilters(treatment_table_df, filters = ["CatID", "Date"])
+# dynamic_filters.display_filters(location = 'columns', num_columns=2, gap='large')
+# treatment_table_df_final = dynamic_filters.filter_df()
 
 # Add a New treatment Button
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
@@ -284,7 +284,7 @@ if st.session_state.show_add_treatment_dialog:
     add_treatment()
 
 # Display the Table
-treatment_table = st.dataframe(treatment_table_df_final, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
+treatment_table = st.dataframe(treatment_table_df, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
 
 if treatment_table["selection"]["rows"]: # if a row is selected
         

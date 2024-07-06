@@ -11,9 +11,9 @@ from sqlalchemy.engine import URL
 from sqlalchemy import create_engine
 
 # database information ; will change when db hosting
-# # server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA # Note the double backslashes
+# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA # Note the double backslashes
 database = 'PawRescue' # EMAN 'Khidmat'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
@@ -82,10 +82,13 @@ def open_dialog():
         # Gender field
         with engine.begin() as conn:
             genderSelection = pd.read_sql_query(sa.text("Select gender from Gender"), conn)
+            cageID = pd.read_sql_query(sa.text("select cageID from Cage"), conn)
+
         gender = st.selectbox("Gender", genderSelection["gender"].tolist())
 
         # Cage no field
-        cageNum = st.text_input("Cage Number", placeholder="Enter the cage number")
+        cageNum = st.selectbox("Cage Number", cageID["cageID"].tolist())
+        # cageNum = st.text_input("Cage Number", placeholder="Enter the cage number")
 
     with engine.begin() as conn:
         statusSelection = pd.read_sql_query(sa.text("Select statusType from CatStatus"), conn)
@@ -137,10 +140,10 @@ def open_dialog():
                 end
 
                 insert into Cats
-                values (:catID, :catName, :age , (select genderID from gender where gender = :gender),(select typeID from type where type = :type), (select top 1 cageID from Cage order by cageID desc) + 1, (select externalID from Externals where name = :name) , (select statusID from Status where status = :status) , :admittedOn)
+                values (:catID, :catName, :age , (select genderID from gender where gender = :gender),(select typeID from type where type = :type), :cageID, (select externalID from Externals where name = :name) , (select statusID from CatStatus where statusType = :status) , :admittedOn)
                 """),
                 {"name": ownerName, "contactNum": ownerContact, "address": address, "catID": catID, "catName": name,
-                "age": age, "gender": gender, "type":type, "status": status, "admittedOn" : date })
+                "age": age, "gender": gender, "type":type, "cageID":cageID, "status": status, "admittedOn" : date })
         print("wohoo")
         st.rerun()
         # st.success(f"Pet {name} added successfully!")
