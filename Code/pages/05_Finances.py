@@ -14,12 +14,13 @@ from sqlalchemy import create_engine
 
 # custom streamlit imports
 from st_pages import Page, show_pages, add_page_title, hide_pages
-from streamlit_dynamic_filters import DynamicFilters
 
 # database information ; will change when db hosting
+
 server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+
 database = 'PawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
@@ -34,20 +35,21 @@ st.logo(logo)
 # Button Styling
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
 
-st.sidebar.markdown("""
-    <style>
-        .sidebar-content > div:nth-child(1) > div > div {color: white}
-        .sidebar-content > div:nth-child(1) > div > div > span {color: #FFA500}
-    </style>
-""", unsafe_allow_html=True)
+st.markdown(
+        """
+       <style>
+       [data-testid="stSidebar"][aria-expanded="true"]{
+           min-width: 250px;
+           max-width: 250px;
+       }
+       """,
+        unsafe_allow_html=True,
+)
 
-if st.sidebar.button("👥 Team"):
-    st.switch_page("pages/Teams.py")
-            
 if st.sidebar.button("🔓 Logout"):
     st.switch_page("LoginScreen.py")
 
-hide_pages(["Login", "Teams"])
+hide_pages(["Login"])
 
 st.header("Finances")
 
@@ -310,9 +312,6 @@ with Donations:
     
     # Filtering and Final Table
     st.write("Filters")
-    dynamic_filters = DynamicFilters(donation_table_df, filters = ["Mode", "Date"])
-    dynamic_filters.display_filters(location = 'columns', num_columns=2, gap='large')
-    donation_table_df_final = dynamic_filters.filter_df()
     
     col1, col2, col3, col4, col5, col6 = st.columns(6)
     
@@ -324,12 +323,12 @@ with Donations:
         add_donation()
 
     # Display the Table
-    donation_table = st.dataframe(donation_table_df_final, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
+    donation_table = st.dataframe(donation_table_df, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
 
     # Update and Delete Buttons (Only for Admin though)
     if donation_table["selection"]["rows"]: # if a row is selected
         
-        row_selected = int(donation_table_df_final.iat[donation_table['selection']['rows'][0], 0])
+        row_selected = int(donation_table_df.iat[donation_table['selection']['rows'][0], 0])
         # print([donation_table['selection']['rows'][0], 0])
 
         update_button = col4.button("Update Donation", on_click = update_donation_dialog)
@@ -454,7 +453,7 @@ with Revenue:
                             begin 
                                 insert into Externals values
                                     ((select top 1 externalID from Externals order by externalID desc) + 1, 
-                                    :name, :contact, Null,(select externalRoleID from ExternalRole where roleDesc = 'Buyer'))
+                                    :name, :contact, Null)
                             end
 
                         insert into Revenue

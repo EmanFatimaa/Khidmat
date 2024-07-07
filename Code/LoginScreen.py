@@ -3,11 +3,25 @@ from st_pages import Page, show_pages, add_page_title, hide_pages
 from PIL import Image
 import time
 
+# need to do this next
+# remember to use streamlit_auth please for this as well!
+
 @st.experimental_dialog("Reset Your Password")
 def reset_pass_dialog():
     st.write("Contact the administrator to reset your password.")
 
 st.set_page_config(page_title="Login", page_icon="🔐", layout="wide", initial_sidebar_state="collapsed")
+
+st.markdown(
+        """
+       <style>
+       [data-testid="stSidebar"][aria-expanded="true"]{
+           min-width: 250px;
+           max-width: 250px;
+       }
+       """,
+        unsafe_allow_html=True,
+)
 
 logo = Image.open("assets/logo.png")
 st.logo(logo)

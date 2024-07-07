@@ -11,36 +11,46 @@ from sqlalchemy.engine import URL
 from sqlalchemy import create_engine
 
 # database information ; will change when db hosting
+
 server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA # Note the double backslashes
+
 database = 'PawRescue' # EMAN 'Khidmat'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
 engine = create_engine(connection_url)
 
-st.set_page_config(page_title="Cats", page_icon="🐈", layout="centered", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Cats", page_icon="🐈", layout="wide", initial_sidebar_state="expanded")
 
 # Button Styling
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
 
-st.sidebar.markdown("""
-    <style>
-        .sidebar-content > div:nth-child(1) > div > div {color: white}
-        .sidebar-content > div:nth-child(1) > div > div > span {color: #FFA500}
-    </style>
-""", unsafe_allow_html=True)
+st.markdown(
+        """
+       <style>
+       [data-testid="stSidebar"][aria-expanded="true"]{
+           min-width: 250px;
+           max-width: 250px;
+       }
+       """,
+        unsafe_allow_html=True,
+)
 
-if st.sidebar.button("👥 Team"):
-    st.switch_page("pages/Teams.py")
-            
 if st.sidebar.button("🔓 Logout"):
     st.switch_page("LoginScreen.py")
 
-hide_pages(["Login", "Teams"])
+hide_pages(["Login"])
 
 logo = Image.open("assets/logo.png")
 st.logo(logo)
+
+# Treatments Filter Remains
+# Edit and Delete Remains
+# Filtering Remains
+# Lastly, Aesthestics ofc
+# Checks remain for each field as well (Refer to Treatments.py or Finances.py)
+# Error of when inserting a new queryy
 
 #Creating columns for better formatting
 col1, col2, col3, col4 = st.columns(4)
@@ -61,12 +71,13 @@ def open_dialog():
         
         #Cat ID Field
         with engine.begin()as conn:
-            currentCatID = int(pd.read_sql_query(sa.text("select top 1 catID from Cats order by catID desc"), conn).iloc[0]) + 1
+            currentCatID = int(pd.read_sql_query(sa.text("select top 1 catID from Cats order by catID desc"), conn).iat[0,0]) + 1
             #TODO:
             CatCodestr = "PA-000" + str(currentCatID) #need to fix this logic 
+
         catID = st.text_input("Cat ID", value = CatCodestr, disabled= True)
         # Age field
-        age = st.number_input("Age (in years)", step=0.5, value=1.0)
+        age = st.number_input("Age (in years)", step=0.1, value=0.0)
 
         # Type field
         with engine.begin() as conn:
@@ -82,13 +93,12 @@ def open_dialog():
         # Gender field
         with engine.begin() as conn:
             genderSelection = pd.read_sql_query(sa.text("Select gender from Gender"), conn)
-            cageID = pd.read_sql_query(sa.text("select cageID from Cage"), conn)
+            cageID = pd.read_sql_query(sa.text("SELECT cageID FROM cage WHERE cageID NOT IN (SELECT cageID FROM cats)"), conn)
 
         gender = st.selectbox("Gender", genderSelection["gender"].tolist())
 
         # Cage no field
-        cageNum = st.selectbox("Cage Number", cageID["cageID"].tolist())
-        # cageNum = st.text_input("Cage Number", placeholder="Enter the cage number")
+        cageNum = st.selectbox("Cage Number", cageID["cageID"].tolist()) # This should also show whcih Ward it is in and that Cage is free or not ofc.
 
     with engine.begin() as conn:
         statusSelection = pd.read_sql_query(sa.text("Select statusType from CatStatus"), conn)
@@ -122,32 +132,40 @@ def open_dialog():
 
     #Logic for inserting the data
     if submitted:
-        print("submitted")
+
+        # Checks
+        everything_filled = False
+
         # Check if any of the fields are left unfilled
         if not (catID and age and type and name and gender and cageNum and status and ownerName and  ownerContact and date and address ):
             st.error("Please fill in all fields before submitting.")
+        else:
+            everything_filled = True
 
-        
-        with engine.begin() as conn:
-            conn.execute(sa.text("""
-            if not exists(select externalID from Externals where name = :name)
-                begin
-                    insert into Externals
-                    values
-                    ((select top 1 externalID from Externals  order by externalID desc) +1,
-                    :name, :contactNum, :address)
+        if everything_filled:
+            with engine.begin() as conn:
+                conn.execute(sa.text(""" if not exists(select externalID from Externals where name = :name)
+                    begin
+                        insert into Externals
+                        values
+                        ((select top 1 externalID from Externals  order by externalID desc) + 1,
+                        :name, :contactNum, :address)
+                    end
 
-                end
+                    insert into Cats
+                    values 
+                    (:catID, :catName, :age , 
+                    (select genderID from gender where gender = :gender),
+                    (select typeID from type where type = :type), :cageID , 
+                    (select externalID from Externals where name = :name) , 
+                    (select statusID from CatStatus where statusType = :status), 
+                    :admittedOn)"""),
 
-                insert into Cats
-                values (:catID, :catName, :age , (select genderID from gender where gender = :gender),(select typeID from type where type = :type), :cageID, (select externalID from Externals where name = :name) , (select statusID from CatStatus where statusType = :status) , :admittedOn)
-                """),
-                {"name": ownerName, "contactNum": ownerContact, "address": address, "catID": catID, "catName": name,
-                "age": age, "gender": gender, "type":type, "cageID":cageID, "status": status, "admittedOn" : date })
-        print("wohoo")
-        st.rerun()
-        # st.success(f"Pet {name} added successfully!")
-        # st.balloons()
+                    {"name": ownerName, "name": ownerName, "contactNum": ownerContact, "address": address, "catID": catID, "catName": name,
+                    "age": age, "gender": gender, "type" : type, "cageID":cageID, "name": ownerName, "status": status, "admittedOn" : date })
+                
+            print("wohoo")
+            st.rerun()
            
 #Add a new cat button
 with col3:    
@@ -169,22 +187,18 @@ if addWard:
 
 #Table for Cats:
 with engine.begin() as conn:
-    catTable = pd.read_sql_query(
-    sa.text(""" select catID as 'Cat ID',
-                        catName as 'Cat Name' ,
-                        (select name from externals join cats on externals.externalID = cats.externalID)as 'Onwer/Reporter' ,
-                        (select contactNum from externals join cats on externals.externalID = cats.externalID)as 'Contact Number' ,
-                        admittedOn as 'Admitted on',
-                        (select type  from type join cats on type.typeID = cats.typeID)  as 'Type',
-                        (select code 
-                        from Ward 
-                        where wardID in 
-                                    (select wardID 
-                                    from cage join Cats 
-                                    on Cats.cageID= cage.cageID)) as 'Cage' ,
-                        (select  statusType  from CatStatus join cats on CatStatus.statusID =cats.statusID )   as 'Status'
-            from cats"""), conn)
-st.dataframe(catTable, width = 1300, height = 100, hide_index= True , on_select = "rerun", selection_mode= "single-row")
+    cat_table_df = pd.read_sql_query(sa.text(""" 
+                        select catID as 'Cat ID', catName as 'Cat Name', Externals.name as 'Owner/Reporter', admittedOn as 'Admitted On',
+                                Type.type as 'Type', Cage.cageID as 'Cage', CatStatus.statusType as 'Status'
+
+                        from Cats, Externals, Type, Cage, CatStatus 
+                        where Cats.externalID = Externals.externalID and 
+                        Type.typeID = Cats.typeID and 
+                        Cage.cageID = Cats.cageID and
+                        Cats.statusID = CatStatus.StatusID"""), conn)
+    
+cat_table = st.dataframe(cat_table_df, width = 1500, height = 600, hide_index= True , on_select = "rerun", selection_mode= "single-row")
+
 #-------------------------------------------------------------------
 
 @st.experimental_dialog("Edit Cat Details")
@@ -256,12 +270,3 @@ def open_dialogEdit():
         else:
             # Add logic to process form data here
             st.success(f"Pet {name} details edited successfully!")
-
-# Specify the path to your CSV file
-csv_file_path = 'assets/Cats.csv'
-
-# Read the CSV file into a DataFrame
-df = pd.read_csv(csv_file_path)
-
-# Display the DataFrame with adjustable width and height
-st.dataframe(df, width= 1500, height= 150, hide_index= True, on_select= open_dialogEdit)

@@ -4,21 +4,24 @@ import plotly.express as px # for pie chart
 from st_pages import Page, show_pages, add_page_title, hide_pages
 from PIL import Image
 
-st.set_page_config(page_title="Dashboard", page_icon="📊", initial_sidebar_state="expanded")
+# connectivity remains
+
+st.set_page_config(page_title="Dashboard", page_icon="📊", initial_sidebar_state="expanded", layout="wide")
 
 # Button Styling
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
 
-st.sidebar.markdown("""
-    <style>
-        .sidebar-content > div:nth-child(1) > div > div {color: white}
-        .sidebar-content > div:nth-child(1) > div > div > span {color: #FFA500}
-    </style>
-""", unsafe_allow_html=True)
+st.markdown(
+        """
+       <style>
+       [data-testid="stSidebar"][aria-expanded="true"]{
+           min-width: 250px;
+           max-width: 250px;
+       }
+       """,
+        unsafe_allow_html=True,
+) 
 
-if st.sidebar.button("👥 Team"):
-    st.switch_page("pages/Teams.py")
-            
 if st.sidebar.button("🔓 Logout"):
     st.switch_page("LoginScreen.py")
 
@@ -35,7 +38,7 @@ show_pages(
     ]
 )
 
-hide_pages(["Login", "Teams"])
+hide_pages(["Login"])
 
 # logo
 logo = Image.open("assets/logo.png")

@@ -1,8 +1,10 @@
 import streamlit as st
 import pandas as pd
 import datetime
+
 from st_pages import Page, show_pages, add_page_title, hide_pages
 from PIL import Image
+
 import sqlalchemy as sa
 from millify import prettify
 from sqlalchemy.engine import URL
@@ -11,34 +13,36 @@ from sqlalchemy import create_engine
 server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+
 database = 'PawRescue' # EMAN :'Khidmat'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
 engine = create_engine(connection_url)
 
-st.set_page_config(page_title="Wards", page_icon="🛏️", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Wards", page_icon="🛏️", initial_sidebar_state="expanded", layout='wide')
 
 # logo
 logo = Image.open("assets/logo.png")
 st.logo(logo)
 
 # Button Styling
-# st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
+st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
 
-st.sidebar.markdown("""
-    <style>
-        .sidebar-content > div:nth-child(1) > div > div {color: white}
-        .sidebar-content > div:nth-child(1) > div > div > span {color: #FFA500}
-    </style>
-""", unsafe_allow_html=True)
+st.markdown(
+        """
+       <style>
+       [data-testid="stSidebar"][aria-expanded="true"]{
+           min-width: 250px;
+           max-width: 250px;
+       }
+       """,
+        unsafe_allow_html=True,
+)
 
-if st.sidebar.button("👥 Team"):
-    st.switch_page("pages/Teams.py")
-            
 if st.sidebar.button("🔓 Logout"):
     st.switch_page("LoginScreen.py")
 
-hide_pages(["Login", "Teams"])
+hide_pages(["Login"])
 
 st.header("Wards")
 
@@ -48,7 +52,7 @@ if 'wards_df' not in st.session_state:
 
 # Fetch existing wards from the database
 with engine.begin() as conn:
-    existing_wards = pd.read_sql_query(sa.text("""SELECT name, code, CapacityCages AS total_cages, capacityCages AS free_cages FROM Ward"""), conn)
+    existing_wards = pd.read_sql_query(sa.text("""SELECT name, code, CapacityCages AS total_cages, capacityCages AS free_cages FROM Ward where name is not null"""), conn)
 
 # Combine existing wards with session state wards
 combined_wards_df = pd.concat([existing_wards, st.session_state.wards_df]).drop_duplicates(subset=["Name", "code"]).reset_index(drop=True)
@@ -126,7 +130,7 @@ def add_ward():
 @st.experimental_dialog("Edit Ward")
 def edit_ward():
         with engine.begin() as conn:
-            df = pd.read_sql_query("SELECT wardID FROM Ward", conn)
+            df = pd.read_sql_query("SELECT wardID FROM Ward where name is not null", conn)
             selected_index = df['wardID'].tolist()
         index = st.selectbox("Ward ID", selected_index)
 
@@ -161,8 +165,9 @@ def edit_ward():
 @st.experimental_dialog("Delete Ward")
 def delete_ward():
     with engine.begin() as conn:
-        df = pd.read_sql_query("SELECT name FROM Ward", conn)
+        df = pd.read_sql_query("SELECT * FROM Ward where name is not null", conn)
         selected_name = df['name'].tolist()
+        wardID = df['wardID'].tolist()[0]
     name = st.selectbox("Ward Name", selected_name)
 
     if st.button("Delete Ward", key=name):
@@ -179,10 +184,10 @@ def delete_ward():
             st.warning('You need to delete the cages of this ward from the Cats data first in order to delete this ward', icon="⚠️")
             if st.button("Okay"):
                 st.rerun()  # Refresh the app to reflect changes
-        # else:
-        #     with engine.begin() as conn:
-        #         conn.execute(sa.text("DELETE FROM Ward where name = :name"), {"name": name})
-        #     st.rerun()
+        else:
+            with engine.begin() as conn:
+                conn.execute(sa.text("update ward set name = NULL, code = NULL, capacityCages = NULL where wardID = :wardID"), {"wardID": wardID})
+            st.rerun()
 
     st.session_state.show_delete_ward_dialog = False
     st.caption('_:orange[Press Esc to Cancel]_')
