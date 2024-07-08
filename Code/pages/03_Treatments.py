@@ -125,7 +125,6 @@ def add_treatment():
 
         if everything_filled and valid_treatment:
             with engine.begin() as conn:
-                print("woohoo")
                 userid = conn.execute(sa.text("""SELECT UserID FROM Users WHERE userName = :userName"""), {"userName": givenby}).fetchone()[0] 
                 conn.execute(sa.text("""
                     INSERT INTO Treatment (TreatmentID, CatID, UserID, DateTime, Temperature, Treatment)

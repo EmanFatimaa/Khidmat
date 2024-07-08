@@ -12,9 +12,9 @@ from sqlalchemy import create_engine
 
 # database information ; will change when db hosting
 
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA # Note the double backslashes
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA # Note the double backslashes
 
 database = 'PawRescue' # EMAN 'Khidmat'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'

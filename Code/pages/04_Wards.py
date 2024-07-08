@@ -68,27 +68,53 @@ def add_ward_dialog():
     st.session_state.show_add_ward_dialog = True
     st.session_state.show_update_ward_dialog = False
     st.session_state.show_delete_ward_dialog = False
+    st.session_state.show_delete_wardDetails_dialog = False
+    st.session_state.show_update_wardDetails_dialog = False
 
 def update_ward_dialog():
     st.session_state.show_update_ward_dialog = True
     st.session_state.show_add_ward_dialog = False
     st.session_state.show_delete_ward_dialog = False
+    st.session_state.show_delete_wardDetails_dialog = False
+    st.session_state.show_update_wardDetails_dialog = False
 
 def delete_ward_dialog():
     st.session_state.show_update_ward_dialog = False
     st.session_state.show_add_ward_dialog = False
     st.session_state.show_delete_ward_dialog = True
+    st.session_state.show_delete_wardDetails_dialog = False
+    st.session_state.show_update_wardDetails_dialog = False
+
+def update_wardDetails_dialog():
+    st.session_state.show_update_wardDetails_dialog = True
+    st.session_state.show_update_ward_dialog = False
+    st.session_state.show_add_ward_dialog = False
+    st.session_state.show_delete_ward_dialog = False
+    st.session_state.show_delete_wardDetails_dialog = False
+
+def delete_wardDetails_dialog():
+    st.session_state.show_delete_wardDetails_dialog = True
+    st.session_state.show_update_wardDetails_dialog = False
+    st.session_state.show_update_ward_dialog = False
+    st.session_state.show_add_ward_dialog = False
+    st.session_state.show_delete_ward_dialog = False
+
 
 @st.experimental_dialog("Ward Details")
-def Details():
+def Details(name):
+    name = st.text_input("Name", value = f"{row['name']}", disabled=True)
     with engine.begin() as conn:
-        wards_table = pd.read_sql_query(sa.text("""
+        capacity = conn.execute(sa.text("select capacityCages from Ward where name = :name"), {"name": f"{row['name']}"}).fetchall()[0][0]
+    total = st.text_input("Capacity", value=capacity, disabled=True)
+    
+    with engine.begin() as conn:
+        wards_table = conn.execute(sa.text("""
                 SELECT 
                 Cage.cageID as CageID,
                 Cats.catID as CatID,
                 Cats.catName as CatName,
-                cageStatus.cageStatus as Status,
-                Cage.date as Date
+                Cage.date as Date,
+                cageStatus.cageStatus as Status
             FROM 
                 Cage
             INNER JOIN 
@@ -96,10 +122,23 @@ def Details():
             INNER JOIN 
                 cageStatus ON Cage.cageStatusID = cageStatus.cageStatusID
             INNER JOIN 
-                Cats ON Cage.cageID = Cats.cageID WHERE Cats.cageID = Cage.cageID;"""), conn)
+                Cats ON Cage.cageID = Cats.cageID 
+            WHERE name = :name"""), {"name": name}).fetchall()
         
-    st.dataframe(wards_table, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
+    final_table = st.dataframe(wards_table, width=1500, height=600, hide_index = True, on_select = "ignore", selection_mode = "single-row")
+
+    # if final_table["selection"]["rows"]: # if a row is selected
+        
+    #     row_selected = int(wards_table.iat[final_table['selection']['rows'][0], 0])
+    #     # print(treatment_table_df)
+
+    #     update_button = col4.button("Update Treatment", on_click = update_wardDetails_dialog)
+    #     # delete_button = col5.button("Delete Treatment", on_click = delete_wardDetails_dialog)
+
+    #     if st.session_state.show_update_wardDetails_dialog:
+    #         edit_ward_details(row_selected) 
     st.caption('_:orange[Press Esc to Close]_')
+
 
 @st.experimental_dialog("Add New Ward")
 def add_ward():
@@ -227,7 +266,7 @@ wards_df = combined_wards_df
 for index, row in wards_df.iterrows():
     with st.container():
         with st.expander(f"**{row['name']}**"):
-            col1, col2, col3, col4, col5, = st.columns([0.1, 0.5, 0.7, 0.7, 1])  # Adjusted column widths
+            col1, col2, col3, col4, col5= st.columns([0.1, 0.5, 0.7, 0.7, 1])  # Adjusted column widths
             with col1:
                 st.write("")  # Placeholder for the button
             with col2:
@@ -258,5 +297,10 @@ for index, row in wards_df.iterrows():
                         st.write(f"Free Cages: {row['total_cages']}")
             with col5:
                 if st.button(f"{row['name']} Details"):
-                    Details()
-            st.write("")
+                    # st.switch_page("pages/Ward_Details.py")
+                    Details(f"{row['name']}")
+        st.write("")
+
+
+def edit_ward_details(row_to_update):
+    st.text_input("")
