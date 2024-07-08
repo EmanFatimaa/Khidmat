@@ -45,12 +45,12 @@ hide_pages(["Login"])
 logo = Image.open("assets/logo.png")
 st.logo(logo)
 
-# Treatments Filter Remains
 # Edit and Delete Remains
 # Filtering Remains
 # Lastly, Aesthestics ofc
 # Checks remain for each field as well (Refer to Treatments.py or Finances.py)
 # Error of when inserting a new queryy
+# Wards and Cage should update by their own
 
 #Creating columns for better formatting
 col1, col2, col3, col4 = st.columns(4)

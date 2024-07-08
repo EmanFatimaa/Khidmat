@@ -10,9 +10,9 @@ from millify import prettify
 from sqlalchemy.engine import URL
 from sqlalchemy import create_engine
 
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'PawRescue' # EMAN :'Khidmat'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -180,7 +180,7 @@ def delete_ward():
                     WHERE cageStatus.cageStatusID = :cageStatusID and name = :name
                 """), {"cageStatusID": 2, "name": name}).fetchall()
             
-        if status == 0:
+        if status != 0:
             st.warning('You need to delete the cages of this ward from the Cats data first in order to delete this ward', icon="⚠️")
             if st.button("Okay"):
                 st.rerun()  # Refresh the app to reflect changes
@@ -233,16 +233,24 @@ for index, row in wards_df.iterrows():
             with col2:
                 st.write(f"Code: {row['code']}")
             with col3:
-                st.write(f"Total Cages: {row['total_cages']}")
+                with engine.begin() as conn:
+                    totalCages = conn.execute(sa.text("""
+                        select count(cageID)as total_cages from Cage
+                        inner join Ward on Cage.wardID = Ward.wardID
+                        where code = :code
+                    """), {"code": row['code']}).fetchall()
+                    if totalCages:
+                        totalCages = totalCages[0][0]
+                        st.write(f"Available Cages: {totalCages}")
+                    else:
+                        st.write(f"Available Cages: {row['total_cages']}")
             with col4:
                 with engine.begin() as conn:
                     freeCage = conn.execute(sa.text("""
-                        SELECT (capacityCages - COUNT(*)) AS free_cages
-                        FROM Ward
-                        JOIN Cage ON Ward.wardID = Cage.wardID
-                        WHERE code = :code
-                        GROUP BY Ward.capacityCages, Cage.wardID
-                    """), {"code": row['code']}).fetchall()
+                        select count(cageID)as free_cages from Cage
+                        inner join Ward on Cage.wardID = Ward.wardID
+                        where cageStatusID = :cageStatusID and code = :code
+                    """), {"cageStatusID": 2, "code": row['code']}).fetchall()
                     if freeCage:
                         freeCage = freeCage[0][0]
                         st.write(f"Free Cages: {freeCage}")

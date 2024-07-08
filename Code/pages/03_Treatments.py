@@ -15,9 +15,9 @@ from sqlalchemy import create_engine
 # custom streamlit imports
 from st_pages import Page, show_pages, add_page_title, hide_pages
 
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA # Note the double backslashes
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA # Note the double backslashes
 
 database = 'PawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -72,8 +72,9 @@ def delete_treatment_dialog():
 
 @st.experimental_dialog("Add Treatment")
 def add_treatment():
+    print("adding")
     with engine.begin() as conn:
-        treatmentid = int(pd.read_sql_query(sa.text("SELECT TOP 1 treatmentID FROM Treatment ORDER BY treatmentID DESC"), conn).iloc[0][0]) + 1
+        treatmentid = int(pd.read_sql_query(sa.text("SELECT TOP 1 treatmentID FROM Treatment ORDER BY treatmentID DESC"), conn).iat[0,0]) + 1
         df = pd.read_sql_query("SELECT CatID FROM Cats", conn)
         cat_ids = df['CatID'].tolist()
 
@@ -93,7 +94,7 @@ def add_treatment():
 
     col1, col2 = st.columns(2)
     with col1:
-        temperature = st.number_input("Temperature", value=float(100))
+        temperature = st.text_input("Temperature", value=float(100))
     with col2:
         with engine.begin() as conn:
             df = pd.read_sql_query("SELECT userName FROM Users", conn)
@@ -105,12 +106,12 @@ def add_treatment():
     add_treatment_button = st.button("Add Treatment", key="add_treatment")
 
     if add_treatment_button:
-
+        print("button pressed")
         # check other individual fields for errors as well.
         everything_filled = False
         valid_treatment =   False
 
-        if all(x.isalpha() or x.isspace() for x in treatment_details):
+        if all(x.isalpha() or x.isspace() or x=='.' for x in treatment_details):
             valid_treatment = True
         else:
             st.error("Please enter valid treatment details.")
@@ -120,9 +121,11 @@ def add_treatment():
             st.error("Please fill in all fields before submitting.")
         else: 
             date_and_time = datetime.combine(treatment_date, treatment_time)
-        
+            everything_filled = True
+
         if everything_filled and valid_treatment:
             with engine.begin() as conn:
+                print("woohoo")
                 userid = conn.execute(sa.text("""SELECT UserID FROM Users WHERE userName = :userName"""), {"userName": givenby}).fetchone()[0] 
                 conn.execute(sa.text("""
                     INSERT INTO Treatment (TreatmentID, CatID, UserID, DateTime, Temperature, Treatment)
@@ -154,7 +157,10 @@ def update_treatment(ID_to_update):
     with col1:
         treat_id =st.text_input("TreatmentID", value=ID_to_update, disabled=True)
     with col2:
-        selected_cat_id = st.selectbox("Select Cat ID", cat_ids)
+        with engine.begin() as conn:
+            current_catID = int(conn.execute(sa.text("select catId from Treatment where treatmentid = :t"), {"t":ID_to_update}).fetchall()[0][0])
+            # print(current_catID)
+        selected_cat_id = st.selectbox("Select Cat ID", cat_ids, index = current_catID - 1)
 
     col1, col2 = st.columns(2)
         
@@ -178,10 +184,19 @@ def update_treatment(ID_to_update):
     
     with col2:
         with engine.begin() as conn:
-            # user_value = conn.execute(sa.text("select userName from Users where userID = (select userID from Treatment where treatmentID = :treatmentID)"), {"treatmentID": ID_to_update}).fetchall()[0][0]
+            # current_givenby = conn.execute(sa.text("select mode from Mode where modeID = (select modeID from Donations where treatmentID = :t)"), {"t": ID_to_update}).fetchall()[0][0]
+            user_value = conn.execute(sa.text("select userName from Users where userID = (select userID from Treatment where treatmentID = :treatmentID)"), {"treatmentID": ID_to_update}).fetchall()[0][0]
             df = pd.read_sql_query("SELECT userName FROM Users", conn)
             update_user = df['userName'].tolist()
-        user = st.selectbox("Given By", update_user)
+        final_user_index = update_user.index(user_value)
+        print(final_user_index)
+        user = st.selectbox("Given By", update_user, index = final_user_index)
+
+            # with engine.begin() as conn:
+            #     donation_mode = pd.read_sql_query(sa.text("select mode from Mode"), conn)
+            #     mode_value = conn.execute(sa.text("select mode from Mode where modeID = (select modeID from Donations where donationID = :donationID)"), {"donationID": id_to_update}).fetchall()[0][0]
+            #     final_mode_value = 1 if mode_value == 'Cash' else 0
+            # mode = st.selectbox("Donation Mode", donation_mode["mode"].tolist(), index = final_mode_value)
 
         with engine.begin() as conn:
             Userid = conn.execute(sa.text("""SELECT UserID FROM Users WHERE userName = :userName"""), {"userName": user}).fetchall()[0][0]
@@ -198,7 +213,7 @@ def update_treatment(ID_to_update):
         everything_filled = False
         valid_treatment_details =   False
         
-        if all(x.isalpha() or x.isspace() for x in treatment):
+        if all(x.isalpha() or x.isspace() or x=='.' for x in treatment):
             valid_treatment_details = True
         else:
             st.error("Please enter valid treatment details for updation.")
@@ -231,21 +246,21 @@ def delete_treatment(Id_to_delete):
     if col1.button("Yes"):
         with engine.begin() as conn:
             # conn.execute(sa.text("update Treatment set catID = NULL, temperature = NULL, dateTime = NULL, treatment = NULL FROM Treatment where treatmentID = :treatmentID"), {"treatmentID": Id_to_delete})
-            conn.execute(sa.text("DELETE FROM Treatment where treatmentID = :treatmentID"), {"treatmentID": Id_to_delete})
+            conn.execute(sa.text("update Treatment set catID = NULL, userID = NULL, dateTime = NULL, temperature = NULL, treatment = NULL where treatmentID = :treatmentID"), {"treatmentID": Id_to_delete})
         st.rerun()
 
     if col2.button("No", key = 'no'):
         st.rerun()
 
-    st.session_state.show_delete_donation_dialog = False
+    st.session_state.show_delete_treatment_dialog = False
     st.caption('_:orange[Press Esc to Cancel]_') 
 
 col1, col2, col3, col4, col5, col6 = st.columns(6)
 
 if 'show_add_treatment_dialog' not in st.session_state:
-        st.session_state.show_add_donation_dialog = False
+        st.session_state.show_add_treatment_dialog = False
 if 'show_update_treatment_dialog' not in st.session_state:
-    st.session_state.show_update_donation_dialog = False
+    st.session_state.show_update_treatment_dialog = False
 if 'show_delete_treatment_dialog' not in st.session_state:
         st.session_state.show_delete_treatment_dialog = False
 
