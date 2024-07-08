@@ -142,10 +142,6 @@ def add_treatment():
     st.session_state.show_add_treatment_dialog = False
     st.caption('_:orange[Press Esc to Cancel]_')
 
-# Check if the session state variable exists
-if "show_add_treatment_dialog" not in st.session_state:
-    st.session_state.show_add_treatment_dialog = False
-
 @st.experimental_dialog("Update Treatment")
 def update_treatment(ID_to_update):
     with engine.begin() as conn:
@@ -257,11 +253,11 @@ def delete_treatment(Id_to_delete):
 col1, col2, col3, col4, col5, col6 = st.columns(6)
 
 if 'show_add_treatment_dialog' not in st.session_state:
-        st.session_state.show_add_treatment_dialog = False
+    st.session_state.show_add_treatment_dialog = False
 if 'show_update_treatment_dialog' not in st.session_state:
     st.session_state.show_update_treatment_dialog = False
 if 'show_delete_treatment_dialog' not in st.session_state:
-        st.session_state.show_delete_treatment_dialog = False
+    st.session_state.show_delete_treatment_dialog = False
 
 # Table for treatments
 with engine.begin() as conn:
