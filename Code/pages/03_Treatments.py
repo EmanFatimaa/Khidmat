@@ -184,7 +184,7 @@ def update_treatment(ID_to_update):
             df = pd.read_sql_query("SELECT userName FROM Users", conn)
             update_user = df['userName'].tolist()
         final_user_index = update_user.index(user_value)
-        print(final_user_index)
+        # print(final_user_index)
         user = st.selectbox("Given By", update_user, index = final_user_index)
 
             # with engine.begin() as conn:

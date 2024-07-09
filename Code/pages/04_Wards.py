@@ -100,7 +100,7 @@ def delete_wardDetails_dialog():
     st.session_state.show_delete_ward_dialog = False
 
 
-@st.experimental_dialog("Ward Details")
+# @st.experimental_dialog("Ward Details")
 def Details(name):
     name = st.text_input("Name", value = f"{row['name']}", disabled=True)
     with engine.begin() as conn:
@@ -124,11 +124,13 @@ def Details(name):
             INNER JOIN 
                 Cats ON Cage.cageID = Cats.cageID 
             WHERE name = :name"""), {"name": name}).fetchall()
-        
-    final_table = st.dataframe(wards_table, width=1500, height=600, hide_index = True, on_select = "ignore", selection_mode = "single-row")
+    
+    final_table = st.dataframe(wards_table, width=1500, height=600, hide_index = True, selection_mode="single-row", on_select='rerun')
+    row_selected = int(final_table.iat[final_table['selection']['rows'][0], 0])
+    print(row_selected)
 
     # if final_table["selection"]["rows"]: # if a row is selected
-        
+
     #     row_selected = int(wards_table.iat[final_table['selection']['rows'][0], 0])
     #     # print(treatment_table_df)
 
@@ -137,7 +139,7 @@ def Details(name):
 
     #     if st.session_state.show_update_wardDetails_dialog:
     #         edit_ward_details(row_selected) 
-    st.caption('_:orange[Press Esc to Close]_')
+    # st.caption('_:orange[Press Esc to Close]_')
 
 
 @st.experimental_dialog("Add New Ward")
@@ -295,12 +297,12 @@ for index, row in wards_df.iterrows():
                         st.write(f"Free Cages: {freeCage}")
                     else:
                         st.write(f"Free Cages: {row['total_cages']}")
-            with col5:
-                if st.button(f"{row['name']} Details"):
+            # with col5:
+            if st.button(f"{row['name']} Details"):
                     # st.switch_page("pages/Ward_Details.py")
                     Details(f"{row['name']}")
         st.write("")
 
 
 def edit_ward_details(row_to_update):
-    st.text_input("")
+    st.text_input("das;l,")
