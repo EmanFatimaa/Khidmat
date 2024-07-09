@@ -18,9 +18,8 @@ from st_pages import Page, show_pages, add_page_title, hide_pages
 # database information ; will change when db hosting
 
 # server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-
-# server = 'DESKTOP-HT3NB74' # EMAN
-server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA # Note the double backslashes
+server = 'DESKTOP-HT3NB74' # EMAN
+# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA # Note the double backslashes
 
 # server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA # Note the double backslashes
@@ -75,14 +74,13 @@ def add_cat():
     col1, col2 = st.columns(2)
 
     with col1:
-        # Cat ID Field
-        with engine.begin() as conn:
-            result = pd.read_sql_query(sa.text("SELECT TOP 1 catID FROM Cats ORDER BY catID DESC"), conn)
-        if not result.empty:
-            currentCatID = int(result.iat[0, 0]) + 1
-        else:
-            currentCatID = 1  # or some other default value
-        catID = st.text_input("Cat ID", value=str(currentCatID), disabled=True)
+        
+        #Cat ID Field
+        with engine.begin()as conn:
+            currentCatID = int(pd.read_sql_query(sa.text("select top 1 catID from Cats order by catID desc"), conn).iat[0,0]) + 1
+            #TODO:
+            catCodestr = "PA-0000" + str(currentCatID) #need to fix this logic , explore prettify
+        st.text_input("Cat ID", value = catCodestr, disabled= True)
 
         # Age field
         age = st.number_input("Age (in years)", step=0.1, value=0.0)
@@ -104,8 +102,10 @@ def add_cat():
         # Cage no field
         with engine.begin() as conn:
             cageID = pd.read_sql_query(sa.text("SELECT cageID FROM Cage WHERE cageID NOT IN (SELECT cageID FROM Cats)"), conn)  # OR: select cageID from Cage where cageStatus = 'Free'
+            wardID =pd.read_sql_query(sa.text("Select wardID from ward where wardID in (select WardID from cage)"),conn)
         cageNum = st.selectbox("Cage Number", cageID["cageID"].tolist())  # This should also show which Ward it is in and that Cage is free or not ofc.
-
+        
+        
     with engine.begin() as conn:
         statusSelection = pd.read_sql_query(sa.text("SELECT statusType FROM CatStatus"), conn)
     status = st.selectbox("Status", statusSelection["statusType"].tolist())
@@ -195,7 +195,7 @@ if st.session_state.show_add_cat_dialog:
     add_cat()
 
 #Add a new ward button
-with col4:    
+with col5:    
     addWard = st.button("Go To Wards")#, on_click= add_cat_dialog -- doesnt work dky..
     
 if addWard:
@@ -215,8 +215,97 @@ with engine.begin() as conn:
                         Type.typeID = Cats.typeID and 
                         Cage.cageID = Cats.cageID and
                         Cats.statusID = CatStatus.StatusID"""), conn)
-    
-cat_table = st.dataframe(cat_table_df, width = 1500, height = 600, hide_index= True , on_select = "rerun", selection_mode= "single-row")
+
+# Generate catCodestr for each catID
+cat_table_df['Cat Code'] = cat_table_df['Cat ID'].apply(lambda x: f"PA-{str(x).zfill(4)}")
+
+# Rearrange columns to include 'Cat Code'
+cat_table_df = cat_table_df[['Cat Code', 'Cat Name', 'Owner/Reporter', 'Admitted On', 'Type', 'Cage', 'Status']]
+
+# Generate cage for each catID
+cat_table_df['Cage Code'] = cat_table_df['Cage'].apply(lambda x: f"GW-C-{str(x).zfill(2)}")
+
+# Rearrange columns to include 'Cat Code'
+cat_table_df = cat_table_df[['Cat Code', 'Cat Name', 'Owner/Reporter', 'Admitted On', 'Type', 'Cage Code', 'Status']]
+# Display the DataFrame
+cat_table = st.dataframe(cat_table_df, width=1500, height=600, hide_index=True, on_select="rerun", selection_mode="single-row")
 
 #-------------------------------------------------------------------
 
+# @st.experimental_dialog("Edit Cat Details")
+# def edit_cat():
+
+#     # Creating columns for better formatting -- dk if better way of doing 
+#     col1, col2= st.columns(2)
+    
+#     with col1:
+#         # Name field
+#         name = st.text_input("Cat Name", placeholder= "Enter Cat's Name")
+
+#     with col2:
+#         # Age field
+#         age = st.number_input("Age (in years)", step=0.5, value=1.0)
+
+#     with col1:
+#         # Gender field
+#         gender = st.selectbox("Gender", ["Female", "Male"])
+
+#     with col2:
+#         # Type field
+#         type = st.selectbox("Type", ["Pet", "Rescued"])
+
+#     with col1:
+#         # Cage no field
+#         cageNum = st.text_input("Cage Number", placeholder="Please select a cage number")
+
+#     with col2:
+#         # Status dropdown with new options
+#         status = st.selectbox("Status", [
+#             "Adopted",
+#             "Discharged",
+#             "Expired",
+#             "Fostered",
+#             "Healthy In Lower Portion",
+#             "Missing",
+#             "Moved To Healthy Area",
+#             "Ready To Be Moved To Healthy Area",
+#             "Ready To Discharge",
+#             "Under Observation",
+#             "Under Treatment"
+#         ])
+
+#     with col1:
+#         # Owner name text input
+#         ownerName = st.text_input("Owner's Name", placeholder="Enter Owner's Name")
+
+#     with col2:
+#         # Owner contact text input
+#         ownerContact = st.text_input("Owner's Contact", placeholder="xxxx-xxxxxxx")
+
+#     # with col1:
+#     # Date input
+#     date = st.date_input('Date', value=datetime.date.today())
+
+#     # with col2:
+#     # address text area
+#     address = st.text_area("Address", placeholder="Enter Address")
+
+# # Submit and Cancel buttons
+#     submitted = st.button("Save Changes")
+#     st.caption(':orange[*Press Esc to Cancel*]')
+
+#     if submitted:
+#         # Check if any of the fields are left unfilled
+#         if not (name and age and gender and type and cageNum and status and ownerName and ownerContact and address and date):
+#             st.error("Please fill in all fields before submitting.")
+#         else:
+#             # Add logic to process form data here
+#             st.success(f"Pet {name} details edited successfully!")
+
+# Edit and Delete Remains
+# Filtering Remains
+# Lastly, Aesthestics ofc
+# Checks remain for each field as well (Refer to Treatments.py or Finances.py)
+# Error of when inserting a new queryy
+# Wards and Cage should update by their own
+# Code for upfating cage id for managing when cages get free/occupied
