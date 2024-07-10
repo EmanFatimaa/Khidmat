@@ -52,8 +52,7 @@ hide_pages(["Login"])
 # Creating columns for better formatting
 col1, col2, col3, col4 = st.columns(4)
 
-with col1:
-    st.header("Treatment")
+st.header("Treatment", divider='orange')
 
 def add_treatment_dialog():
     st.session_state.show_add_treatment_dialog = True
@@ -200,7 +199,7 @@ def update_treatment(ID_to_update):
         treatment_value = conn.execute(sa.text("select treatment from Treatment where treatmentID = :treatmentID"), {"treatmentID": ID_to_update}).fetchall()[0][0]
     treatment = st.text_area("Treatment Details", value=treatment_value)
 
-    update_treatment_button = st.button("Update Treatment", key = 'update_treatment')
+    update_treatment_button = st.button("Save Changes", key = 'update_treatment')
 
 
     if update_treatment_button:

@@ -32,7 +32,7 @@ logo = Image.open("assets/logo.png")
 st.logo(logo)
 
 #Title
-st.write("## Team")
+st.header("Team", divider='orange')
 
 # Button Styling
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
@@ -62,7 +62,7 @@ def edit_team_dialog():
     st.session_state.show_add_team_dialog = False
     st.session_state.show_edit_team_dialog = True
 
-col1, col2 = st.columns([1, 2.7])
+col1, col2 = st.columns([1, 3])
 with col1:
     add_button = st.button("⊹ Add New Member", on_click=add_team_dialog)
 with col2:
@@ -170,47 +170,44 @@ def addScreen():
 @st.experimental_dialog("Edit Team Member")
 def edit_team():
     with engine.begin() as conn:
-            df = pd.read_sql_query("SELECT userID FROM Users", conn)
-            user_value = df['userID'].tolist()
-    user_id = st.selectbox("Member ID", user_value)
+            df = pd.read_sql_query("SELECT userName FROM Users", conn)
+            user_value = df['userName'].tolist()
+    user_name = st.selectbox("Member Name", user_value)
 
     with engine.begin() as conn:
-        picture_value = conn.execute(sa.text("select picture from Users where userID = :userID"), {"userID": user_id}).fetchall()[0][0]
+        picture_value = conn.execute(sa.text("select picture from Users where userName = :userName"), {"userName": user_name}).fetchall()[0][0]
     if picture_value:
         current_image = Image.open(io.BytesIO(picture_value))
         st.image(current_image, caption= "Current Photo", width=150)
     new_image = st.file_uploader("Upload New Photo", type='png')
-    
-    col1, col2 =st.columns(2)
 
-    with col1:
-        with engine.begin() as conn:
-            name_value = conn.execute(sa.text("select userName from Users where userID = :userID"), {"userID": user_id}).fetchall()[0][0]
-        current_name = st.text_input("Name", value = name_value)
+    # with col1:
+    #     with engine.begin() as conn:
+    #         name_value = conn.execute(sa.text("select userName from Users where userID = :userID"), {"userID": user_id}).fetchall()[0][0]
+    #     current_name = st.text_input("Name", value = name_value)
 
-    with col2:
-        with engine.begin() as conn:
-            role = conn.execute(sa.text("select roleDesc from InternalRole where internalRoleID = (Select internalRoleID from Users where userID = :userID)"), {"userID": user_id}).fetchall()[0][0]
-            df = pd.read_sql_query("SELECT roleDesc FROM InternalRole", conn)
-            update_role = df['roleDesc'].tolist()
-        final_role_index = update_role.index(role)
+    with engine.begin() as conn:
+        role = conn.execute(sa.text("select roleDesc from InternalRole where internalRoleID = (Select internalRoleID from Users where userName = :userName)"), {"userName": user_name}).fetchall()[0][0]
+        df = pd.read_sql_query("SELECT roleDesc FROM InternalRole", conn)
+        update_role = df['roleDesc'].tolist()
+    final_role_index = update_role.index(role)
 
-        current_role = st.selectbox("Role", update_role, index = final_role_index)
+    current_role = st.selectbox("Role", update_role, index = final_role_index)
 
     col1, col2 =st.columns(2)
 
     with col1:
         with engine.begin() as conn:
-            email_value = conn.execute(sa.text("select email from Users where userID = :userID"), {"userID": user_id}).fetchall()[0][0]
+            email_value = conn.execute(sa.text("select email from Users where userName = :userName"), {"userName": user_name}).fetchall()[0][0]
         current_email = st.text_input("Email", value = email_value)
 
     with col2:
         with engine.begin() as conn:
-            password_value = conn.execute(sa.text("select password from Users where userID = :userID"), {"userID": user_id}).fetchall()[0][0]
+            password_value = conn.execute(sa.text("select password from Users where userName = :userName"), {"userName": user_name}).fetchall()[0][0]
         current_password = st.text_input("Password", value = password_value)
 
-    if st.button("Edit"):
-        if (current_name and current_email and current_password and current_role):
+    if st.button("Save Changes"):
+        if (current_email and current_password and current_role):
             with engine.begin() as conn:
                 internal_role_id = conn.execute(sa.text("SELECT internalRoleID FROM InternalRole WHERE roleDesc = :roleDesc"), {"roleDesc": current_role}).fetchall()[0][0]
                 if new_image:
@@ -218,14 +215,13 @@ def edit_team():
                     conn.execute(sa.text(""" 
                         UPDATE Users
                         SET userName = :userName, email = :email, password = :password, internalRoleID = :internalRoleID, picture = :picture
-                        WHERE userID = :userID
+                        WHERE userName= :userName
                         """), {
-                        "userName": current_name,
+                        "userName": user_name,
                         "email": current_email,
                         "password": current_password,
                         "internalRoleID": internal_role_id,
                         "picture": image_bytes,
-                        "userID": user_id
                     })
                 else:
                     conn.execute(sa.text(""" 
@@ -233,11 +229,10 @@ def edit_team():
                         SET userName = :userName, email = :email, password = :password, internalRoleID = :internalRoleID
                         WHERE userID = :userID
                         """), {
-                        "userName": current_name,
+                        "userName": user_name,
                         "email": current_email,
                         "password": current_password,
                         "internalRoleID": internal_role_id,
-                        "userID": user_id
                     })
             st.rerun()
 
@@ -254,5 +249,3 @@ if st.session_state.show_add_team_dialog:
 
 if st.session_state.show_edit_team_dialog:
     edit_team()
-    
-
