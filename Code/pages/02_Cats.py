@@ -58,8 +58,7 @@ hide_pages(["Login"])
 col1, col2, col3, col4 = st.columns(4)
 
 #Title
-with col1:
-    st.header("Cats")
+st.header("Cats", divider='orange')
 
 def add_cat_dialog():
     st.session_state.show_add_cat_dialog = True
