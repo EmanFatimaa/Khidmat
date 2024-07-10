@@ -11,8 +11,8 @@ from sqlalchemy.engine import URL
 from sqlalchemy import create_engine
 
 # server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-# server = 'DESKTOP-HT3NB74' # EMAN
-server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HT3NB74' # EMAN
+# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'PawRescue' # EMAN :'Khidmat'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -253,7 +253,7 @@ if st.session_state.show_delete_ward_dialog:
 col1, col2, col3 = st.columns([8.9, 2, 3])
 with col1:
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    newWard = st.button("⊹ Add Ward", on_click=add_ward_dialog)
+    newWard = st.button("✙ Add Ward", on_click=add_ward_dialog)
 with col2:
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
     updateWard = st.button("Edit Ward", on_click=update_ward_dialog)

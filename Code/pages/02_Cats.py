@@ -1,6 +1,7 @@
 # standard imports
 import datetime
 from PIL import Image
+import time
 
 # third party imports
 import pandas as pd
@@ -18,10 +19,7 @@ from st_pages import Page, show_pages, add_page_title, hide_pages
 # database information ; will change when db hosting
 
 # server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-# server = 'DESKTOP-HT3NB74' # EMAN
-server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA # Note the double backslashes
-
-# server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA # Note the double backslashes
 
 database = 'PawRescue' # EMAN 'Khidmat'
@@ -58,18 +56,65 @@ hide_pages(["Login"])
 col1, col2, col3, col4 = st.columns(4)
 
 #Title
-st.header("Cats", divider='orange')
+#with col1:
+st.header("Cats", divider = "orange")
 
+
+#Functions
 def add_cat_dialog():
     st.session_state.show_add_cat_dialog = True
-    # st.session_state.edit_cat_dialog = False
+    st.session_state.show_view_cat_dialog = False
+    st.session_state.update_cat_dialog = False
+    st.session_state.delete_cat_dialog = False
 
-# ADD DIALOGE EMAN:)
+def view_cat_dialog():
+    st.session_state.show_add_cat_dialog = False
+    st.session_state.show_view_cat_dialog = True
+    st.session_state.show_update_cat_dialog = False
+    st.session_state.show_delete_cat_dialog = False
+
+def update_cat_dialog():
+    st.session_state.show_add_cat_dialog = False
+    st.session_state.show_view_cat_dialog = False
+    st.session_state.show_update_cat_dialog = True
+    st.session_state.show_delete_cat_dialog = False
+
+def delete_cat_dialog():
+    st.session_state.show_add_cat_dialog = False
+    st.session_state.show_view_cat_dialog = False
+    st.session_state.show_update_cat_dialog =  False
+    st.session_state.show_delete_cat_dialog = True
+
+# Load custom CSS
+def load_css(file_name):
+    with open(file_name) as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+# Function to format contact number
+def format_contact_number(contact):
+    if '-' in contact:
+        return contact
+    return contact[:4] + '-' + contact[4:] if len(contact) > 4 else contact
+
+#Funciton to extract number from cat id
+def extract_cat_number(cat_id_str):
+    # Remove the prefix "PA-"
+    numberStr = cat_id_str.replace("PA-", "")
+    
+    # Convert to integer
+    numberInt = int(numberStr)
+    
+    return numberInt
+
+# ADD DIALOG
+catCodestr = ''
 @st.experimental_dialog("Add a New Cat")
 def add_cat():
+
     #cats info (in the form)
-    st.write("Cat related details")
-        # Creating columns for better formatting 
+    st.write(" :orange[Cat related details]")
+
+    # Creating columns for better formatting 
     col1, col2 = st.columns(2)
 
     with col1:
@@ -78,7 +123,7 @@ def add_cat():
         with engine.begin()as conn:
             currentCatID = int(pd.read_sql_query(sa.text("select top 1 catID from Cats order by catID desc"), conn).iat[0,0]) + 1
             #TODO:
-            catCodestr = "PA-0000" + str(currentCatID) #need to fix this logic , explore prettify
+            catCodestr = "PA-000" + str(currentCatID) #need to fix this logic , explore prettify
         st.text_input("Cat ID", value = catCodestr, disabled= True)
 
         # Age field
@@ -110,7 +155,7 @@ def add_cat():
     status = st.selectbox("Status", statusSelection["statusType"].tolist())
 
     # Owner related info (in the form)
-    st.write("Owner related details")
+    st.write(" :orange[Owner related details]")
 
     col1, col2 = st.columns(2)  # redefining to enter owner related details after cat details
 
@@ -127,6 +172,7 @@ def add_cat():
                     contactFromDB = fetchall[0][0]
 
         # Owner contact text input
+        # contactFromDB = format_contact_number(contactFromDB)
         ownerContact = st.text_input("Owner's Contact", value=contactFromDB, placeholder="0300-7413639")
 
     # Date
@@ -140,6 +186,7 @@ def add_cat():
 
     # Logic for inserting the data
     if st.button("Add cat"):
+       
         # Checks
         everythingFilled = False
 
@@ -175,10 +222,16 @@ def add_cat():
                     "contactNum": ownerContact, "address": address, 
                     "status": status, "admittedOn": date
                 })
-
+            # with st.spinner('Adding...'):
+            #     time.sleep(2)
+            #     st.success("Cat with CatID: "+ str(catCodestr)+ " has been added successfully", icon = "🎉")
+            #     st.balloons() # why not working
             st.rerun()
+                
+        # st.success("Cat with CatID: "+ str(catCodestr)+ " has been added successfully", icon = "🎉")
         st.session_state.show_add_cat_dialog = False
 
+    # st.success("Cat with CatID: "+ str(catCodestr)+ " has been added successfully", icon = "🎉")
 
 # Check if the session state exists or not
 if 'show_add_cat_dialog' not in st.session_state:
@@ -188,26 +241,217 @@ col1, col2, col3, col4, col5, col6 = st.columns(6)
 
 #Add a new cat button
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-new_treatment = col6.button("⊹ Add New Cat", on_click = add_cat_dialog)
+new_cat = col6.button("✙ Add New Cat", on_click = add_cat_dialog) # ✙, ⊹, ➕
 
 if st.session_state.show_add_cat_dialog:
     add_cat()
 
-#Add a new ward button
-with col5:    
-    addWard = st.button("Go To Wards")#, on_click= add_cat_dialog -- doesnt work dky..
+# #Add a new ward button
+# with col5:    
+#     addWard = st.button("Go To Wards")#, on_click= add_cat_dialog -- doesnt work dky..
     
-if addWard:
-    st.switch_page("pages/04_Wards.py") # -- dk if this is the right way to do this
+# if addWard:
+#     st.switch_page("pages/04_Wards.py") # -- dk if this is the right way to do this
 
 #With form or only form = , st. inputs or form. inputs?
 
+#-------------------------------------------------------------------
+
+#UPDATE DIALOG
+@st.experimental_dialog("Update Cat Details")
+def update_cat(id):
+    
+    #cats info (in the form)
+    st.write(" :orange[Cat related details]")
+
+    # Creating columns for better formatting 
+    col1, col2 = st.columns(2)
+
+    with col1:
+        
+        #Cat ID Field
+        catID = st.text_input("Cat ID", value = id) # disable if id should not be editable
+        
+        # Age field
+        with engine.begin() as conn:
+            ageValue= conn.execute(sa.text("Select age from cats where catID = :catID") ,{"catID": extract_cat_number(id)}).fetchall()[0][0]
+        age = st.number_input("Age (in years)", step = 0.1, value = float(ageValue))
+
+         # Type field
+        with engine.begin() as conn:
+            typeSelection = pd.read_sql_query(sa.text("SELECT type FROM Type"), conn)
+        type = st.selectbox("Type", typeSelection["type"].tolist())
+
+        # # Type field
+        # with engine.begin() as conn:
+        #     typeValue = conn.execute(sa.text("SELECT type FROM Type where typeID in (select typeID from cats where catID = :catID)", {"catID":  extract_cat_number(id)}).fetchall())[0][0]
+        # type = st.selectbox("Type", typeValue["type"].tolist())
+
+    with col2:
+        name = st.text_input("Cat Name", placeholder="Enter Cat's Name")
+
+        # with engine.begin() as conn:
+        #     catNameValue = conn.execute(sa.text("Select catName from cats where  catID = :catID)"), {"catID": extract_cat_number(id)}).fetchall()[0]
+        #     # catNameValue = conn.execute(sa.text("Select name from Externals where externalID = (select externalID from cats where catID = :catID)"), {"catID": extract_cat_number(id)}).fetchall()[0][0]
+        # catName = st.text_input("Cat Name", value =  catNameValue)
+        
+        # Gender field
+        
+        with engine.begin() as conn:
+            genderSelection = pd.read_sql_query(sa.text("SELECT gender FROM Gender"), conn)
+        gender = st.selectbox("Gender", genderSelection["gender"].tolist())
+        
+        # with engine.begin() as conn:
+        #     genderValue = int(conn.execute(sa.text("SELECT gender FROM Gender where genderID in (select genderID from cats where catID = : catID"), {"catID": extract_cat_number(id)}).fetchall()[0][0])
+        #     print(genderValue)
+        # gender = st.selectbox("Gender", genderValue["gender"].tolist())
+
+        # Cage no field
+        with engine.begin() as conn:
+            cageID = pd.read_sql_query(sa.text("SELECT cageID FROM Cage WHERE cageID NOT IN (SELECT cageID FROM Cats)"), conn)  # OR: select cageID from Cage where cageStatus = 'Free'
+            wardID =pd.read_sql_query(sa.text("Select wardID from ward where wardID in (select WardID from cage)"),conn)
+        cageNum = st.selectbox("Cage Number", cageID["cageID"].tolist())  # This should also show which Ward it is in and that Cage is free or not ofc.
+        
+    with engine.begin() as conn:
+        statusSelection = pd.read_sql_query(sa.text("SELECT statusType FROM CatStatus"), conn)
+        status = st.selectbox("Status", statusSelection["statusType"].tolist())
+
+       # Owner related info (in the form)
+    st.write(" :orange[Owner related details]")
+
+    col1, col2 = st.columns(2)  # redefining to enter owner related details after cat details
+
+    with col1:
+        # Name field
+        with engine.begin() as conn:
+            ownerNameValue = conn.execute(sa.text("Select name from Externals where externalID = (select externalID from cats where catID = :catID)"), {"catID": extract_cat_number(id)}).fetchall()[0][0]
+        ownerName = st.text_input("Owner/Reporter's Name",  value = ownerNameValue)
+    
+    with col2:
+        # Owner contact text input
+        # with engine.begin() as conn:
+        #     contactValue = conn.execute(sa.text("select contact from externals where externalID in (select externalID from cats where catID = :catID"),{"catID": extract_cat_number(id)}).fetchall()[0][0]
+        # contact = st.text_input("Owner's Contact", value = contact)
+
+        contactFromDB = ''
+        if ownerName:
+            with engine.begin() as conn:
+                fetchall = conn.execute(sa.text("SELECT contactNum FROM Externals WHERE name = :name"), {"name": ownerName}).fetchall()
+                if fetchall:
+                    contactFromDB = fetchall[0][0]
+        ownerContact = st.text_input("Owner's Contact", value=contactFromDB)
+
+    # Date
+    date = st.date_input('Date', value=datetime.date.today())
+
+    # Address text area
+    # with engine.begin() as conn:
+        # addressValue = conn.execute("select address from externals where externalID in (select externalID from cats where catID = :catID)", {"catID": extract_cat_number(id)}).fetchall()[0][0]
+    address = st.text_area("Address", placeholder="Enter Address")
+
+    # Submit and Cancel buttons
+    st.caption(':orange[Press Esc to Cancel]')
+
+
+#------------------------------------------------------------
+
+#DELETE
+@st.experimental_dialog("Delete Cat Details")
+def delete_cat(id):
+    st.warning("Are you sure you want to delete cat ID: "+ str(id)+ " ?", icon = "⚠️")
+    
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
+
+    if col3.button("Yes"):
+        # with engine.begin() as conn:
+        #     conn.execute(sa.text())
+        st.rerun()
+
+    if col4.button("No ", key = "no"):
+        st.rerun()
+
+    st.session_state.show_delete_cat_dialog = False
+    st.caption('_:orange[Press Esc to Cancel]_') 
+
+# Check if the session state exists or not
+if 'show_add_cat_dialog' not in st.session_state:
+    st.session_state.show_add_cat_dialog = False
+if 'show_view_cat_dialog' not in st.session_state:
+    st.session_state.show_view_cat_dialog = False
+if 'show_update_cat_dialog' not in st.session_state:
+    st.session_state.show_update_cat_dialog = False
+if 'show_delete_cat_dialog' not in st.session_state:
+    st.session_state.show_delete_cat_dialog = False
+# ------------------------------------------------------------
+# # Assuming 'style.css' is in the same directory
+# load_css("style.css")
+
+#VIEW CAT DETAILS
+@st.experimental_dialog("View Cat's Details")
+def view_cat(id):
+    
+    st.write("## :orange[ **Cat ID :**]" , id)
+    # Gathering data
+    with engine.begin() as conn:
+        ageDB = conn.execute(sa.text("Select age from cats where catID = :catID") ,{"catID": extract_cat_number(id)}).fetchall()[0]
+        genderDB = conn.execute(sa.text("Select genderID from cats where catID = :catID") ,{"catID": extract_cat_number(id)}).fetchall()[0]
+        addressDB = conn.execute(sa.text("select address from Externals where externalID in (select externalID from cats where catID = :catID)") ,{"catID": extract_cat_number(id)}).fetchall()[0]
+
+    if cat_table["selection"]["rows"]: #if a row is selected
+            selectedID = cat_table_df.iat[cat_table["selection"]["rows"][0],0]
+            # print("selected cat id:", selectedID)
+            selectedCatName = cat_table_df.iat[cat_table["selection"]["rows"][0],1]
+            # print("selected cat name:", selectedCatName)
+            selectedCage = cat_table_df.iat[cat_table["selection"]["rows"][0],6]
+            # print("selected age:", selectedCage)
+            selectedStatus = cat_table_df.iat[cat_table["selection"]["rows"][0],7]
+            # print("selected status:", selectedStatus)
+            selectedOwnerName = cat_table_df.iat[cat_table["selection"]["rows"][0],2]
+            # print("selected owner name:", selectedOwnerName)
+            selectedOwnerContact = cat_table_df.iat[cat_table["selection"]["rows"][0],3]
+            # print("selected owner contact:", selectedOwnerContact)
+            selectedDate = cat_table_df.iat[cat_table["selection"]["rows"][0],4]
+            # print("selected date:", selectedDate)
+            selectedType = cat_table_df.iat[cat_table["selection"]["rows"][0],5]
+            # print("selected type:", selectedType)
+
+    # Expanders:
+    with st.expander(":orange[General Information]", expanded= False):
+        
+        st.write("***Name:***",selectedCatName )
+        st.write("***Cage ID:***", selectedCage)
+        st.write("***Admitted On:***",selectedID)
+
+        if str(int(genderDB[0])) == "1":
+            st.write("***Gender:***", "Male")
+
+        elif str(int(genderDB[0])) == "2":
+            st.write("***Gender:***", "Female")
+
+        st.write("***Age:***", str(int(ageDB[0])), "yr(s)")
+        st.write("***Status:***",selectedStatus)
+
+    
+    with st.expander(":orange[Owner/Reporter's Details]", expanded = False):
+            st.write("***Name:***", selectedOwnerName)
+            st.write("***Contact Number:***", selectedOwnerContact)
+            st.write("***Address:***", str(addressDB[0]))
+            st.write("***Pet Type:***", selectedType)
+
+    with st.expander(":orange[Treatment related Details]", expanded = False):
+        # with st.table():
+        st.write("*For viewing treatments log for cat ID:*", id, "*kindly click the button below to be redirected to treatments page where you can filter the treatments log for the cat ID:*", id)
+        treatment = st.button("Go To Treatments")
+        if treatment:
+            st.switch_page("pages/03_Treatments.py") 
+    st.caption('_:orange[Press Esc to Cancel]_') 
+    
 # ------------------------------------------------------------
 #Table for Cats:
 with engine.begin() as conn:
     cat_table_df = pd.read_sql_query(sa.text(""" 
-                        select catID as 'Cat ID', catName as 'Cat Name', Externals.name as 'Owner/Reporter', admittedOn as 'Admitted On',
-                                Type.type as 'Type', Cage.cageID as 'Cage', CatStatus.statusType as 'Status'
+                        select catID as 'Cat ID', catName as 'Cat Name', Externals.name as 'Owner/Reporter', Externals.contactNum as 'Contact Number', admittedOn as 'Admitted On',
+                                Type.type as 'Type', Cage.cageID as 'Cage ID', CatStatus.statusType as 'Status'
 
                         from Cats, Externals, Type, Cage, CatStatus 
                         where Cats.externalID = Externals.externalID and 
@@ -215,92 +459,44 @@ with engine.begin() as conn:
                         Cage.cageID = Cats.cageID and
                         Cats.statusID = CatStatus.StatusID"""), conn)
 
-# Generate catCodestr for each catID
-cat_table_df['Cat Code'] = cat_table_df['Cat ID'].apply(lambda x: f"PA-{str(x).zfill(4)}")
+# Convert 'Admitted On' to datetime and format as "date month year"
+cat_table_df['Admitted On'] = pd.to_datetime(cat_table_df['Admitted On']).dt.strftime('%d %b %Y')
 
-# Rearrange columns to include 'Cat Code'
-cat_table_df = cat_table_df[['Cat Code', 'Cat Name', 'Owner/Reporter', 'Admitted On', 'Type', 'Cage', 'Status']]
+# Format the contact number to insert a hyphen after the first four digits
+cat_table_df['Contact Number'] = cat_table_df['Contact Number'].apply(format_contact_number)
+
+# Generate catCodestr for each catID
+cat_table_df['Cat ID'] = cat_table_df['Cat ID'].apply(lambda x: f"PA-{str(x).zfill(4)}")
 
 # Generate cage for each catID
-cat_table_df['Cage Code'] = cat_table_df['Cage'].apply(lambda x: f"GW-C-{str(x).zfill(2)}")
+cat_table_df['Cage ID'] = cat_table_df['Cage ID'].apply(lambda x: f"GW-C-{str(x).zfill(2)}")
 
-# Rearrange columns to include 'Cat Code'
-cat_table_df = cat_table_df[['Cat Code', 'Cat Name', 'Owner/Reporter', 'Admitted On', 'Type', 'Cage Code', 'Status']]
 # Display the DataFrame
 cat_table = st.dataframe(cat_table_df, width=1500, height=600, hide_index=True, on_select="rerun", selection_mode="single-row")
 
-#-------------------------------------------------------------------
+# UPDATE AND DELETE BUTTONS
+if cat_table["selection"]["rows"]: #if a row is selected
+    selectedRow = cat_table_df.iat[cat_table["selection"]["rows"][0], 0]
+    # filteredRow = extract_cat_number(selectedRow)
+    # print("filteredRow: ", filteredRow)
 
-# @st.experimental_dialog("Edit Cat Details")
-# def edit_cat():
+    # print("selected row is :", selectedRow) -- PA-0001
+    view = col3.button("View", on_click= view_cat_dialog) # 👀 🧐
+    update = col4.button("Update  ", on_click= update_cat_dialog) # 📝
+    delete = col5.button("Delete  ", on_click= delete_cat_dialog) #🗑️
 
-#     # Creating columns for better formatting -- dk if better way of doing 
-#     col1, col2= st.columns(2)
-    
-#     with col1:
-#         # Name field
-#         name = st.text_input("Cat Name", placeholder= "Enter Cat's Name")
+    if st.session_state.show_view_cat_dialog:
+        view_cat(selectedRow)
+        
+    if st.session_state.show_update_cat_dialog:
+        update_cat(selectedRow)
 
-#     with col2:
-#         # Age field
-#         age = st.number_input("Age (in years)", step=0.5, value=1.0)
+    if st.session_state.show_delete_cat_dialog:
+        delete_cat(selectedRow)
+else:
+    print("No row selected")
 
-#     with col1:
-#         # Gender field
-#         gender = st.selectbox("Gender", ["Female", "Male"])
-
-#     with col2:
-#         # Type field
-#         type = st.selectbox("Type", ["Pet", "Rescued"])
-
-#     with col1:
-#         # Cage no field
-#         cageNum = st.text_input("Cage Number", placeholder="Please select a cage number")
-
-#     with col2:
-#         # Status dropdown with new options
-#         status = st.selectbox("Status", [
-#             "Adopted",
-#             "Discharged",
-#             "Expired",
-#             "Fostered",
-#             "Healthy In Lower Portion",
-#             "Missing",
-#             "Moved To Healthy Area",
-#             "Ready To Be Moved To Healthy Area",
-#             "Ready To Discharge",
-#             "Under Observation",
-#             "Under Treatment"
-#         ])
-
-#     with col1:
-#         # Owner name text input
-#         ownerName = st.text_input("Owner's Name", placeholder="Enter Owner's Name")
-
-#     with col2:
-#         # Owner contact text input
-#         ownerContact = st.text_input("Owner's Contact", placeholder="xxxx-xxxxxxx")
-
-#     # with col1:
-#     # Date input
-#     date = st.date_input('Date', value=datetime.date.today())
-
-#     # with col2:
-#     # address text area
-#     address = st.text_area("Address", placeholder="Enter Address")
-
-# # Submit and Cancel buttons
-#     submitted = st.button("Save Changes")
-#     st.caption(':orange[*Press Esc to Cancel*]')
-
-#     if submitted:
-#         # Check if any of the fields are left unfilled
-#         if not (name and age and gender and type and cageNum and status and ownerName and ownerContact and address and date):
-#             st.error("Please fill in all fields before submitting.")
-#         else:
-#             # Add logic to process form data here
-#             st.success(f"Pet {name} details edited successfully!")
-
+# --------------------------------------------------------------------------------------------------------------------------- #
 # Edit and Delete Remains
 # Filtering Remains
 # Lastly, Aesthestics ofc

@@ -18,8 +18,8 @@ from st_pages import Page, show_pages, add_page_title, hide_pages
 # database information ; will change when db hosting
 
 # server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-# server = 'DESKTOP-HT3NB74' # EMAN
-server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HT3NB74' # EMAN
+# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'PawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -51,7 +51,7 @@ if st.sidebar.button("🔓 Logout"):
 
 hide_pages(["Login"])
 
-st.header("Finances")
+st.header("Finances", divider='orange')
 
 col1, col2, col3, col4 = st.columns(4)
 
@@ -130,7 +130,7 @@ with Donations:
 
             amount = st.text_input("Amount Donated")
 
-        add_donation_button = st.button("⊹ Add Donation")
+        add_donation_button = st.button("Add Donation")
 
         if add_donation_button:
 
@@ -317,7 +317,7 @@ with Donations:
     
     # Add a New Donation Button
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    new_donation = col6.button("⊹ Add New Donation", on_click = add_donation_dialog)
+    new_donation = col6.button("✙ Add New Donation", on_click = add_donation_dialog)
 
     if st.session_state.show_add_donation_dialog:
         add_donation()
@@ -400,7 +400,7 @@ with Revenue:
         with col5:
             remarks = st.text_area("Remarks", placeholder="Bought a collar")
 
-        add_rev_button = st.button("Add Revenue")
+        add_rev_button = st.button("✙ Add Revenue")
 
         if add_rev_button:
 
@@ -609,7 +609,7 @@ with Revenue:
     
     # Add a New Revenue Button
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    new_revenue = col6.button("⊹ Add New Revenue", on_click=add_revenue_dialog, key = "add_revenue")
+    new_revenue = col6.button("✙ Add New Revenue", on_click=add_revenue_dialog, key = "add_revenue")
 
     if st.session_state.show_add_revenue_dialog:
         add_revenue()
@@ -853,7 +853,7 @@ with Transactions:
 
     # Add a New Transaction Button
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    new_transaction = col6.button("⊹ Add Transaction", on_click=add_transaction_dialog , key = "add_transaction")
+    new_transaction = col6.button("✙ Add Transaction", on_click=add_transaction_dialog , key = "add_transaction")
 
     if st.session_state.show_add_transaction_dialog:
         add_transaction()

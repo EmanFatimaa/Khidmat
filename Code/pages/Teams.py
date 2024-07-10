@@ -17,8 +17,8 @@ from sqlalchemy import create_engine
 from st_pages import Page, show_pages, add_page_title, hide_pages
 
 # server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-# server = 'DESKTOP-HT3NB74' # EMAN
-server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA # Note the double backslashes
+server = 'DESKTOP-HT3NB74' # EMAN
+# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA # Note the double backslashes
 
 database = 'PawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -64,7 +64,7 @@ def edit_team_dialog():
 
 col1, col2 = st.columns([1, 3])
 with col1:
-    add_button = st.button("⊹ Add New Member", on_click=add_team_dialog)
+    add_button = st.button("✙ Add New Member", on_click=add_team_dialog)
 with col2:
     update_button = st.button("Update Member Details", on_click = edit_team_dialog)
 

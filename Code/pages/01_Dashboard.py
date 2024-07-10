@@ -45,7 +45,7 @@ logo = Image.open("assets/logo.png")
 st.logo(logo)
 
 #title
-st.header("Dashboard")
+st.header("Dashboard" , divider='orange')
 
 # Custom CSS for centering text
 # st.markdown(

@@ -16,8 +16,8 @@ from sqlalchemy import create_engine
 from st_pages import Page, show_pages, add_page_title, hide_pages
 
 # server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-# server = 'DESKTOP-HT3NB74' # EMAN
-server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA # Note the double backslashes
+server = 'DESKTOP-HT3NB74' # EMAN
+# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA # Note the double backslashes
 
 database = 'PawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -28,7 +28,7 @@ st.set_page_config(page_title="Treatments", page_icon="💊", initial_sidebar_st
 
 # logo
 logo = Image.open("assets/logo.png")
-st.image(logo, width=150)
+st.logo(logo)
 
 # Button Styling
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
@@ -285,7 +285,7 @@ st.write("Filters")
 
 # Add a New treatment Button
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-new_treatment = col6.button("⊹ Add Treatment", on_click = add_treatment_dialog)
+new_treatment = col6.button("✙ Add Treatment", on_click = add_treatment_dialog)
 
 if st.session_state.show_add_treatment_dialog:
     add_treatment()
