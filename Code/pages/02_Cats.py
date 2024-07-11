@@ -244,7 +244,7 @@ def add_cat():
 if 'show_add_cat_dialog' not in st.session_state:
     st.session_state.show_add_cat_dialog = False
 
-col1, col2, col3, col4, col5, col6 = st.columns(6)
+col1, col2, col3, col4, col5, col6 = st.columns([4.4,1.2,1,1,1,1.6])
 
 #Add a new cat button
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
