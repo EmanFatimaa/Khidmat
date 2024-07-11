@@ -6,7 +6,7 @@ from PIL import Image
 
 # connectivity remains
 
-st.set_page_config(page_title="Dashboard", page_icon="📊", initial_sidebar_state="expanded", layout="wide")
+st.set_page_config(page_title="Dashboard", page_icon="📊", initial_sidebar_state="expanded")
 
 # Button Styling
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)

@@ -179,7 +179,13 @@ def add_cat():
     date = st.date_input('Date', value=datetime.date.today(), disabled=True)
 
     # Address text area
-    address = st.text_area("Address", placeholder="Enter Address")
+    addressFromDB = ''
+    if ownerName:
+        with engine.begin() as conn:
+            fetchall = conn.execute(sa.text("Select address from externals where name = :name"), {"name": ownerName}).fetchall()
+            if fetchall:
+                addressFromDB = fetchall[0][0]
+    address = st.text_area("Address", value = addressFromDB , placeholder = "Enter your address" )
 
     # Submit and Cancel buttons
     st.caption(':orange[Press Esc to Cancel]')
@@ -222,16 +228,17 @@ def add_cat():
                     "contactNum": ownerContact, "address": address, 
                     "status": status, "admittedOn": date
                 })
-            # with st.spinner('Adding...'):
-            #     time.sleep(2)
-            #     st.success("Cat with CatID: "+ str(catCodestr)+ " has been added successfully", icon = "🎉")
-            #     st.balloons() # why not working
-            st.rerun()
-                
-        # st.success("Cat with CatID: "+ str(catCodestr)+ " has been added successfully", icon = "🎉")
-        st.session_state.show_add_cat_dialog = False
 
-    # st.success("Cat with CatID: "+ str(catCodestr)+ " has been added successfully", icon = "🎉")
+            with st.spinner('Adding...'):
+                time.sleep(2)
+            st.rerun()
+    st.session_state.show_add_cat_dialog = False
+    
+# with engine.begin() as conn:
+#         catDB = int(pd.read_sql_query(sa.text("select top 1 catID from cats order by catID desc "), conn).iat[0,0])
+#     if catDB == currentCatID:
+#         st.success("Cat with CatID: "+ str(catCodestr)+ " has been added successfully", icon = "🎉")
+#         st.balloons() # why not working
 
 # Check if the session state exists or not
 if 'show_add_cat_dialog' not in st.session_state:
@@ -245,16 +252,6 @@ new_cat = col6.button("✙ Add New Cat", on_click = add_cat_dialog) # ✙, ⊹, 
 
 if st.session_state.show_add_cat_dialog:
     add_cat()
-
-# #Add a new ward button
-# with col5:    
-#     addWard = st.button("Go To Wards")#, on_click= add_cat_dialog -- doesnt work dky..
-    
-# if addWard:
-#     st.switch_page("pages/04_Wards.py") # -- dk if this is the right way to do this
-
-#With form or only form = , st. inputs or form. inputs?
-
 #-------------------------------------------------------------------
 
 #UPDATE DIALOG
@@ -351,7 +348,7 @@ def update_cat(id):
 
     # Submit and Cancel buttons
     st.caption(':orange[Press Esc to Cancel]')
-
+    st.session_state.show_update_cat_dialog = False
 
 #------------------------------------------------------------
 
@@ -370,8 +367,9 @@ def delete_cat(id):
     if col4.button("No ", key = "no"):
         st.rerun()
 
-    st.session_state.show_delete_cat_dialog = False
     st.caption('_:orange[Press Esc to Cancel]_') 
+    st.session_state.show_delete_cat_dialog = False
+    
 
 # Check if the session state exists or not
 if 'show_add_cat_dialog' not in st.session_state:
@@ -383,9 +381,6 @@ if 'show_update_cat_dialog' not in st.session_state:
 if 'show_delete_cat_dialog' not in st.session_state:
     st.session_state.show_delete_cat_dialog = False
 # ------------------------------------------------------------
-# # Assuming 'style.css' is in the same directory
-# load_css("style.css")
-
 #VIEW CAT DETAILS
 @st.experimental_dialog("View Cat's Details")
 def view_cat(id):
@@ -398,7 +393,7 @@ def view_cat(id):
         addressDB = conn.execute(sa.text("select address from Externals where externalID in (select externalID from cats where catID = :catID)") ,{"catID": extract_cat_number(id)}).fetchall()[0]
 
     if cat_table["selection"]["rows"]: #if a row is selected
-            selectedID = cat_table_df.iat[cat_table["selection"]["rows"][0],0]
+            # selectedID = cat_table_df.iat[cat_table["selection"]["rows"][0],0]
             # print("selected cat id:", selectedID)
             selectedCatName = cat_table_df.iat[cat_table["selection"]["rows"][0],1]
             # print("selected cat name:", selectedCatName)
@@ -420,7 +415,7 @@ def view_cat(id):
         
         st.write("***Name:***",selectedCatName )
         st.write("***Cage ID:***", selectedCage)
-        st.write("***Admitted On:***",selectedID)
+        st.write("***Admitted On:***",selectedDate)
 
         if str(int(genderDB[0])) == "1":
             st.write("***Gender:***", "Male")
@@ -440,12 +435,29 @@ def view_cat(id):
 
     with st.expander(":orange[Treatment related Details]", expanded = False):
         # with st.table():
-        st.write("*For viewing treatments log for cat ID:*", id, "*kindly click the button below to be redirected to treatments page where you can filter the treatments log for the cat ID:*", id)
-        treatment = st.button("Go To Treatments")
+        # st.write("*To add a new treatment kindly click the button below to be redirected to treatments page*" )
+        col1, col2= st.columns([1.7, 1])
+        
+        with col2:
+            treatment = st.button(" ✙ Add Treatment")
         if treatment:
             st.switch_page("pages/03_Treatments.py") 
+
+        with engine.begin() as conn:
+            treatment_table_df = pd.read_sql_query(sa.text("""
+            select dateTime as 'Date/Time', temperature as 'Temp', treatment as 'Treatment' , users.userName as 'Given by'
+            from treatment
+            join cats on treatment.catID = cats.catID
+            join users on treatment.userID = users.userID"""), conn)
+
+        treatment_table_df["Date/Time"] =pd.to_datetime(treatment_table_df["Date/Time"]).dt.strftime('%d %b %Y, %I:%M %p')
+        st.write("Table:")
+        st.table(treatment_table_df)
+        st.write("Dataframe:")
+        st.dataframe(treatment_table_df, width = 600, height = 110, hide_index = True)
+
     st.caption('_:orange[Press Esc to Cancel]_') 
-    
+    st.session_state.show_view_cat_dialog = False
 # ------------------------------------------------------------
 #Table for Cats:
 with engine.begin() as conn:
