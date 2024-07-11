@@ -346,10 +346,12 @@ def update_cat(id):
         # addressValue = conn.execute("select address from externals where externalID in (select externalID from cats where catID = :catID)", {"catID": extract_cat_number(id)}).fetchall()[0][0]
     address = st.text_area("Address", placeholder="Enter Address")
 
-    # Submit and Cancel buttons
+    if st.button("Update"):
+        st.session_state.show_update_cat_dialog = False
+        st.rerun()
+    # Submit button
     st.caption(':orange[Press Esc to Cancel]')
-    st.session_state.show_update_cat_dialog = False
-
+    
 #------------------------------------------------------------
 
 #DELETE
