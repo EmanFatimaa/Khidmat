@@ -1,0 +1,33 @@
+erd confirm
+front end
+hosting
+documentation
+Filtering
+
+--------------------------------------------
+
+
+Checkboxes border should  
+Cats images should be there
+Cats View should be tabs instead of headers
+Aesthestics at the end
+
+Myssql men convert karna pare ga then we can do hosting easily.
+
+Shared Hosting: streamlit should be there as well.
+Cloud Hosting: Azure
+Docariztion: there might be some free services as well. Octato, maybe some other free services.
+
+Shared Hosting would be better because it is much cheaper and it is a small scale hi. Local Pakistani solutions. 
+.pk domains for website (remember to have streamlit hi)
+
+There would be yearly cost and security concerns with online hosting as well. maybe better to keep it local.
+
+Add new things to a list and prioritize which things to do. Maintain that sheet and there are some things that we just would not do. Share that sheet to them and bas ye ye cheezen we are doing, baaqi other khidmat karsakte
+
+Give the ownership to Github Repo to them, technically they do own the code.
+
+We can have 1lakh of salary. We did it at the right time.
+
+Testimonials and stuff we can ask. Video is very important. Best Khidmat Award lesgooo
+

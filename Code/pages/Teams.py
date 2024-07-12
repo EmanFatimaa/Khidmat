@@ -16,8 +16,8 @@ from sqlalchemy import create_engine
 # custom streamlit imports
 from st_pages import Page, show_pages, add_page_title, hide_pages
 
-# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA # Note the double backslashes
 
 database = 'PawRescue'
