@@ -32,7 +32,6 @@ show_pages(
         Page("pages/03_Treatments.py", "Treatments", "💊"),
         Page("pages/04_Wards.py", "Wards", "🛏️"),
         Page("pages/05_Finances.py", "Finances", "💰"),
-        # Page("pages/Connectivity.py", "Connection Test", ":books:"),
         Page("LoginScreen.py", "Login", "🔐"),
         Page("pages/Teams.py", "Teams", "👥"),
     ]
