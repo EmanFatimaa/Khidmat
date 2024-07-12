@@ -264,6 +264,16 @@ def update_cat(id):
     # Creating columns for better formatting 
     col1, col2 = st.columns(2)
 
+    if cat_table["selection"]["rows"]: #if a row is selected
+            # selectedID = cat_table_df.iat[cat_table["selection"]["rows"][0],0]
+            selectedCatName = cat_table_df.iat[cat_table["selection"]["rows"][0],1]
+            selectedCage = cat_table_df.iat[cat_table["selection"]["rows"][0],6]
+            selectedStatus = cat_table_df.iat[cat_table["selection"]["rows"][0],7]
+            selectedOwnerName = cat_table_df.iat[cat_table["selection"]["rows"][0],2]
+            selectedOwnerContact = cat_table_df.iat[cat_table["selection"]["rows"][0],3]
+            selectedDate = cat_table_df.iat[cat_table["selection"]["rows"][0],4]
+            selectedType = cat_table_df.iat[cat_table["selection"]["rows"][0],5]
+
     with col1:
         
         #Cat ID Field
@@ -274,35 +284,28 @@ def update_cat(id):
             ageValue= conn.execute(sa.text("Select age from cats where catID = :catID") ,{"catID": extract_cat_number(id)}).fetchall()[0][0]
         age = st.number_input("Age (in years)", step = 0.1, value = float(ageValue))
 
-         # Type field
+         # Type field -- IBAD : selected type hai iopar
         with engine.begin() as conn:
             typeSelection = pd.read_sql_query(sa.text("SELECT type FROM Type"), conn)
         type = st.selectbox("Type", typeSelection["type"].tolist())
 
-        # # Type field
-        # with engine.begin() as conn:
-        #     typeValue = conn.execute(sa.text("SELECT type FROM Type where typeID in (select typeID from cats where catID = :catID)", {"catID":  extract_cat_number(id)}).fetchall())[0][0]
-        # type = st.selectbox("Type", typeValue["type"].tolist())
-
     with col2:
-        name = st.text_input("Cat Name", placeholder="Enter Cat's Name")
+        #Cat name field
+        name = st.text_input("Cat Name", value = selectedCatName)
 
-        # with engine.begin() as conn:
-        #     catNameValue = conn.execute(sa.text("Select catName from cats where  catID = :catID)"), {"catID": extract_cat_number(id)}).fetchall()[0]
-        #     # catNameValue = conn.execute(sa.text("Select name from Externals where externalID = (select externalID from cats where catID = :catID)"), {"catID": extract_cat_number(id)}).fetchall()[0][0]
-        # catName = st.text_input("Cat Name", value =  catNameValue)
-        
+        # # Gender field
         # Gender field
-        
         with engine.begin() as conn:
             genderSelection = pd.read_sql_query(sa.text("SELECT gender FROM Gender"), conn)
         gender = st.selectbox("Gender", genderSelection["gender"].tolist())
-        
-        # with engine.begin() as conn:
-        #     genderValue = int(conn.execute(sa.text("SELECT gender FROM Gender where genderID in (select genderID from cats where catID = : catID"), {"catID": extract_cat_number(id)}).fetchall()[0][0])
-        #     print(genderValue)
-        # gender = st.selectbox("Gender", genderValue["gender"].tolist())
 
+        # with engine.begin() as conn:
+        #     genderSelection = pd.read_sql_query(sa.text("SELECT gender FROM Gender"), conn)
+        #     genderValue = conn.execute(sa.text("SELECT genderid from cats where catID = :catID"), {"catID": id}).fetchall()[0][0]
+        # genderDF = genderSelection["gender"].tolist() 
+        # finalGenderIndex = genderDF.index(genderValue)
+        # gender = st.selectbox("Gender", genderDF, index = finalGenderIndex)
+     
         # Cage no field
         with engine.begin() as conn:
             cageID = pd.read_sql_query(sa.text("SELECT cageID FROM Cage WHERE cageID NOT IN (SELECT cageID FROM Cats)"), conn)  # OR: select cageID from Cage where cageStatus = 'Free'
@@ -342,9 +345,15 @@ def update_cat(id):
     date = st.date_input('Date', value=datetime.date.today())
 
     # Address text area
-    # with engine.begin() as conn:
-        # addressValue = conn.execute("select address from externals where externalID in (select externalID from cats where catID = :catID)", {"catID": extract_cat_number(id)}).fetchall()[0][0]
-    address = st.text_area("Address", placeholder="Enter Address")
+    # Address text area
+    addressFromDB = ''
+    if ownerName:
+        with engine.begin() as conn:
+            fetchall = conn.execute(sa.text("Select address from externals where name = :name"), {"name": ownerName}).fetchall()
+            if fetchall:
+                addressFromDB = fetchall[0][0]
+    address = st.text_area("Address", value = addressFromDB , placeholder = "Enter your address" )
+
 
     if st.button("Update"):
         st.session_state.show_update_cat_dialog = False
