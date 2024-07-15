@@ -21,9 +21,9 @@ import yaml
 from yaml.loader import SafeLoader
 
 # Note the double backslashes
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'PawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -45,12 +45,12 @@ authenticator = stauth.Authenticate(
 
 name, logged_in, user_name = authenticator.login()
 
-st.sidebar.write(f"Logged in as {name}")
+st.sidebar.write(f"Logged in as: _:orange[{name}]_")
 
 with engine.connect() as conn:
     role = conn.execute(sa.text("select roleDesc from InternalRole, Users where Users.internalRoleID = InternalRole.internalRoleID and Users.userName = :name"), {"name":name}).fetchone()[0]
 
-st.sidebar.write(f"Role: {role}")
+st.sidebar.write(f"Role: _:orange[{role}]_")
 # logo
 logo = Image.open("assets/logo.png")
 st.logo(logo)
@@ -305,113 +305,39 @@ with engine.begin() as conn:
         Users ON Treatment.UserID = Users.UserID
     """), conn)
 
+
+treatment_table_df['Date'] = pd.to_datetime(treatment_table_df['Date']).dt.strftime('%d %b %Y')
 # --------------------------------------------------------------------------------------------------------------------------------filters code start
 st.write("Filters")
-
-# Checkbox options for filtering
-col1, col2= st.columns(2)
-with col1:
-    filter_by_date = st.checkbox("Filter by Date")
-with col2:
-    filter_by_cat_id = st.checkbox("Filter by Cat ID")
-
+dates2 = treatment_table_df['Date'].unique()
+cat_id = treatment_table_df['CatID'].unique()
 
 col1, col2 = st.columns(2)
 with col1:
-    if filter_by_date:
-        dates = treatment_table_df["Date"].unique()
-        selected_date = st.selectbox("Select Date", dates)
-
+    selected_date2 = st.selectbox("Select Date", options=[""] + list(dates2), index=0, placeholder='Choose an option')
 with col2:
-    if filter_by_cat_id:
-        cat_ids = treatment_table_df['CatID'].unique()
-        selected_cat_id = st.selectbox("Select Cat ID", cat_ids)
+    selected_mode2 = st.selectbox("Select CatID", options=[""] + list(cat_id), index=0, placeholder='Choose an option')
 
-# Apply filters based on the selected options
-with engine.begin() as conn:
-    if filter_by_date and filter_by_cat_id:
-        query = sa.text(f"""
-            SELECT 
-                treatmentID as TreatmentID,
-                Cats.CatID, 
-                Cats.CatName AS Name, 
-                Cats.CageID AS CageNo, 
-                Treatment.Temperature AS Temperature, 
-                Treatment.Treatment AS Treatment, 
-                CONVERT(VARCHAR, Treatment.DateTime, 108) AS Time, 
-                convert(date, dateTime) as Date,
-                Users.UserName AS GivenBy
-            FROM 
-                Cats
-            INNER JOIN 
-                Treatment ON Treatment.CatID = Cats.CatID
-            INNER JOIN 
-                Users ON Treatment.UserID = Users.UserID
-            WHERE 
-                convert(date, dateTime) = :selected_date
-                AND Cats.CatID = :selected_cat_id
-        """)
-        filtered_df = pd.read_sql_query(query, conn, params={"selected_date": selected_date, "selected_cat_id": selected_cat_id})
+if selected_date2:
+    filtered_df = treatment_table_df[treatment_table_df['Date'] == selected_date2]
+else:
+    filtered_df = treatment_table_df
 
-    elif filter_by_date:
-        query = sa.text(f"""
-            SELECT 
-                treatmentID as TreatmentID,
-                Cats.CatID, 
-                Cats.CatName AS Name, 
-                Cats.CageID AS CageNo, 
-                Treatment.Temperature AS Temperature, 
-                Treatment.Treatment AS Treatment, 
-                CONVERT(VARCHAR, Treatment.DateTime, 108) AS Time, 
-                convert(date, dateTime) as Date,
-                Users.UserName AS GivenBy
-            FROM 
-                Cats
-            INNER JOIN 
-                Treatment ON Treatment.CatID = Cats.CatID
-            INNER JOIN 
-                Users ON Treatment.UserID = Users.UserID
-            WHERE 
-                convert(date, dateTime) = :selected_date
-        """)
-        filtered_df = pd.read_sql_query(query, conn, params={"selected_date": selected_date})
+if selected_mode2:
+    filtered_df = filtered_df[filtered_df['CatID'] == selected_mode2]
 
-    elif filter_by_cat_id:
-        query = sa.text(f"""
-            SELECT 
-                treatmentID as TreatmentID,
-                Cats.CatID, 
-                Cats.CatName AS Name, 
-                Cats.CageID AS CageNo, 
-                Treatment.Temperature AS Temperature, 
-                Treatment.Treatment AS Treatment, 
-                CONVERT(VARCHAR, Treatment.DateTime, 108) AS Time, 
-                convert(date, dateTime) as Date,
-                Users.UserName AS GivenBy
-            FROM 
-                Cats
-            INNER JOIN 
-                Treatment ON Treatment.CatID = Cats.CatID
-            INNER JOIN 
-                Users ON Treatment.UserID = Users.UserID
-            WHERE 
-                Cats.CatID = :selected_cat_id
-        """)
-        filtered_df = pd.read_sql_query(query, conn, params={"selected_cat_id": selected_cat_id})
+st.divider()
 
-    else:
-        filtered_df = treatment_table_df
-# ----------------------------------------------------------------------------------------------------------------------------------filter code end
+col1, col2, col3, col4, col5, col6 = st.columns(6)
 
-# Convert 'Admitted On' to datetime and format as "date month year"
-filtered_df['Date'] = pd.to_datetime(filtered_df['Date']).dt.strftime('%d %b %Y')
+ # Add a New Transaction Button
+st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
+new_transaction = col6.button("✙ Add Treatment", on_click=add_treatment_dialog)
+
 
 # Display the filtered table
 treatment_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, on_select='rerun', selection_mode='single-row')
 
-# Add a New treatment Button
-st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-new_treatment = col6.button("✙ Add Treatment", on_click = add_treatment_dialog)
 
 if st.session_state.show_add_treatment_dialog:
     add_treatment()
@@ -432,3 +358,4 @@ if treatment_table["selection"]["rows"]: # if a row is selected
 
 else:
     print("No row selected")
+

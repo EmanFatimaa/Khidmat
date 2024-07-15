@@ -16,9 +16,9 @@ import yaml
 from yaml.loader import SafeLoader
 
 # Note the double backslashes
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'PawRescue' # EMAN :'Khidmat'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -40,12 +40,12 @@ authenticator = stauth.Authenticate(
 
 name, logged_in, user_name = authenticator.login()
 
-st.sidebar.write(f"Logged in as {name}")
+st.sidebar.write(f"Logged in as: _:orange[{name}]_")
 
 with engine.connect() as conn:
     role = conn.execute(sa.text("select roleDesc from InternalRole, Users where Users.internalRoleID = InternalRole.internalRoleID and Users.userName = :name"), {"name":name}).fetchone()[0]
 
-st.sidebar.write(f"Role: {role}")
+st.sidebar.write(f"Role: _:orange[{role}]_")
 
 # logo
 logo = Image.open("assets/logo.png")
@@ -138,7 +138,7 @@ def Details(name):
     total = st.text_input("Capacity", value=capacity, disabled=True)
     
     with engine.begin() as conn:
-        wards_table = conn.execute(sa.text("""
+        result = conn.execute(sa.text("""
                 SELECT 
                 Cage.cageID as CageID,
                 Cats.catID as CatID,
@@ -155,7 +155,10 @@ def Details(name):
                 Cats ON Cage.cageID = Cats.cageID 
             WHERE name = :name"""), {"name": name}).fetchall()
         
+        
+    wards_table = pd.DataFrame(result, columns=['CageID', 'CatID', 'CatName', 'Date', 'Status'])
     # The Date Formatting remains here
+    wards_table['Date'] = pd.to_datetime(wards_table['Date']).dt.strftime('%d %b %Y')
 
     final_table = st.dataframe(wards_table, width=1500, height=600, hide_index = True, selection_mode="single-row", on_select='rerun')
 
@@ -282,8 +285,9 @@ def add_cages():
                     VALUES (:cageID, :wardID, :cageStatusID, :date)
                 """), {"cageID": cage_id + i, "wardID": wardID, "cageStatusID": 2, "date": date})
 
-        st.session_state.show_add_cages_dialog = False
         st.rerun()
+    st.session_state.show_add_cages_dialog = False
+    st.caption('_:orange[Press Esc to Cancel]_')
 
 
 if 'show_add_ward_dialog' not in st.session_state:

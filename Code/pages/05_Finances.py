@@ -20,12 +20,14 @@ import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
 
+from streamlit_dynamic_filters import DynamicFilters
+
 # database information ; will change when db hosting
 
 # Note the double backslashes
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'PawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -47,12 +49,12 @@ authenticator = stauth.Authenticate(
 
 name, logged_in, user_name = authenticator.login()
 
-st.sidebar.write(f"Logged in as {name}")
+st.sidebar.write(f"Logged in as: _:orange[{name}]_")
 
 with engine.connect() as conn:
     role = conn.execute(sa.text("select roleDesc from InternalRole, Users where Users.internalRoleID = InternalRole.internalRoleID and Users.userName = :name"), {"name":name}).fetchone()[0]
 
-st.sidebar.write(f"Role: {role}")
+st.sidebar.write(f"Role: _:orange[{role}]_")
 
 # logo
 logo = Image.open("assets/logo.png")
@@ -129,6 +131,22 @@ with Donations:
             st.session_state.show_add_revenue_dialog = False
             st.session_state.show_update_donation_dialog = False
             st.session_state.show_delete_donation_dialog = True
+
+
+    def display_unique_filters(dynamic_filters, filters_name, num_columns=2):
+        unique_keys = {filter_name: f"{filters_name}_{filter_name}" for filter_name in dynamic_filters.filters}
+        
+        col1, col2 = st.columns(num_columns)
+        with col1:
+            for filter_name in dynamic_filters.filters:
+                options = sorted(dynamic_filters.df[filter_name].dropna().unique())
+                selected = st.multiselect(
+                    f"Select {filter_name}", 
+                    options, 
+                    key=unique_keys[filter_name]
+                )
+                dynamic_filters.df = dynamic_filters.df[dynamic_filters.df[filter_name].isin(selected) | (dynamic_filters.df[filter_name].isna())]
+        return dynamic_filters.df
 
     @st.experimental_dialog("Add New Donation")
     def add_donation():
@@ -337,20 +355,41 @@ with Donations:
 	                      date as 'Date' 
                     from Donations, Externals where Donations.donorID = Externals.externalID"""), conn)
     
-    # Filtering and Final Table
+
+    donation_table_df['Date'] = pd.to_datetime(donation_table_df['Date']).dt.strftime('%d %b %Y')
+
     st.write("Filters")
-    
+    dates = donation_table_df['Date'].unique()
+    modes = donation_table_df['Mode'].unique()
+
+    col1, col2 = st.columns(2)
+    with col1:
+        selected_date = st.selectbox("Select Date", options=[""] + list(dates), index=0, placeholder='Choose an option', key='donation_date_filter')
+    with col2:
+        selected_mode = st.selectbox("Select Mode", options=[""] + list(modes), index=0, placeholder='Choose an option', key='donation_mode_filter')
+
+    # Apply filters
+    if selected_date:
+        filtered_df = donation_table_df[donation_table_df['Date'] == selected_date]
+    else:
+        filtered_df = donation_table_df
+
+    if selected_mode:
+        filtered_df = filtered_df[filtered_df['Mode'] == selected_mode]
+
+    st.divider()
+
     col1, col2, col3, col4, col5, col6 = st.columns(6)
     
     # Add a New Donation Button
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    new_donation = col6.button("✙ Add New Donation", on_click = add_donation_dialog)
+    new_donation = col6.button("✙ Add Donation", on_click = add_donation_dialog)
 
     if st.session_state.show_add_donation_dialog:
         add_donation()
 
     # Display the Table
-    donation_table = st.dataframe(donation_table_df, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
+    donation_table = st.dataframe(filtered_df, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
 
     # Update and Delete Buttons (Only for Admin though)
     if donation_table["selection"]["rows"]: # if a row is selected
@@ -629,20 +668,43 @@ with Revenue:
         date as 'Date' 
         from Revenue, Externals where Revenue.buyerID = Externals.externalID"""), conn)
     
+    revenue_table_df['Date'] = pd.to_datetime(revenue_table_df['Date']).dt.strftime('%d %b %Y')
+
     # Filtering and Final Table
-    st.write("Filtering remains for this tab.")
+    st.write("Filters")
+    dates = revenue_table_df['Date'].unique()
+    modes = revenue_table_df['Mode'].unique()
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        selected_date = st.selectbox("Select Date", options=[""] + list(dates), index=0, placeholder='Choose a Date')
+
+    with col2:
+        selected_mode = st.selectbox("Select Mode", options=[""] + list(modes), index=0, placeholder='Choose a Mode')
+
+    # Apply filters
+    if selected_date:
+        filtered_df = revenue_table_df[revenue_table_df['Date'] == selected_date]
+    else:
+        filtered_df = revenue_table_df
+
+    if selected_mode:
+        filtered_df = filtered_df[filtered_df['Mode'] == selected_mode]
+
+    st.divider()
 
     col1, col2, col3, col4, col5, col6 = st.columns(6)
     
     # Add a New Revenue Button
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    new_revenue = col6.button("✙ Add New Revenue", on_click=add_revenue_dialog, key = "add_revenue")
+    new_revenue = col6.button("✙ Add Revenue", on_click=add_revenue_dialog, key = "add_revenue")
 
     if st.session_state.show_add_revenue_dialog:
         add_revenue()
     
     # Display the Table
-    revenue_table = st.dataframe(revenue_table_df, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row")
+    revenue_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, on_select="rerun", selection_mode="single-row")
 
     # Update and Delete Buttons (Only for Admin though)
     if revenue_table["selection"]["rows"]: # if a row is selected
@@ -873,10 +935,32 @@ with Transactions:
                         select transactionID as 'Transaction ID', billFor as 'Bill For', amount as 'Amount', 
                         (select mode from Mode where Mode.modeID = Transactions.modeID) as 'Mode', remarks as 'Remarks', date as 'Date' from Transactions where modeID is not NULL"""), conn)
         
-    # Filtering and Final Table
-    st.write("Filtering remains for this tab.")
+
+    transaction_table_df['Date'] = pd.to_datetime(transaction_table_df['Date']).dt.strftime('%d %b %Y')
+
     
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
+    # Filtering and Final Table
+    st.write("Filters")
+    dates2 = transaction_table_df['Date'].unique()
+    modes2 = transaction_table_df['Mode'].unique()
+
+    col1, col2 = st.columns(2)
+    with col1:
+        selected_date2 = st.selectbox("Select Date", options=[""] + list(dates2), index=0, placeholder='Choose a Date', key='date_filter')
+    with col2:
+        selected_mode2 = st.selectbox("Select Mode", options=[""] + list(modes2), index=0, placeholder='Choose a Mode', key='mode_filter')
+
+    if selected_date2:
+        filtered_df = transaction_table_df[transaction_table_df['Date'] == selected_date2]
+    else:
+        filtered_df = transaction_table_df
+
+    if selected_mode2:
+        filtered_df = filtered_df[filtered_df['Mode'] == selected_mode2]
+
+    st.divider()
+    
+    col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 2, 2, 1, 2])
 
     # Add a New Transaction Button
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
@@ -886,7 +970,7 @@ with Transactions:
         add_transaction()
     
     # Display the Table
-    transaction_table = st.dataframe(transaction_table_df, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
+    transaction_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, on_select="rerun", selection_mode="single-row") 
 
     # Update and Delete Buttons (Only for Admin though)
     if transaction_table["selection"]["rows"]: # if a row is selected

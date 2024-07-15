@@ -18,9 +18,9 @@ from yaml.loader import SafeLoader
 # database information ; will change when db hosting
 
 # Note the double backslashes
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'PawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -42,12 +42,12 @@ authenticator = stauth.Authenticate(
 
 name, logged_in, user_name = authenticator.login()
 
-st.sidebar.write(f"Logged in as {name}")
+st.sidebar.write(f"Logged in as: _:orange[{name}]_")
 
 with engine.connect() as conn:
     role = conn.execute(sa.text("select roleDesc from InternalRole, Users where Users.internalRoleID = InternalRole.internalRoleID and Users.userName = :name"), {"name":name}).fetchone()[0]
 
-st.sidebar.write(f"Role: {role}")
+st.sidebar.write(f"Role: _:orange[{role}]_")
 
 # connectivity remains
 
