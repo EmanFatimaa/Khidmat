@@ -16,6 +16,11 @@ from sqlalchemy import create_engine
 #custome streamlit imports
 from st_pages import Page, show_pages, add_page_title, hide_pages
 
+# streamlit-authenticator package
+import streamlit_authenticator as stauth
+import yaml
+from yaml.loader import SafeLoader
+
 # database information ; will change when db hosting
 
 # Note the double backslashes
@@ -23,12 +28,32 @@ server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
-database = 'PawRescue' # EMAN 'Khidmat'
+database = 'PawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
 engine = create_engine(connection_url)
 
 st.set_page_config(page_title="Cats", page_icon="🐈", layout="wide", initial_sidebar_state="expanded")
+
+with open('../config.yaml') as file:
+    config = yaml.load(file, Loader=SafeLoader)
+
+authenticator = stauth.Authenticate(
+    config['credentials'],
+    config['cookie']['name'],
+    config['cookie']['key'],
+    config['cookie']['expiry_days'],
+    config['pre-authorized']
+)
+
+name, logged_in, user_name = authenticator.login()
+
+st.sidebar.write(f"Logged in as {name}")
+
+with engine.connect() as conn:
+    role = conn.execute(sa.text("select roleDesc from InternalRole, Users where Users.internalRoleID = InternalRole.internalRoleID and Users.userName = :name"), {"name":name}).fetchone()[0]
+
+st.sidebar.write(f"Role: {role}")
 
 # Logo
 logo = Image.open("assets/logo.png")
@@ -49,6 +74,7 @@ st.markdown(
 )
 
 if st.sidebar.button("🔓 Logout"):
+    authenticator.logout(location = "unrendered")
     st.switch_page("LoginScreen.py")
 
 hide_pages(["Login"])
@@ -230,9 +256,11 @@ def add_cat():
                     "status": status, "admittedOn": date
                 })
 
-            with st.spinner('Adding...'):
+            with st.spinner('Adding...'): # is this really necessary? lmao
                 time.sleep(2)
+
             st.rerun()
+            
     st.session_state.show_add_cat_dialog = False
     
 # with engine.begin() as conn:
@@ -470,8 +498,10 @@ def view_cat(id):
 
     st.caption('_:orange[Press Esc to Cancel]_') 
     st.session_state.show_view_cat_dialog = False
+
 # ------------------------------------------------------------
-#Table for Cats:
+
+# Table for Cats:
 with engine.begin() as conn:
     cat_table_df = pd.read_sql_query(sa.text(""" 
                         select catID as 'Cat ID', catName as 'Cat Name', Externals.name as 'Owner/Reporter', Externals.contactNum as 'Contact Number', admittedOn as 'Admitted On',
@@ -520,7 +550,8 @@ if cat_table["selection"]["rows"]: #if a row is selected
 else:
     print("No row selected")
 
-# --------------------------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------------------------#
+
 # Edit and Delete Remains
 # Filtering Remains
 # Lastly, Aesthestics ofc

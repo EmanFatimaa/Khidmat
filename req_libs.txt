@@ -1,8 +1,10 @@
 python
-streamlit 1.36.0
+streamlit==1.36.0
 sqlalchemy
 pandas
 PIL
 plotly
 millify
 io
+streamlit-authenticator
+yaml

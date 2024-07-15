@@ -15,6 +15,11 @@ from sqlalchemy import create_engine
 # custom streamlit imports
 from st_pages import Page, show_pages, add_page_title, hide_pages
 
+# streamlit-authenticator package
+import streamlit_authenticator as stauth
+import yaml
+from yaml.loader import SafeLoader
+
 # database information ; will change when db hosting
 
 # Note the double backslashes
@@ -28,6 +33,26 @@ connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_st
 engine = create_engine(connection_url)
 
 st.set_page_config(page_title="Finances", page_icon="💰", layout= "wide",initial_sidebar_state="expanded")
+
+with open('../config.yaml') as file:
+    config = yaml.load(file, Loader=SafeLoader)
+
+authenticator = stauth.Authenticate(
+    config['credentials'],
+    config['cookie']['name'],
+    config['cookie']['key'],
+    config['cookie']['expiry_days'],
+    config['pre-authorized']
+)
+
+name, logged_in, user_name = authenticator.login()
+
+st.sidebar.write(f"Logged in as {name}")
+
+with engine.connect() as conn:
+    role = conn.execute(sa.text("select roleDesc from InternalRole, Users where Users.internalRoleID = InternalRole.internalRoleID and Users.userName = :name"), {"name":name}).fetchone()[0]
+
+st.sidebar.write(f"Role: {role}")
 
 # logo
 logo = Image.open("assets/logo.png")
@@ -48,6 +73,7 @@ st.markdown(
 )
 
 if st.sidebar.button("🔓 Logout"):
+    authenticator.logout(location = "unrendered")
     st.switch_page("LoginScreen.py")
 
 hide_pages(["Login"])

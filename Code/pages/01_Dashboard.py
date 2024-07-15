@@ -4,9 +4,52 @@ import plotly.express as px # for pie chart
 from st_pages import Page, show_pages, add_page_title, hide_pages
 from PIL import Image
 
-# connectivity remains
+import sqlalchemy as sa
 
-st.set_page_config(page_title="Dashboard", page_icon="📊", initial_sidebar_state="expanded")
+# custom imports
+from sqlalchemy.engine import URL
+from sqlalchemy import create_engine
+
+# streamlit-authenticator package
+import streamlit_authenticator as stauth
+import yaml
+from yaml.loader import SafeLoader
+
+# database information ; will change when db hosting
+
+# Note the double backslashes
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-HT3NB74' # EMAN
+# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+
+database = 'PawRescue'
+connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
+connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
+engine = create_engine(connection_url)
+
+st.set_page_config(page_title="Dashboard", page_icon="📊", initial_sidebar_state="expanded", layout="wide") # I think we should keep it wide and make it work this way? More information maybe or something.
+
+with open('../config.yaml') as file:
+    config = yaml.load(file, Loader=SafeLoader)
+
+authenticator = stauth.Authenticate(
+    config['credentials'],
+    config['cookie']['name'],
+    config['cookie']['key'],
+    config['cookie']['expiry_days'],
+    config['pre-authorized']
+)
+
+name, logged_in, user_name = authenticator.login()
+
+st.sidebar.write(f"Logged in as {name}")
+
+with engine.connect() as conn:
+    role = conn.execute(sa.text("select roleDesc from InternalRole, Users where Users.internalRoleID = InternalRole.internalRoleID and Users.userName = :name"), {"name":name}).fetchone()[0]
+
+st.sidebar.write(f"Role: {role}")
+
+# connectivity remains
 
 # Button Styling
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
@@ -23,6 +66,7 @@ st.markdown(
 ) 
 
 if st.sidebar.button("🔓 Logout"):
+    authenticator.logout(location = "unrendered")
     st.switch_page("LoginScreen.py")
 
 show_pages(
@@ -33,7 +77,7 @@ show_pages(
         Page("pages/04_Wards.py", "Wards", "🛏️"),
         Page("pages/05_Finances.py", "Finances", "💰"),
         Page("LoginScreen.py", "Login", "🔐"),
-        Page("pages/Teams.py", "Teams", "👥"),
+        Page("pages/06_Teams.py", "Teams", "👥"),
     ]
 )
 
@@ -45,21 +89,6 @@ st.logo(logo)
 
 #title
 st.header("Dashboard" , divider='orange')
-
-# Custom CSS for centering text
-# st.markdown(
-#     """
-#     <style>
-#     .center-text {
-#         text-align: center;
-#     }
-#     </style>
-#     """,
-#     unsafe_allow_html=True
-# )
-
-# Using HTML within st.markdown to center-align text
-# st.markdown("<h1 class='center-text'>Dashboard</h1>", unsafe_allow_html=True)
 
 # Boxes
 

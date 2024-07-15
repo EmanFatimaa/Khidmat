@@ -10,6 +10,11 @@ from millify import prettify
 from sqlalchemy.engine import URL
 from sqlalchemy import create_engine
 
+# streamlit-authenticator package
+import streamlit_authenticator as stauth
+import yaml
+from yaml.loader import SafeLoader
+
 # Note the double backslashes
 server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
@@ -21,6 +26,26 @@ connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_st
 engine = create_engine(connection_url)
 
 st.set_page_config(page_title="Wards", page_icon="🛏️", initial_sidebar_state="expanded", layout='wide')
+
+with open('../config.yaml') as file:
+    config = yaml.load(file, Loader=SafeLoader)
+
+authenticator = stauth.Authenticate(
+    config['credentials'],
+    config['cookie']['name'],
+    config['cookie']['key'],
+    config['cookie']['expiry_days'],
+    config['pre-authorized']
+)
+
+name, logged_in, user_name = authenticator.login()
+
+st.sidebar.write(f"Logged in as {name}")
+
+with engine.connect() as conn:
+    role = conn.execute(sa.text("select roleDesc from InternalRole, Users where Users.internalRoleID = InternalRole.internalRoleID and Users.userName = :name"), {"name":name}).fetchone()[0]
+
+st.sidebar.write(f"Role: {role}")
 
 # logo
 logo = Image.open("assets/logo.png")
@@ -41,6 +66,7 @@ st.markdown(
 )
 
 if st.sidebar.button("🔓 Logout"):
+    authenticator.logout(location = "unrendered")
     st.switch_page("LoginScreen.py")
 
 hide_pages(["Login"])
@@ -56,12 +82,6 @@ with engine.begin() as conn:
 # Combine existing wards with session state wards
 combined_wards_df = pd.concat([existing_wards, st.session_state.wards_df]).drop_duplicates(subset=["Name", "code"]).reset_index(drop=True)
 
-# Search functionality
-selected = st.text_input("", placeholder="🔍 Search...")
-
-# if selected:
-#     combined_wards_df = combined_wards_df[combined_wards_df.apply(lambda row: selected.lower() in row.astype(str).str.lower().to_string(), axis=1)]
-
 st.header("Wards", divider='orange')
 
 # Define the dialog for adding a new ward
@@ -69,33 +89,42 @@ def add_ward_dialog():
     st.session_state.show_add_ward_dialog = True
     st.session_state.show_update_ward_dialog = False
     st.session_state.show_delete_ward_dialog = False
-    st.session_state.show_delete_wardDetails_dialog = False
-    st.session_state.show_update_wardDetails_dialog = False
+    st.session_state.show_add_cages_dialog = False
+    # st.session_state.show_delete_wardDetails_dialog = False
+    # st.session_state.show_update_wardDetails_dialog = False
 
 def update_ward_dialog():
     st.session_state.show_update_ward_dialog = True
     st.session_state.show_add_ward_dialog = False
     st.session_state.show_delete_ward_dialog = False
-    st.session_state.show_delete_wardDetails_dialog = False
-    st.session_state.show_update_wardDetails_dialog = False
+    st.session_state.show_add_cages_dialog = False
+    # st.session_state.show_delete_wardDetails_dialog = False
+    # st.session_state.show_update_wardDetails_dialog = False
 
 def delete_ward_dialog():
     st.session_state.show_update_ward_dialog = False
     st.session_state.show_add_ward_dialog = False
     st.session_state.show_delete_ward_dialog = True
-    st.session_state.show_delete_wardDetails_dialog = False
-    st.session_state.show_update_wardDetails_dialog = False
+    st.session_state.show_add_cages_dialog = False
+    # st.session_state.show_delete_wardDetails_dialog = False
+    # st.session_state.show_update_wardDetails_dialog = False
 
-def update_wardDetails_dialog():
-    st.session_state.show_update_wardDetails_dialog = True
-    st.session_state.show_update_ward_dialog = False
-    st.session_state.show_add_ward_dialog = False
-    st.session_state.show_delete_ward_dialog = False
-    st.session_state.show_delete_wardDetails_dialog = False
+# def update_wardDetails_dialog():
+#     st.session_state.show_update_wardDetails_dialog = True
+#     st.session_state.show_update_ward_dialog = False
+#     st.session_state.show_add_ward_dialog = False
+#     st.session_state.show_delete_ward_dialog = False
+#     st.session_state.show_delete_wardDetails_dialog = False
 
-def delete_wardDetails_dialog():
-    st.session_state.show_delete_wardDetails_dialog = True
-    st.session_state.show_update_wardDetails_dialog = False
+# def delete_wardDetails_dialog():
+#     st.session_state.show_delete_wardDetails_dialog = True
+#     st.session_state.show_update_wardDetails_dialog = False
+#     st.session_state.show_update_ward_dialog = False
+#     st.session_state.show_add_ward_dialog = False
+#     st.session_state.show_delete_ward_dialog = False
+
+def add_cages_dialog():
+    st.session_state.show_add_cages_dialog = True
     st.session_state.show_update_ward_dialog = False
     st.session_state.show_add_ward_dialog = False
     st.session_state.show_delete_ward_dialog = False
@@ -125,23 +154,10 @@ def Details(name):
             INNER JOIN 
                 Cats ON Cage.cageID = Cats.cageID 
             WHERE name = :name"""), {"name": name}).fetchall()
-    
+        
+    # The Date Formatting remains here
+
     final_table = st.dataframe(wards_table, width=1500, height=600, hide_index = True, selection_mode="single-row", on_select='rerun')
-    row_selected = int(final_table.iat[final_table['selection']['rows'][0], 0])
-    print(row_selected)
-
-    # if final_table["selection"]["rows"]: # if a row is selected
-
-    #     row_selected = int(wards_table.iat[final_table['selection']['rows'][0], 0])
-    #     # print(treatment_table_df)
-
-    #     update_button = col4.button("Update Treatment", on_click = update_wardDetails_dialog)
-    #     # delete_button = col5.button("Delete Treatment", on_click = delete_wardDetails_dialog)
-
-    #     if st.session_state.show_update_wardDetails_dialog:
-    #         edit_ward_details(row_selected) 
-    # st.caption('_:orange[Press Esc to Close]_')
-
 
 @st.experimental_dialog("Add New Ward")
 def add_ward():
@@ -234,12 +250,50 @@ def delete_ward():
     st.session_state.show_delete_ward_dialog = False
     st.caption('_:orange[Press Esc to Cancel]_')
 
+@st.experimental_dialog("Add Cages")
+def add_cages():
+    with engine.begin() as conn:
+        cage_id = int(pd.read_sql_query(sa.text("select top 1 cageID from Cage order by cageID desc"), conn).iloc[0][0]) + 1
+    cageid = st.text_input("Cage ID", value=cage_id, disabled=True)
+
+    with engine.begin() as conn:
+        df = pd.read_sql_query("SELECT * FROM Ward WHERE name IS NOT NULL", conn)
+        selected_name = df['name'].tolist()
+    name = st.selectbox("Ward Name", selected_name)
+
+    with engine.begin() as conn:
+        ward_data = conn.execute(sa.text("SELECT wardID, capacityCages FROM Ward WHERE name = :name"), {"name": name}).fetchone()
+        occupied = conn.execute(sa.text("""select count(cageID) as total_cages from Cage
+                        inner join Ward on Cage.wardID = Ward.wardID where name = :name"""), {"name": name}).fetchall()
+        
+    wardID = ward_data[0]
+    capacity = ward_data[1]
+    occupied = occupied[0][0]
+
+    new_cages = st.number_input("Add Cages", step=1, min_value=0, max_value=(capacity-occupied))
+    date = st.date_input("Date of Cage Addition")
+
+    add_new_cages = st.button("Add Cage")
+    if add_new_cages:
+        with engine.begin() as conn:
+            for i in range(new_cages):
+                conn.execute(sa.text("""
+                    INSERT INTO Cage (cageID, wardID, cageStatusID, date)
+                    VALUES (:cageID, :wardID, :cageStatusID, :date)
+                """), {"cageID": cage_id + i, "wardID": wardID, "cageStatusID": 2, "date": date})
+
+        st.session_state.show_add_cages_dialog = False
+        st.rerun()
+
+
 if 'show_add_ward_dialog' not in st.session_state:
     st.session_state.show_add_ward_dialog = False
 if 'show_update_ward_dialog' not in st.session_state:
     st.session_state.show_update_ward_dialog = False
 if 'show_delete_ward_dialog' not in st.session_state:
     st.session_state.show_delete_ward_dialog = False
+if 'show_add_cages_dialog' not in st.session_state:
+    st.session_state.show_add_cages_dialog = False
 
 if st.session_state.show_add_ward_dialog:
     add_ward()
@@ -250,17 +304,25 @@ if st.session_state.show_update_ward_dialog:
 if st.session_state.show_delete_ward_dialog:
     delete_ward()
 
+if st.session_state.show_add_cages_dialog:
+    add_cages()
+
 # "Add Ward" button
-col1, col2, col3 = st.columns([8.9, 2, 3])
+col1, col2, col3, col4, col5, col6 = st.columns([1.5,5,2,1,1,1.6])
+
+#Add a new cat button
 with col1:
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    newWard = st.button("✙ Add Ward", on_click=add_ward_dialog)
+    updateWard = st.button("Edit Ward", on_click=update_ward_dialog)
 with col2:
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    updateWard = st.button("Edit Ward", on_click=update_ward_dialog)
+    deleteWard = st.button("Delete Ward", on_click=delete_ward_dialog)
 with col3:
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    deleteWard = st.button("Delete Ward", on_click=delete_ward_dialog)
+    deleteWard = st.button("Increase Cages", on_click=add_cages_dialog)
+with col6:
+    st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
+    newWard = st.button("✙ Add Ward", on_click=add_ward_dialog)
 
 
 # Display the ward information
@@ -301,12 +363,7 @@ for index, row in wards_df.iterrows():
                 st.write(f"Free Cages: {freeCage}")
                     # else:
                     #     st.write(f"Free Cages: {row['total_cages']}")
-            # with col5:
             if st.button(f"{row['name']} Details"):
                     # st.switch_page("pages/Ward_Details.py")
                     Details(f"{row['name']}")
         st.write("")
-
-
-def edit_ward_details(row_to_update):
-    st.text_input("das;l,")

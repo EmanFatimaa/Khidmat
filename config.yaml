@@ -1,0 +1,51 @@
+credentials:
+  usernames:
+    Ahmed Bilal:
+      email: crazy_bilal@gmail.com
+      failed_login_attempts: 0 # Will be managed automatically
+      logged_in: False # Will be managed automatically
+      name: Ahmed Bilal
+      password: bilal # Will be hashed automatically
+    Maida Butt:
+      email: maida.aftab.butt@gmail.com
+      failed_login_attempts: 0 # Will be managed automatically
+      logged_in: False # Will be managed automatically
+      name: Maida Butt
+      password: aftab # Will be hashed automatically
+    Anam Rafiq:
+      email: anamrafiq@gmail.com
+      failed_login_attempts: 0 # Will be managed automatically
+      logged_in: False # Will be managed automatically
+      name: Anam Rafiq
+      password: rafiq # Will be hashed automatically
+    Hunain Theba:
+      email: hunain.theba@gmail.com
+      failed_login_attempts: 0 # Will be managed automatically
+      logged_in: False # Will be managed automatically
+      name: Hunain Theba
+      password: theba # Will be hashed automatically
+    Dr Sajdeen:
+      email: sajdeen@gmail.com
+      failed_login_attempts: 0 # Will be managed automatically
+      logged_in: False # Will be managed automatically
+      name: Dr Sajdeen
+      password: sajdeen # Will be hashed automatically
+    Syeda Maryum:
+      email: syeda.marry@gmail.com
+      failed_login_attempts: 0 # Will be managed automatically
+      logged_in: False # Will be managed automatically
+      name: Syeda Maryum
+      password: maryum # Will be hashed automatically
+    Fakeha Faisal:
+      email: fakeha.faisal@gmail.com
+      failed_login_attempts: 0 # Will be managed automatically
+      logged_in: False # Will be managed automatically
+      name: Fakeha Faisal
+      password: faisal # Will be hashed automatically
+cookie:
+  expiry_days: 0
+  key: PawRescue # Must be string
+  name: none
+pre-authorized:
+  emails:
+  - ibad29377@gmail.com # I dont think this does anything
