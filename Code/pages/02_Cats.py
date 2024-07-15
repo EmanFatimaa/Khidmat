@@ -24,9 +24,9 @@ from yaml.loader import SafeLoader
 # database information ; will change when db hosting
 
 # Note the double backslashes
-# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'PawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -34,26 +34,6 @@ connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_st
 engine = create_engine(connection_url)
 
 st.set_page_config(page_title="Cats", page_icon="🐈", layout="wide", initial_sidebar_state="expanded")
-
-with open('../config.yaml') as file:
-    config = yaml.load(file, Loader=SafeLoader)
-
-authenticator = stauth.Authenticate(
-    config['credentials'],
-    config['cookie']['name'],
-    config['cookie']['key'],
-    config['cookie']['expiry_days'],
-    config['pre-authorized']
-)
-
-name, logged_in, user_name = authenticator.login()
-
-st.sidebar.write(f"Logged in as: _:orange[{name}]_")
-
-with engine.connect() as conn:
-    role = conn.execute(sa.text("select roleDesc from InternalRole, Users where Users.internalRoleID = InternalRole.internalRoleID and Users.userName = :name"), {"name":name}).fetchone()[0]
-
-st.sidebar.write(f"Role: _:orange[{role}]_")
 
 # Logo
 logo = Image.open("assets/logo.png")
@@ -72,10 +52,6 @@ st.markdown(
        """,
         unsafe_allow_html=True,
 )
-
-if st.sidebar.button("🔓 Logout"):
-    authenticator.logout(location = "unrendered")
-    st.switch_page("LoginScreen.py")
 
 hide_pages(["Login"])
 
@@ -577,6 +553,30 @@ if cat_table["selection"]["rows"]: #if a row is selected
         delete_cat(selectedRow)
 else:
     print("No row selected")
+
+with open('../config.yaml') as file:
+    config = yaml.load(file, Loader=SafeLoader)
+
+authenticator = stauth.Authenticate(
+    config['credentials'],
+    config['cookie']['name'],
+    config['cookie']['key'],
+    config['cookie']['expiry_days'],
+    config['pre-authorized']
+)
+
+name, logged_in, user_name = authenticator.login()
+
+st.sidebar.write(f"Logged in as: _:orange[{name}]_")
+
+with engine.connect() as conn:
+    role = conn.execute(sa.text("select roleDesc from InternalRole, Users where Users.internalRoleID = InternalRole.internalRoleID and Users.userName = :name"), {"name":name}).fetchone()[0]
+
+st.sidebar.write(f"Role: _:orange[{role}]_")
+
+if st.sidebar.button("🔓 Logout"):
+    authenticator.logout(location = "unrendered")
+    st.switch_page("LoginScreen.py")
 
 # ---------------------------------------------------------------------------------------------------------------------------#
 
