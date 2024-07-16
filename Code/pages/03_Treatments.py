@@ -311,10 +311,8 @@ col1, col2, col3, col4, col5, col6 = st.columns(6)
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
 new_transaction = col6.button("✙ Add Treatment", on_click=add_treatment_dialog)
 
-
 # Display the filtered table
 treatment_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, on_select='rerun', selection_mode='single-row')
-
 
 if st.session_state.show_add_treatment_dialog:
     add_treatment()

@@ -161,40 +161,41 @@ def add_ward():
         st.session_state.wards_df = pd.concat([st.session_state.wards_df, new_row])
         st.session_state.show_add_ward_dialog = False
         st.rerun()
-
+    
+    st.session_state.show_add_ward_dialog = False
     st.caption('_:orange[Press Esc to Cancel]_')
 
 @st.experimental_dialog("Edit Ward")
 def edit_ward():
-        with engine.begin() as conn:
-            df = pd.read_sql_query("SELECT name FROM Ward where name is not null", conn)
-            selected_index = df['name'].tolist()
-        index = st.selectbox("Ward Name", selected_index)
+    with engine.begin() as conn:
+        df = pd.read_sql_query("SELECT name FROM Ward where name is not null", conn)
+        selected_index = df['name'].tolist()
+    index = st.selectbox("Ward Name", selected_index)
 
 
-        with engine.begin() as conn:
-            edit_code = conn.execute(sa.text("select code from Ward where name = :name"), {"name": index}).fetchall()[0][0]
-        final_code = st.text_input("Ward Code", edit_code)
+    with engine.begin() as conn:
+        edit_code = conn.execute(sa.text("select code from Ward where name = :name"), {"name": index}).fetchall()[0][0]
+    final_code = st.text_input("Ward Code", edit_code)
 
-        with engine.begin() as conn:
-            edit_total_cages = conn.execute(sa.text("select capacityCages from Ward where name = :name"), {"name": index}).fetchall()[0][0]
-        final_total_cages = st.number_input("Total Cages", edit_total_cages)
+    with engine.begin() as conn:
+        edit_total_cages = conn.execute(sa.text("select capacityCages from Ward where name = :name"), {"name": index}).fetchall()[0][0]
+    final_total_cages = st.number_input("Total Cages", edit_total_cages)
 
+    # print(index, final_name, final_code, final_total_cages)
+
+    if st.button("Save"):
         # print(index, final_name, final_code, final_total_cages)
+        if (index and final_code and edit_ward and final_total_cages):
+            with engine.begin() as conn:
+                conn.execute(sa.text("""
+                UPDATE Ward
+                SET name = :name, code = :code, capacityCages = :total_cages
+                WHERE name  = :name
+            """), {"code": final_code, "total_cages": final_total_cages, "name": index})
+            st.rerun()
 
-        if st.button("Save"):
-            # print(index, final_name, final_code, final_total_cages)
-            if (index and final_code and edit_ward and final_total_cages):
-                with engine.begin() as conn:
-                    conn.execute(sa.text("""
-                    UPDATE Ward
-                    SET name = :name, code = :code, capacityCages = :total_cages
-                    WHERE name  = :name
-                """), {"code": final_code, "total_cages": final_total_cages, "name": index})
-                st.rerun()
-
-        st.session_state.show_update_ward_dialog = False
-        st.caption('_:orange[Press Esc to Cancel]_')
+    st.session_state.show_update_ward_dialog = False
+    st.caption('_:orange[Press Esc to Cancel]_')
 
 @st.experimental_dialog("Delete Ward")
 def delete_ward():

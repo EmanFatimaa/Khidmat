@@ -118,7 +118,6 @@ def addScreen():
         password = st.text_input("Password", type="password", placeholder= "••••••••••")
 
     submitted = st.button("Add Member")
-    st.caption(':orange[*Press Esc to Cancel*]') #st.write("Note: Upon clicking Cancel, the form will be closed")
 
     # Flag to track message box visibility
     show_message_box = st.empty()  # Initially empty element
@@ -183,6 +182,9 @@ def addScreen():
     
             st.rerun()
         # st.success(f"{name} added to team successfully!")
+    
+    st.session_state.show_add_team_dialog = False
+    st.caption('_:orange[Press Esc to Cancel]_')
 
 @st.experimental_dialog("Edit Team Member")
 def edit_team():
