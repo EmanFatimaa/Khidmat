@@ -58,6 +58,10 @@ fixed_sidebar_width = '''
 
 st.markdown(fixed_sidebar_width, unsafe_allow_html=True)
 
+@st.experimental_dialog("Reset Your Password")
+def reset_pass_dialog():
+    st.write("Contact the administrator to reset your password.")
+
 logo = Image.open("assets/logo.png")
 st.logo(logo)
 
@@ -88,6 +92,11 @@ with login:
         st.session_state['logged_in'] = True
         st.success(f'Welcome, {user_name}!')
         st.switch_page("pages/01_Dashboard.py")
+
+    forget_button = st.button("Forgot Password?")
+    
+    if forget_button:
+        reset_pass_dialog()
 
     # Do something about the forgotten password thingy
     # Do something about the login attempts. if not zero then show Login Failed or something.

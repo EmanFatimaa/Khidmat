@@ -155,29 +155,41 @@ def addScreen():
 
         if everything_filled and valid_name and valid_email and valid_password:
             with engine.begin() as conn:
-                   image_bytes = image.read() if image else None
-                   conn.execute(sa.text("""
-                    INSERT INTO Users (userID, userName, email, password, picture, internalRoleID)
-                    VALUES (:userID, :userName, :email, :password, :picture, 
-                    (SELECT internalRoleID FROM InternalRole WHERE roleDesc = :roleDesc))
-                """), {
-                    "userID": user_id,
-                    "userName": name,
-                    "email": email,
-                    "password": password,
-                    "picture": image_bytes,
-                    "roleDesc": UserType
+                image_bytes = image.read() if image else None
+                conn.execute(sa.text("""
+                INSERT INTO Users (userID, userName, email, password, picture, internalRoleID)
+                VALUES (:userID, :userName, :email, :password, :picture, 
+                (SELECT internalRoleID FROM InternalRole WHERE roleDesc = :roleDesc))
+            """), {
+                "userID": user_id,
+                "userName": name,
+                "email": email,
+                "password": password,
+                "picture": image_bytes,
+                "roleDesc": UserType
                 })
+            
+            # Add a new user in the config file
+            config['credentials']['usernames'][name.lower()] = {
+                'email': email,
+                'failed_login_attempts': 0,
+                'logged_in': False,
+                'name': name,
+                'password': password
+            }
+            
+            with open('../config.yaml', 'w') as file:
+                yaml.dump(config, file, default_flow_style=False)
+    
             st.rerun()
         # st.success(f"{name} added to team successfully!")
-
 
 @st.experimental_dialog("Edit Team Member")
 def edit_team():
     with engine.begin() as conn:
             df = pd.read_sql_query("SELECT userName FROM Users", conn)
             user_value = df['userName'].tolist()
-    user_name = st.selectbox("Member Name", user_value)
+    user_name = str(st.selectbox("Member Name", user_value))
 
     with engine.begin() as conn:
         picture_value = conn.execute(sa.text("select picture from Users where userName = :userName"), {"userName": user_name}).fetchall()[0][0]
@@ -232,13 +244,26 @@ def edit_team():
                     conn.execute(sa.text(""" 
                         UPDATE Users
                         SET userName = :userName, email = :email, password = :password, internalRoleID = :internalRoleID
-                        WHERE userID = :userID
+                        WHERE userName = :userName
                         """), {
                         "userName": user_name,
                         "email": current_email,
                         "password": current_password,
                         "internalRoleID": internal_role_id,
                     })
+            
+            # Update the user in the config file
+            config['credentials']['usernames'][user_name.lower()] = {
+                'email': current_email,
+                'failed_login_attempts': 0,
+                'logged_in': False,
+                'name': user_name,
+                'password': current_password
+            }
+            
+            with open('../config.yaml', 'w') as file:
+                yaml.dump(config, file, default_flow_style=False)
+            
             st.rerun()
 
     st.session_state.show_edit_team_dialog = False
