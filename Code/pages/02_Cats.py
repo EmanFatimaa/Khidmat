@@ -421,8 +421,10 @@ def view_cat(id):
             selectedType = cat_table_df.iat[cat_table["selection"]["rows"][0],5]
             # print("selected type:", selectedType)
 
-    # Expanders:
-    with st.expander(":orange[General Information]", expanded= False):
+    general_info, owner_info, treatment_info = st.tabs([":orange[General Information]", ":orange[Owner/Reporter's Details]", ":orange[Treatment related Details]"])
+
+    # Tabs
+    with general_info:
         
         st.write("***Name:***",selectedCatName )
         st.write("***Cage ID:***", selectedCage)
@@ -434,17 +436,16 @@ def view_cat(id):
         elif str(int(genderDB[0])) == "2":
             st.write("***Gender:***", "Female")
 
-        st.write("***Age:***", str(int(ageDB[0])), "yr(s)")
+        st.write("***Age:***", str(ageDB[0]), "yr(s)")
         st.write("***Status:***",selectedStatus)
 
-    
-    with st.expander(":orange[Owner/Reporter's Details]", expanded = False):
+    with owner_info:
             st.write("***Name:***", selectedOwnerName)
             st.write("***Contact Number:***", selectedOwnerContact)
             st.write("***Address:***", str(addressDB[0]))
             st.write("***Pet Type:***", selectedType)
-
-    with st.expander(":orange[Treatment related Details]", expanded = False):
+    
+    with treatment_info:
         # with st.table():
         # st.write("*To add a new treatment kindly click the button below to be redirected to treatments page*" )
         col1, col2= st.columns([1.7, 1])
@@ -470,7 +471,7 @@ def view_cat(id):
     st.caption('_:orange[Press Esc to Cancel]_') 
     st.session_state.show_view_cat_dialog = False
 
-# ------------------------------------------------------------
+# ------------------------------------------------------------ #
 
 # Table for Cats:
 with engine.begin() as conn:

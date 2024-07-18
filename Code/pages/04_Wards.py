@@ -62,55 +62,58 @@ st.header("Wards", divider='orange')
 
 # Define the dialog for adding a new ward
 def add_ward_dialog():
-    st.session_state.show_add_ward_dialog = True
+    st.session_state.show_add_ward_dialog = True # True
     st.session_state.show_update_ward_dialog = False
     st.session_state.show_delete_ward_dialog = False
     st.session_state.show_add_cages_dialog = False
-    # st.session_state.show_delete_wardDetails_dialog = False
-    # st.session_state.show_update_wardDetails_dialog = False
+    st.session_state.show_update_cages_dialog = False
+    st.session_state.show_delete_cages_dialog = False
 
 def update_ward_dialog():
-    st.session_state.show_update_ward_dialog = True
     st.session_state.show_add_ward_dialog = False
+    st.session_state.show_update_ward_dialog = True # True
     st.session_state.show_delete_ward_dialog = False
     st.session_state.show_add_cages_dialog = False
-    # st.session_state.show_delete_wardDetails_dialog = False
-    # st.session_state.show_update_wardDetails_dialog = False
+    st.session_state.show_update_cages_dialog = False
+    st.session_state.show_delete_cages_dialog = False
 
 def delete_ward_dialog():
-    st.session_state.show_update_ward_dialog = False
     st.session_state.show_add_ward_dialog = False
-    st.session_state.show_delete_ward_dialog = True
+    st.session_state.show_update_ward_dialog = False
+    st.session_state.show_delete_ward_dialog = True # True
     st.session_state.show_add_cages_dialog = False
-    # st.session_state.show_delete_wardDetails_dialog = False
-    # st.session_state.show_update_wardDetails_dialog = False
-
-# def update_wardDetails_dialog():
-#     st.session_state.show_update_wardDetails_dialog = True
-#     st.session_state.show_update_ward_dialog = False
-#     st.session_state.show_add_ward_dialog = False
-#     st.session_state.show_delete_ward_dialog = False
-#     st.session_state.show_delete_wardDetails_dialog = False
-
-# def delete_wardDetails_dialog():
-#     st.session_state.show_delete_wardDetails_dialog = True
-#     st.session_state.show_update_wardDetails_dialog = False
-#     st.session_state.show_update_ward_dialog = False
-#     st.session_state.show_add_ward_dialog = False
-#     st.session_state.show_delete_ward_dialog = False
+    st.session_state.show_update_cages_dialog = False
+    st.session_state.show_delete_cages_dialog = False
 
 def add_cages_dialog():
-    st.session_state.show_add_cages_dialog = True
-    st.session_state.show_update_ward_dialog = False
     st.session_state.show_add_ward_dialog = False
+    st.session_state.show_update_ward_dialog = False
     st.session_state.show_delete_ward_dialog = False
+    st.session_state.show_add_cages_dialog = True # True
+    st.session_state.show_update_cages_dialog = False
+    st.session_state.show_delete_cages_dialog = False
 
+def update_cages_dialog():
+    st.session_state.show_add_ward_dialog = False
+    st.session_state.show_update_ward_dialog = False
+    st.session_state.show_delete_ward_dialog = False
+    st.session_state.show_add_cages_dialog = False
+    st.session_state.show_update_cages_dialog = True # True
+    st.session_state.show_delete_cages_dialog = False
+
+def delete_cages_dialog():
+    st.session_state.show_add_ward_dialog = False
+    st.session_state.show_update_ward_dialog = False
+    st.session_state.show_delete_ward_dialog = False
+    st.session_state.show_add_cages_dialog = False
+    st.session_state.show_update_cages_dialog = False
+    st.session_state.show_delete_cages_dialog = True # True
 
 # @st.experimental_dialog("Ward Details")
 def Details(name):
-    name = st.text_input("Name", value = f"{row['name']}", disabled=True)
     with engine.begin() as conn:
         capacity = conn.execute(sa.text("select capacityCages from Ward where name = :name"), {"name": f"{row['name']}"}).fetchall()[0][0]
+    
     total = st.text_input("Capacity", value=capacity, disabled=True)
     
     with engine.begin() as conn:
@@ -131,12 +134,13 @@ def Details(name):
                 Cats ON Cage.cageID = Cats.cageID 
             WHERE name = :name"""), {"name": name}).fetchall()
         
-        
     wards_table = pd.DataFrame(result, columns=['CageID', 'CatID', 'CatName', 'Date', 'Status'])
+
     # The Date Formatting remains here
     wards_table['Date'] = pd.to_datetime(wards_table['Date']).dt.strftime('%d %b %Y')
+    final_table = st.dataframe(wards_table, width=1500, height=300, hide_index = True, selection_mode="single-row", on_select='rerun', key = name)
 
-    final_table = st.dataframe(wards_table, width=1500, height=600, hide_index = True, selection_mode="single-row", on_select='rerun')
+    return final_table
 
 @st.experimental_dialog("Add New Ward")
 def add_ward():
@@ -147,8 +151,7 @@ def add_ward():
     new_code = st.text_input("Ward Cage Code", placeholder="Enter Code for Cage e.g GW")
     new_cage = st.number_input("Total Cages", value=0, step=1, format="%d", min_value=0)
 
-    add_ward_button = st.button("Add Ward")
-    # cancel_ward_button = st.button("Cancel")
+    add_ward_button = st.button("Add Ward", key='add_ward')
 
     if add_ward_button:
         with engine.begin() as conn:
@@ -183,7 +186,7 @@ def edit_ward():
 
     # print(index, final_name, final_code, final_total_cages)
 
-    if st.button("Save"):
+    if st.button("Save", key='save'):
         # print(index, final_name, final_code, final_total_cages)
         if (index and final_code and edit_ward and final_total_cages):
             with engine.begin() as conn:
@@ -206,7 +209,7 @@ def delete_ward():
     name = st.selectbox("Ward Name", selected_name)
     # print(name)
 
-    if st.button("Delete Ward", key=name):
+    if st.button("Delete Ward", key='delete'):
         with engine.begin() as conn:
             status = conn.execute(sa.text("""
                     SELECT count(Cage.cageID) 
@@ -220,7 +223,7 @@ def delete_ward():
             
         if status[0][0] > 0:
             st.warning('You need to delete the cages of this ward from the Cats data first in order to delete this ward', icon="⚠️")
-            if st.button("Okay"):
+            if st.button("Okay", key='okay'):
                 st.rerun()  # Refresh the app to reflect changes
         else:
             with engine.begin() as conn:
@@ -253,7 +256,7 @@ def add_cages():
     new_cages = st.number_input("Add Cages", step=1, min_value=0, max_value=(capacity-occupied))
     date = st.date_input("Date of Cage Addition")
 
-    add_new_cages = st.button("Add Cage")
+    add_new_cages = st.button("Add Cage", key='add_cage')
     if add_new_cages:
         with engine.begin() as conn:
             for i in range(new_cages):
@@ -266,6 +269,25 @@ def add_cages():
     st.session_state.show_add_cages_dialog = False
     st.caption('_:orange[Press Esc to Cancel]_')
 
+@st.experimental_dialog("Update Cages")
+def update_cages(id_to_update):
+    st.write(id_to_update)
+
+    if st.button("Update Cages", key='update_cages'):
+        st.rerun()
+
+    st.session_state.show_update_cages_dialog = False
+    st.caption('_:orange[Press Esc to Cancel]_')
+    
+@st.experimental_dialog("Delete Cages")
+def delete_cages(id_to_delete):
+    st.write(id_to_delete)
+
+    if st.button("Delete Cages", key='delete_cages'):
+        st.rerun()
+
+    st.session_state.show_delete_cages_dialog = False
+    st.caption('_:orange[Press Esc to Cancel]_')
 
 if 'show_add_ward_dialog' not in st.session_state:
     st.session_state.show_add_ward_dialog = False
@@ -273,8 +295,13 @@ if 'show_update_ward_dialog' not in st.session_state:
     st.session_state.show_update_ward_dialog = False
 if 'show_delete_ward_dialog' not in st.session_state:
     st.session_state.show_delete_ward_dialog = False
+
 if 'show_add_cages_dialog' not in st.session_state:
     st.session_state.show_add_cages_dialog = False
+if 'show_update_cages_dialog' not in st.session_state:
+    st.session_state.show_update_cages_dialog = False
+if 'show_delete_cages_dialog' not in st.session_state:
+    st.session_state.show_delete_cages_dialog = False
 
 if st.session_state.show_add_ward_dialog:
     add_ward()
@@ -293,18 +320,16 @@ col1, col2, col3, col4, col5, col6 = st.columns([1.5,5,2,1,1,1.6])
 
 #Add a new cat button
 with col1:
-    st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
     updateWard = st.button("Edit Ward", on_click=update_ward_dialog)
-with col2:
-    st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    deleteWard = st.button("Delete Ward", on_click=delete_ward_dialog)
-with col3:
-    st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    deleteWard = st.button("Increase Cages", on_click=add_cages_dialog)
-with col6:
-    st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    newWard = st.button("✙ Add Ward", on_click=add_ward_dialog)
 
+with col2:
+    deleteWard = st.button("Delete Ward", on_click=delete_ward_dialog)
+
+with col3:
+    deleteWard = st.button("Increase Cages", on_click=add_cages_dialog)
+
+with col6:
+    newWard = st.button("✙ Add Ward", on_click=add_ward_dialog)
 
 # Display the ward information
 wards_df = combined_wards_df
@@ -312,7 +337,7 @@ wards_df = combined_wards_df
 for index, row in wards_df.iterrows():
     with st.container():
         with st.expander(f"**{row['name']}**"):
-            col1, col2, col3, col4, col5= st.columns([0.1, 0.5, 0.7, 0.7, 1])  # Adjusted column widths
+            col1, col2, col3, col4, col5, col6= st.columns([0.1, 0.5, 0.7, 0.7, 1, 1])  # Adjusted column widths
             with col1:
                 st.write("")  # Placeholder for the button
             with col2:
@@ -338,16 +363,30 @@ for index, row in wards_df.iterrows():
                         inner join Ward on Cage.wardID = Ward.wardID
                         where cageStatusID = :cageStatusID and code = :code
                     """), {"cageStatusID": 2, "code": row['code']}).fetchall()
-                    # print(freeCage)
-                    # if freeCage:
+
                 freeCage = freeCage[0][0]
                 st.write(f"Free Cages: {freeCage}")
-                    # else:
-                    #     st.write(f"Free Cages: {row['total_cages']}")
-            if st.button(f"{row['name']} Details"):
-                    # st.switch_page("pages/Ward_Details.py")
-                    Details(f"{row['name']}")
-        st.write("")
+
+            details_table = Details(f"{row['name']}")
+
+    # details_table of Cages, Update and Delete (Only for Admin though)
+    if details_table["selection"]["rows"]: # if a row is selected
+        
+        row_selected = details_table["selection"]["rows"][0]
+
+        with col5:
+            update_button = col4.button("Update Donation", on_click = update_cages_dialog, key = str(index) + 'update_cages')
+        
+        with col6:
+            delete_button = col5.button("Delete Donation", on_click = delete_cages_dialog, key = str(index) + 'delete_cages')
+
+        if st.session_state.show_update_cages_dialog:
+            update_cages(row_selected)
+
+        if st.session_state.show_delete_cages_dialog:
+            delete_cages(row_selected)
+    
+        details_table["selection"] = []  # Reset the selection after the dialog is closed
 
 with open('../config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
@@ -369,6 +408,6 @@ with engine.connect() as conn:
 
 st.sidebar.write(f"Role: _:orange[{role}]_")
 
-if st.sidebar.button("🔓 Logout"):
+if st.sidebar.button("🔓 Logout", key = 'logout'):
     authenticator.logout(location = "unrendered")
     st.switch_page("LoginScreen.py")

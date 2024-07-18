@@ -368,7 +368,7 @@ with Donations:
     # Update and Delete Buttons (Only for Admin though)
     if donation_table["selection"]["rows"]: # if a row is selected
         
-        row_selected = int(donation_table_df.iat[donation_table['selection']['rows'][0], 0])
+        row_selected = int(filtered_df.iat[donation_table['selection']['rows'][0], 0])
         # print([donation_table['selection']['rows'][0], 0])
 
         update_button = col4.button("Update Donation", on_click = update_donation_dialog)

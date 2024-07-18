@@ -319,7 +319,7 @@ if st.session_state.show_add_treatment_dialog:
 
 if treatment_table["selection"]["rows"]: # if a row is selected
         
-        row_selected = int(treatment_table_df.iat[treatment_table['selection']['rows'][0], 0])
+        row_selected = int(filtered_df.iat[treatment_table['selection']['rows'][0], 0])
         # print(treatment_table_df)
 
         update_button = col4.button("Update Treatment", on_click = update_treatment_dialog)
