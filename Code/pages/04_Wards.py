@@ -16,9 +16,9 @@ import yaml
 from yaml.loader import SafeLoader
 
 # Note the double backslashes
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'PawRescue' # EMAN :'Khidmat'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -154,17 +154,43 @@ def add_ward():
     add_ward_button = st.button("Add Ward", key='add_ward')
 
     if add_ward_button:
-        with engine.begin() as conn:
-            conn.execute(sa.text("""
-                insert into Ward (wardID, name, code, CapacityCages)
-                values (:wardID, :name, :code, :CapacityCages)
-            """), {"wardID": new_id, "name": new_name, "code": new_code, "CapacityCages": new_cage})
+        everything_filled = False
+        valid_wardName = False
+        valid_code = False
+        valid_cages = False
 
-        new_row = pd.DataFrame({"code": [new_code], "total_cages": [new_cage]}, index=[new_name])
-        st.session_state.wards_df = pd.concat([st.session_state.wards_df, new_row])
-        st.session_state.show_add_ward_dialog = False
-        st.rerun()
-    
+        if not (new_code and new_name and new_cage):
+                st.error("Please fill in all fields before submitting.")
+        else:
+            everything_filled = True
+
+        if all(x.isalpha() or x.isspace() or x=='.' for x in new_name):
+                valid_wardName = True
+        else:
+            st.error("Please enter valid Ward Name.")
+
+        if all(x.isalpha() for x in new_code) and (len(new_code)>0):
+            valid_code = True
+        else:
+            st.error("Please enter valid Ward Code.")
+
+        if new_cage>0:
+            valid_cages=True
+        else:
+            st.error("Please select a Capacity for the Cages")
+            
+        if everything_filled and valid_wardName and valid_code and valid_cages:
+            with engine.begin() as conn:
+                conn.execute(sa.text("""
+                    insert into Ward (wardID, name, code, CapacityCages)
+                    values (:wardID, :name, :code, :CapacityCages)
+                """), {"wardID": new_id, "name": new_name, "code": new_code, "CapacityCages": new_cage})
+
+            new_row = pd.DataFrame({"code": [new_code], "total_cages": [new_cage]}, index=[new_name])
+            st.session_state.wards_df = pd.concat([st.session_state.wards_df, new_row])
+            st.session_state.show_add_ward_dialog = False
+            st.rerun()
+        
     st.session_state.show_add_ward_dialog = False
     st.caption('_:orange[Press Esc to Cancel]_')
 
@@ -187,8 +213,28 @@ def edit_ward():
     # print(index, final_name, final_code, final_total_cages)
 
     if st.button("Save", key='save'):
+        everything_filled = False
+        valid_code = False
+        valid_cages = False
+
+        if not (final_code and final_total_cages):
+                st.error("Please fill in all fields before submitting.")
+        else:
+            everything_filled = True
+
+        if all(x.isalpha() for x in final_code) and (len(final_code)>0):
+            valid_code = True
+        else:
+            st.error("Please enter valid Ward Code.")
+
+        if final_total_cages>edit_total_cages:
+            valid_cages=True
+        else:
+            st.error("Please select a higher capcity for Ward then before")
+            
+        
         # print(index, final_name, final_code, final_total_cages)
-        if (index and final_code and edit_ward and final_total_cages):
+        if (everything_filled and index and valid_code and valid_cages):
             with engine.begin() as conn:
                 conn.execute(sa.text("""
                 UPDATE Ward
@@ -258,20 +304,32 @@ def add_cages():
 
     add_new_cages = st.button("Add Cage", key='add_cage')
     if add_new_cages:
-        with engine.begin() as conn:
-            for i in range(new_cages):
-                conn.execute(sa.text("""
-                    INSERT INTO Cage (cageID, wardID, cageStatusID, date)
-                    VALUES (:cageID, :wardID, :cageStatusID, :date)
-                """), {"cageID": cage_id + i, "wardID": wardID, "cageStatusID": 2, "date": date})
 
-        st.rerun()
+        valid_cages = False
+
+        if new_cages==0:
+            st.error("Please select number of cages to add")
+        else: 
+            valid_cages = True
+
+
+        if valid_cages:
+            with engine.begin() as conn:
+                for i in range(new_cages):
+                    conn.execute(sa.text("""
+                        INSERT INTO Cage (cageID, wardID, cageStatusID, date)
+                        VALUES (:cageID, :wardID, :cageStatusID, :date)
+                    """), {"cageID": cage_id + i, "wardID": wardID, "cageStatusID": 2, "date": date})
+
+            st.rerun()
     st.session_state.show_add_cages_dialog = False
     st.caption('_:orange[Press Esc to Cancel]_')
 
 @st.experimental_dialog("Update Cages")
 def update_cages(id_to_update):
     st.write(id_to_update)
+
+    
 
     if st.button("Update Cages", key='update_cages'):
         st.rerun()
@@ -371,22 +429,23 @@ for index, row in wards_df.iterrows():
 
     # details_table of Cages, Update and Delete (Only for Admin though)
     if details_table["selection"]["rows"]: # if a row is selected
-        
         row_selected = details_table["selection"]["rows"][0]
-
+        
         with col5:
-            update_button = col4.button("Update Donation", on_click = update_cages_dialog, key = str(index) + 'update_cages')
+            update_button = col5.button("Update Cage Details", on_click=update_cages_dialog, key=str(index)+'update_cages')
         
         with col6:
-            delete_button = col5.button("Delete Donation", on_click = delete_cages_dialog, key = str(index) + 'delete_cages')
+            delete_button = col6.button("Delete Cage", on_click = delete_cages_dialog, key = str(index)+'delete_cages')
 
         if st.session_state.show_update_cages_dialog:
             update_cages(row_selected)
-
+            row_selected = 0
+        
         if st.session_state.show_delete_cages_dialog:
             delete_cages(row_selected)
-    
-        details_table["selection"] = []  # Reset the selection after the dialog is closed
+            row_selected = 0
+
+            # details_table["selection"]["rows"] = []  # Reset the selection after the dialog is closed
 
 with open('../config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)

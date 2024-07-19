@@ -21,9 +21,9 @@ import yaml
 from yaml.loader import SafeLoader
 
 # Note the double backslashes
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'PawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -77,12 +77,12 @@ def add_treatment():
     print("adding")
     with engine.begin() as conn:
         treatmentid = int(pd.read_sql_query(sa.text("SELECT TOP 1 treatmentID FROM Treatment ORDER BY treatmentID DESC"), conn).iat[0,0]) + 1
-        df = pd.read_sql_query("SELECT CatID FROM Cats", conn)
-        cat_ids = df['CatID'].tolist()
+        df = pd.read_sql_query("SELECT catName FROM Cats", conn)
+        cat_name = df['catName'].tolist()
 
     col1, col2 = st.columns(2)
     with col1:
-        selected_cat_id = st.selectbox("Select Cat ID", cat_ids)
+        selected_cat_name = st.selectbox("Select Cat", cat_name)
     with col2:
         id = st.text_input("Treatment ID", value=treatmentid, disabled=True)
 
@@ -119,7 +119,7 @@ def add_treatment():
             st.error("Please enter valid treatment details.")
 
         # Check if any of the fields are left unfilled
-        if not (id and selected_cat_id and treatment_time and temperature and givenby and treatment_date and treatment_details):
+        if not (id and selected_cat_name and treatment_time and temperature and givenby and treatment_date and treatment_details):
             st.error("Please fill in all fields before submitting.")
         else: 
             date_and_time = datetime.combine(treatment_date, treatment_time)
@@ -127,13 +127,14 @@ def add_treatment():
 
         if everything_filled and valid_treatment:
             with engine.begin() as conn:
+                catid = conn.execute(sa.text("""SELECT catID FROM Cats WHERE catName = :catName"""), {"catName": selected_cat_name}).fetchone()[0] 
                 userid = conn.execute(sa.text("""SELECT UserID FROM Users WHERE userName = :userName"""), {"userName": givenby}).fetchone()[0] 
                 conn.execute(sa.text("""
                     INSERT INTO Treatment (TreatmentID, CatID, UserID, DateTime, Temperature, Treatment)
                     VALUES (:treatmentID, :CatID, :UserID, :DateTime, :Temperature, :Treatment)
                 """), {
                     "treatmentID": treatmentid,
-                    "CatID": selected_cat_id,
+                    "CatID": catid,
                     "UserID" : userid,
                     "DateTime": date_and_time,
                     "Temperature": temperature,

@@ -23,9 +23,9 @@ from yaml.loader import SafeLoader
 # database information ; will change when db hosting
 
 # Note the double backslashes
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'PawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -683,7 +683,7 @@ with Revenue:
     # Update and Delete Buttons (Only for Admin though)
     if revenue_table["selection"]["rows"]: # if a row is selected
 
-        row_selected = int(revenue_table_df.iat[revenue_table['selection']['rows'][0], 0])
+        row_selected = int(filtered_df.iat[revenue_table['selection']['rows'][0], 0])
 
         update_button = col4.button("Update Revenue", on_click = update_revenue_dialog)
         delete_button = col5.button("Delete Revenue", on_click = delete_revenue_dialog)
@@ -949,7 +949,7 @@ with Transactions:
     # Update and Delete Buttons (Only for Admin though)
     if transaction_table["selection"]["rows"]: # if a row is selected
 
-        row_selected = int(transaction_table_df.iat[transaction_table['selection']['rows'][0], 0])
+        row_selected = int(filtered_df.iat[transaction_table['selection']['rows'][0], 0])
 
         update_button = col4.button("Update Transaction", on_click = update_transaction_dialog)
         delete_button = col5.button("Delete Transaction", on_click = delete_transaction_dialog)

@@ -25,9 +25,9 @@ from yaml.loader import SafeLoader
 # Right now it only works for the 7 people that should also be in the database
 
 # Note the double backslashes
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'PawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -142,15 +142,14 @@ def addScreen():
             st.error("Please enter a valid name.")
 
         if (len(password)>=0 and len(password)<8):
-            valid_password = False
-            show_message_box.error("Password should be atleast 8 characters long.")
+            st.error("Password should be atleast 8 characters long.")
         else:
             valid_password = True
 
-        if ('@gmail.com' or'@live.com' or '@hotmail.com' in email):
+        if ('@' in email):
             valid_email = True
         else:
-            valid_email =False
+            st.error("Please enter valid Email")
 
         if everything_filled and valid_name and valid_email and valid_password:
             with engine.begin() as conn:
@@ -226,7 +225,29 @@ def edit_team():
         current_password = st.text_input("Password", value = password_value)
 
     if st.button("Save Changes"):
-        if (current_email and current_password and current_role):
+        everything_filled = False
+        valid_email = False
+        valid_password = False
+        # Check if any of the fields are left unfilled
+
+
+        if not (current_email and current_password):
+            st.error("Please fill in all fields before submitting.")
+        else:
+            everything_filled = True
+
+        if (len(current_password)>=0 and len(current_password)<8):
+            st.error("Password should be atleast 8 characters long.")
+        else:
+            valid_password = True
+
+        if ('@' not in current_email):
+            st.error("Please enter valid Email")
+        else:
+            valid_email = True
+
+
+        if (valid_email and valid_password and everything_filled):
             with engine.begin() as conn:
                 internal_role_id = conn.execute(sa.text("SELECT internalRoleID FROM InternalRole WHERE roleDesc = :roleDesc"), {"roleDesc": current_role}).fetchall()[0][0]
                 if new_image:

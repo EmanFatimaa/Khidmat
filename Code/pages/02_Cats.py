@@ -24,9 +24,9 @@ from yaml.loader import SafeLoader
 # database information ; will change when db hosting
 
 # Note the double backslashes
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'PawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -266,13 +266,13 @@ def update_cat(id):
 
     if cat_table["selection"]["rows"]: #if a row is selected
             # selectedID = cat_table_df.iat[cat_table["selection"]["rows"][0],0]
-            selectedCatName = cat_table_df.iat[cat_table["selection"]["rows"][0],1]
-            selectedCage = cat_table_df.iat[cat_table["selection"]["rows"][0],6]
-            selectedStatus = cat_table_df.iat[cat_table["selection"]["rows"][0],7]
-            selectedOwnerName = cat_table_df.iat[cat_table["selection"]["rows"][0],2]
-            selectedOwnerContact = cat_table_df.iat[cat_table["selection"]["rows"][0],3]
-            selectedDate = cat_table_df.iat[cat_table["selection"]["rows"][0],4]
-            selectedType = cat_table_df.iat[cat_table["selection"]["rows"][0],5]
+            selectedCatName = filtered_df.iat[cat_table["selection"]["rows"][0],1]
+            selectedCage = filtered_df.iat[cat_table["selection"]["rows"][0],6]
+            selectedStatus = filtered_df.iat[cat_table["selection"]["rows"][0],7]
+            selectedOwnerName = filtered_df.iat[cat_table["selection"]["rows"][0],2]
+            selectedOwnerContact = filtered_df.iat[cat_table["selection"]["rows"][0],3]
+            selectedDate = filtered_df.iat[cat_table["selection"]["rows"][0],4]
+            selectedType = filtered_df.iat[cat_table["selection"]["rows"][0],5]
 
     with col1:
         
@@ -406,19 +406,19 @@ def view_cat(id):
     if cat_table["selection"]["rows"]: #if a row is selected
             # selectedID = cat_table_df.iat[cat_table["selection"]["rows"][0],0]
             # print("selected cat id:", selectedID)
-            selectedCatName = cat_table_df.iat[cat_table["selection"]["rows"][0],1]
+            selectedCatName = filtered_df.iat[cat_table["selection"]["rows"][0],1]
             # print("selected cat name:", selectedCatName)
-            selectedCage = cat_table_df.iat[cat_table["selection"]["rows"][0],6]
+            selectedCage = filtered_df.iat[cat_table["selection"]["rows"][0],6]
             # print("selected age:", selectedCage)
-            selectedStatus = cat_table_df.iat[cat_table["selection"]["rows"][0],7]
+            selectedStatus = filtered_df.iat[cat_table["selection"]["rows"][0],7]
             # print("selected status:", selectedStatus)
-            selectedOwnerName = cat_table_df.iat[cat_table["selection"]["rows"][0],2]
+            selectedOwnerName = filtered_df.iat[cat_table["selection"]["rows"][0],2]
             # print("selected owner name:", selectedOwnerName)
-            selectedOwnerContact = cat_table_df.iat[cat_table["selection"]["rows"][0],3]
+            selectedOwnerContact = filtered_df.iat[cat_table["selection"]["rows"][0],3]
             # print("selected owner contact:", selectedOwnerContact)
-            selectedDate = cat_table_df.iat[cat_table["selection"]["rows"][0],4]
+            selectedDate = filtered_df.iat[cat_table["selection"]["rows"][0],4]
             # print("selected date:", selectedDate)
-            selectedType = cat_table_df.iat[cat_table["selection"]["rows"][0],5]
+            selectedType = filtered_df.iat[cat_table["selection"]["rows"][0],5]
             # print("selected type:", selectedType)
 
     general_info, owner_info, treatment_info = st.tabs([":orange[General Information]", ":orange[Owner/Reporter's Details]", ":orange[Treatment related Details]"])
@@ -468,7 +468,7 @@ def view_cat(id):
         st.write("Dataframe:")
         st.dataframe(treatment_table_df, width = 600, height = 110, hide_index = True)
 
-    st.caption('_:orange[Press Esc to Cancel]_') 
+    # st.caption('_:orange[Press Esc to Cancel]_') 
     st.session_state.show_view_cat_dialog = False
 
 # ------------------------------------------------------------ #
@@ -535,7 +535,7 @@ cat_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, o
 
 # UPDATE AND DELETE BUTTONS
 if cat_table["selection"]["rows"]: #if a row is selected
-    selectedRow = cat_table_df.iat[cat_table["selection"]["rows"][0], 0]
+    selectedRow = filtered_df.iat[cat_table["selection"]["rows"][0], 0]
     # filteredRow = extract_cat_number(selectedRow)
     # print("filteredRow: ", filteredRow)
 
