@@ -16,9 +16,9 @@ import yaml
 from yaml.loader import SafeLoader
 
 # Note the double backslashes
-# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'PawRescue' # EMAN :'Khidmat'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -108,39 +108,6 @@ def delete_cages_dialog():
     st.session_state.show_add_cages_dialog = False
     st.session_state.show_update_cages_dialog = False
     st.session_state.show_delete_cages_dialog = True # True
-
-# @st.experimental_dialog("Ward Details")
-def Details(name):
-    with engine.begin() as conn:
-        capacity = conn.execute(sa.text("select capacityCages from Ward where name = :name"), {"name": f"{row['name']}"}).fetchall()[0][0]
-    
-    total = st.text_input("Capacity", value=capacity, disabled=True)
-    
-    with engine.begin() as conn:
-        result = conn.execute(sa.text("""
-                SELECT 
-                Cage.cageID as CageID,
-                Cats.catID as CatID,
-                Cats.catName as CatName,
-                Cage.date as Date,
-                cageStatus.cageStatus as Status
-            FROM 
-                Cage
-            INNER JOIN 
-                Ward ON Cage.wardID = Ward.wardID
-            INNER JOIN 
-                cageStatus ON Cage.cageStatusID = cageStatus.cageStatusID
-            INNER JOIN 
-                Cats ON Cage.cageID = Cats.cageID 
-            WHERE name = :name"""), {"name": name}).fetchall()
-        
-    wards_table = pd.DataFrame(result, columns=['CageID', 'CatID', 'CatName', 'Date', 'Status'])
-
-    # The Date Formatting remains here
-    wards_table['Date'] = pd.to_datetime(wards_table['Date']).dt.strftime('%d %b %Y')
-    final_table = st.dataframe(wards_table, width=1500, height=300, hide_index = True, selection_mode="single-row", on_select='rerun', key = name)
-
-    return final_table
 
 @st.experimental_dialog("Add New Ward")
 def add_ward():
@@ -339,10 +306,29 @@ def update_cages(id_to_update):
     
 @st.experimental_dialog("Delete Cages")
 def delete_cages(id_to_delete):
-    st.write(id_to_delete)
 
-    if st.button("Delete Cages", key='delete_cages'):
-        st.rerun()
+    id_to_delete = int(id_to_delete)
+
+    st.write(f"You are deleting {id_to_delete}")
+
+    with engine.begin() as conn:
+        availabililty = conn.execute(sa.text("select cageStatus from cageStatus, cage where cageStatus.cageStatusID = Cage.cageStatusID and cageID = :id_to_delete"),{"id_to_delete":id_to_delete}).fetchone()[0]
+
+    if availabililty == 'Free':
+        yes, no = st.columns(2)
+        yes_button = yes.button("Yes", key='yes')
+        no_button = no.button("No", key='no')
+        if yes_button:
+            with engine.begin() as conn:
+                conn.execute(sa.text("update cage set wardID=NULL, cageStatusID=NULL, date=NULL where cageID = :id_to_delete"), {"id_to_delete": id_to_delete})
+            st.rerun()
+        elif no_button:
+            st.session_state.show_delete_cages_dialog = False
+            st.rerun()
+    else:
+        st.write("You cannot currently delete this cage because it is occupied.")
+        if st.button("Okay"):
+            st.rerun()
 
     st.session_state.show_delete_cages_dialog = False
     st.caption('_:orange[Press Esc to Cancel]_')
@@ -393,60 +379,81 @@ with col6:
 wards_df = combined_wards_df
 
 for index, row in wards_df.iterrows():
-    with st.container():
-        with st.expander(f"**{row['name']}**"):
-            col1, col2, col3, col4, col5, col6= st.columns([0.1, 0.5, 0.7, 0.7, 1, 1])  # Adjusted column widths
-            with col1:
-                st.write("")  # Placeholder for the button
-            with col2:
-                st.write(f"Code: {row['code']}")
-                # print(f"Code: {row['code']}")
-            with col3:
-                with engine.begin() as conn:
-                    totalCages = conn.execute(sa.text("""
-                        select count(cageID)as total_cages from Cage
-                        inner join Ward on Cage.wardID = Ward.wardID
-                        where code = :code
-                    """), {"code": row['code']}).fetchall()
-                    # print(totalCages)
-                    # if totalCages:
-                totalCages = totalCages[0][0]
-                st.write(f"Available Cages: {totalCages}")
-                    # else:
-                    #     st.write(f"Available Cages: {row['total_cages']}")
-            with col4:
-                with engine.begin() as conn:
-                    freeCage = conn.execute(sa.text("""
-                        select count(cageID)as free_cages from Cage
-                        inner join Ward on Cage.wardID = Ward.wardID
-                        where cageStatusID = :cageStatusID and code = :code
-                    """), {"cageStatusID": 2, "code": row['code']}).fetchall()
 
-                freeCage = freeCage[0][0]
-                st.write(f"Free Cages: {freeCage}")
+    ward_name = row['name']
 
-            details_table = Details(f"{row['name']}")
+    with st.expander(f"**{ward_name}**", expanded=False):
+        col1, col2, col3, col4, col5, col6= st.columns([0.1, 0.5, 0.7, 0.7, 1, 1])  # Adjusted column widths
 
-    # details_table of Cages, Update and Delete (Only for Admin though)
-    if details_table["selection"]["rows"]: # if a row is selected
-        row_selected = details_table["selection"]["rows"][0]
+        with col1:
+            st.write("")  # Placeholder for the button
+
+        with col2:
+            st.write(f"Code: {row['code']}")
+            # print(f"Code: {row['code']}")
+
+        with col3:
+            with engine.begin() as conn:
+                totalCages = conn.execute(sa.text("""
+                    select count(cageID)as total_cages from Cage
+                    inner join Ward on Cage.wardID = Ward.wardID
+                    where code = :code
+                """), {"code": row['code']}).fetchall()
+            totalCages = totalCages[0][0]
+            st.write(f"Available Cages: {totalCages}")
+
+        with col4:
+            with engine.begin() as conn:
+                freeCage = conn.execute(sa.text("""
+                    select count(cageID)as free_cages from Cage
+                    inner join Ward on Cage.wardID = Ward.wardID
+                    where cageStatusID = :cageStatusID and code = :code
+                """), {"cageStatusID": 2, "code": row['code']}).fetchall()
+
+            freeCage = freeCage[0][0]
+            st.write(f"Free Cages: {freeCage}")
         
-        with col5:
-            update_button = col5.button("Update Cage Details", on_click=update_cages_dialog, key=str(index)+'update_cages')
+        with engine.begin() as conn:
+            capacity = conn.execute(sa.text("select capacityCages from Ward where name = :name"), {"name": f"{row['name']}"}).fetchall()[0][0]
         
-        with col6:
-            delete_button = col6.button("Delete Cage", on_click = delete_cages_dialog, key = str(index)+'delete_cages')
-
-        if st.session_state.show_update_cages_dialog:
-            update_cages(row_selected)
-            row_selected = 0
+        total = st.text_input("Capacity", value=capacity, disabled=True)
         
-        if st.session_state.show_delete_cages_dialog:
-            delete_cages(row_selected)
-            row_selected = 0
+        with engine.begin() as conn: # there is a problem here!
+            result = pd.DataFrame(conn.execute(sa.text(""" 
+                    SELECT 
+                    Cage.cageID as CageID,
+                    Cats.catID as CatID,
+                    Cats.catName as CatName,
+                    Cage.date as Date,
+                    cageStatus.cageStatus as Status
+                FROM 
+                    Cage
+                INNER JOIN 
+                    Ward ON Cage.wardID = Ward.wardID
+                INNER JOIN 
+                    cageStatus ON Cage.cageStatusID = cageStatus.cageStatusID
+                INNER JOIN 
+                    Cats ON Cage.cageID = Cats.cageID 
+                WHERE name = :name"""), {"name": ward_name}).fetchall())
+    
+        cages_table = st.dataframe(result, width=1500, height=300, hide_index = True, selection_mode="single-row", on_select='rerun', key = ward_name)
 
-            # details_table["selection"]["rows"] = []  # Reset the selection after the dialog is closed
+        if cages_table["selection"]["rows"]:
 
+            cage_id_selected = result.iat[cages_table["selection"]["rows"][0],0]
+
+            with col5:
+                update_button = col5.button("Transfer", key=str(index)+'update_cages')
+                if update_button:
+                    st.session_state.show_update_cages_dialog = True
+                    update_cages(cage_id_selected)
+
+            with col6:
+                delete_button = col6.button("Delete", key = str(index)+'delete_cages')
+                if delete_button:
+                    st.session_state.show_delete_cages_dialog = True
+                    delete_cages(cage_id_selected)
+        
 with open('../config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
 
@@ -462,11 +469,13 @@ name, logged_in, user_name = authenticator.login()
 
 st.sidebar.write(f"Logged in as: _:orange[{name}]_")
 
-with engine.connect() as conn:
-    role = conn.execute(sa.text("select roleDesc from InternalRole, Users where Users.internalRoleID = InternalRole.internalRoleID and Users.userName = :name"), {"name":name}).fetchone()[0]
+if name is not None:
+    with engine.connect() as conn:
+        role = conn.execute(sa.text("select roleDesc from InternalRole, Users where Users.internalRoleID = InternalRole.internalRoleID and Users.userName = :name"), {"name":name}).fetchone()[0]        
+    st.sidebar.write(f"Role: _:orange[{role}]_")
+else:
+    st.switch_page("LoginScreen.py")
 
-st.sidebar.write(f"Role: _:orange[{role}]_")
-
-if st.sidebar.button("🔓 Logout", key = 'logout'):
+if st.sidebar.button("🔓 Logout"):
     authenticator.logout(location = "unrendered")
     st.switch_page("LoginScreen.py")

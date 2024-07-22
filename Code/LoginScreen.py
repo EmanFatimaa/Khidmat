@@ -17,9 +17,9 @@ from yaml.loader import SafeLoader
 # database information ; will change when db hosting
 
 # Note the double backslashes
-# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'PawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -60,7 +60,7 @@ st.markdown(fixed_sidebar_width, unsafe_allow_html=True)
 
 @st.experimental_dialog("Reset Your Password")
 def reset_pass_dialog():
-    st.info('Contact the administrator to reset your password', icon="ℹ️")
+    st.warning('Contact the administrator to reset your password', icon="ℹ️")
 
 logo = Image.open("assets/logo.png")
 st.logo(logo)
@@ -85,17 +85,17 @@ with login:
 
     name, logged_in, user_name = authenticator.login(max_concurrent_users = 1, fields={'Form name':'Login', 'Username':'Username', 'Password':'Password', 'Login':'Login'})
 
-    if not name or not user_name:
-        st.info('Please enter your username and password')
-    elif logged_in:
+    if logged_in:
         st.session_state['user_name'] = user_name
         st.session_state['logged_in'] = True
         st.success(f'Welcome, {user_name}!')
         st.switch_page("pages/01_Dashboard.py")
-
+    elif not logged_in:
+        st.info('Please enter your correct username and password')     
+        
     forget_button = st.button("Forgot Password?")
     
-    if forget_button:
+    if forget_button: # ask Maida if we actually need to add reset password functionality.
         reset_pass_dialog()
 
     # Do something about the forgotten password thingy
