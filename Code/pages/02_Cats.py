@@ -24,8 +24,8 @@ from yaml.loader import SafeLoader
 # database information ; will change when db hosting
 
 # Note the double backslashes
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-# server = 'DESKTOP-HT3NB74' # EMAN
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'PawRescue'
@@ -345,7 +345,6 @@ def update_cat(id):
     date = st.date_input('Date', value=datetime.date.today())
 
     # Address text area
-    # Address text area
     addressFromDB = ''
     if ownerName:
         with engine.begin() as conn:
@@ -354,12 +353,11 @@ def update_cat(id):
                 addressFromDB = fetchall[0][0]
     address = st.text_area("Address", value = addressFromDB , placeholder = "Enter your address" )
 
-
     if st.button("Update"):
-        st.session_state.show_update_cat_dialog = False
         st.rerun()
-    # Submit button
+    
     st.caption(':orange[Press Esc to Cancel]')
+    st.session_state.show_update_cat_dialog = False
     
 #------------------------------------------------------------
 
@@ -370,9 +368,11 @@ def delete_cat(id):
     
     col1, col2, col3, col4, col5, col6 = st.columns(6)
 
+    # have to delete from treatments too to maintain referential integrity
     if col3.button("Yes"):
-        # with engine.begin() as conn:
-        #     conn.execute(sa.text())
+        with engine.begin() as conn:
+            conn.execute(sa.text("update cats set catID = NULL, catName = NULL,  age = 0.00, genderID = NULL, typeID = NULL, cageID = NULL, externalID = NULL, statusID = NULL, admittedOn = NULL where catID = :catID"),  {"catID" : id})
+            conn.execute(sa.text("update treatment set treatmentID = NULL, catID = Null, dateTime = NULL, temperature = 0, treatment = NULL where catID = :catID"),  {"catID" : id})
         st.rerun()
 
     if col4.button("No ", key = "no"):
@@ -425,51 +425,72 @@ def view_cat(id):
 
     # Tabs
     with general_info:
-        
-        st.write("***Name:***",selectedCatName )
-        st.write("***Cage ID:***", selectedCage)
-        st.write("***Admitted On:***",selectedDate)
+        with st.container(border= True):
+            st.write("***Name:***",selectedCatName )
+            st.write("***Cage ID:***", selectedCage)
+            st.write("***Admitted On:***",selectedDate)
 
-        if str(int(genderDB[0])) == "1":
-            st.write("***Gender:***", "Male")
+            if str(int(genderDB[0])) == "1":
+                st.write("***Gender:***", "Male")
 
-        elif str(int(genderDB[0])) == "2":
-            st.write("***Gender:***", "Female")
+            elif str(int(genderDB[0])) == "2":
+                st.write("***Gender:***", "Female")
 
-        st.write("***Age:***", str(ageDB[0]), "yr(s)")
-        st.write("***Status:***",selectedStatus)
+            st.write("***Age:***", str(ageDB[0]), "yr(s)")
+            st.write("***Status:***",selectedStatus)
 
     with owner_info:
-            st.write("***Name:***", selectedOwnerName)
-            st.write("***Contact Number:***", selectedOwnerContact)
-            st.write("***Address:***", str(addressDB[0]))
-            st.write("***Pet Type:***", selectedType)
-    
-    with treatment_info:
-        # with st.table():
-        # st.write("*To add a new treatment kindly click the button below to be redirected to treatments page*" )
-        col1, col2= st.columns([1.7, 1])
+        with st.container( border = True):
+                st.write("***Name:***", selectedOwnerName)
+                st.write("***Contact Number:***", selectedOwnerContact)
+                st.write("***Address:***", str(addressDB[0]))
+                st.write("***Pet Type:***", selectedType)
         
-        with col2:
-            treatment = st.button(" ✙ Add Treatment")
-        if treatment:
-            st.switch_page("pages/03_Treatments.py") 
+    with treatment_info:
+        with st.container( border = True):
+            # with st.table():
+            # st.write("*To add a new treatment kindly click the button below to be redirected to treatments page*" )
+            col1, col2= st.columns([1.7, 1])
+            
+            with col2:
+                treatment = st.button(" ✙ Add Treatment")
+            if treatment:
+                st.switch_page("pages/03_Treatments.py") 
 
-        with engine.begin() as conn:
-            treatment_table_df = pd.read_sql_query(sa.text("""
-            select dateTime as 'Date/Time', temperature as 'Temp', treatment as 'Treatment' , users.userName as 'Given by'
-            from treatment
-            join cats on treatment.catID = cats.catID
-            join users on treatment.userID = users.userID"""), conn)
+            # Define the SQL query with a parameter placeholder
+            query = """
+            SELECT dateTime AS 'Date/Time', 
+                temperature AS 'Temp', 
+                treatment AS 'Treatment', 
+                users.userName AS 'Given by'
+            FROM treatment
+            JOIN cats ON treatment.catID = cats.catID
+            JOIN users ON treatment.userID = users.userID
+            WHERE treatment.catID = :catID
+            """
 
-        treatment_table_df["Date/Time"] =pd.to_datetime(treatment_table_df["Date/Time"]).dt.strftime('%d %b %Y, %I:%M %p')
-        st.write("Table:")
-        st.table(treatment_table_df)
-        st.write("Dataframe:")
-        st.dataframe(treatment_table_df, width = 600, height = 110, hide_index = True)
+            # Execute the query and fetch the results into a DataFrame
+            with engine.begin() as conn:
+                treatment_table_df = pd.read_sql_query(sa.text(query), conn, params={"catID": extract_cat_number(id)})
 
-    # st.caption('_:orange[Press Esc to Cancel]_') 
-    st.session_state.show_view_cat_dialog = False
+            # with engine.begin() as conn:
+            #     treatment_table_df = pd.read_sql_query(sa.text("""
+            #     select dateTime as 'Date/Time', temperature as 'Temp', treatment as 'Treatment' , users.userName as 'Given by'
+            #     from treatment
+            #     join cats on treatment.catID = cats.catID
+            #     join users on treatment.userID = users.userID
+            #     where cats.catID = extract_cat_id(id)
+            #     """),conn) #where treatment.catID = :treatment.catID#{"catID":id} 
+            # print("ID = ", id)
+
+            treatment_table_df["Date/Time"] =pd.to_datetime(treatment_table_df["Date/Time"]).dt.strftime('%d %b %Y, %I:%M %p')
+            st.write("Table:")
+            st.table(treatment_table_df)
+            st.write("Dataframe:")
+            st.dataframe(treatment_table_df, width = 600, height = 110, hide_index = True)
+
+        # st.caption('_:orange[Press Esc to Cancel]_') 
+        st.session_state.show_view_cat_dialog = False
 
 # ------------------------------------------------------------ #
 
@@ -497,19 +518,19 @@ cat_table_df['Cat ID'] = cat_table_df['Cat ID'].apply(lambda x: f"PA-{str(x).zfi
 # Generate cage for each catID
 cat_table_df['Cage ID'] = cat_table_df['Cage ID'].apply(lambda x: f"GW-C-{str(x).zfill(2)}")
 
-
-st.write("Filters")
+st.write(" ")
+st.write('##### :orange[Filters:]')
 dates2 = cat_table_df['Admitted On'].unique()
 status = cat_table_df['Status'].unique()
 owner = cat_table_df['Owner/Reporter'].unique()
 
 col1, col2, col3 = st.columns(3)
 with col1:
-    selected_date2 = st.selectbox("Select Date", options=[""] + list(dates2), index=0, placeholder='Choose an option', key='cat_date_filter')
+    selected_date2 = st.selectbox(":white[Select Date:]", options=[""] + list(dates2), index=0, placeholder='Choose an option', key='cat_date_filter')
 with col2:
-    selected_status = st.selectbox("Select Status", options=[""] + list(status), index=0, placeholder='Choose an option', key='cat_status_filter')
+    selected_status = st.selectbox(":white[Select Status:]", options=[""] + list(status), index=0, placeholder='Choose an option', key='cat_status_filter')
 with col3:
-    selected_owner = st.selectbox("Select Owner/Reporter", options= [""] + list(owner), index=0, placeholder='Choose an option', key='cat_owner_filter')
+    selected_owner = st.selectbox(":white[Select Owner/Reporter:]", options= [""] + list(owner), index=0, placeholder='Choose an option', key='cat_owner_filter')
 
 if selected_date2:
     filtered_df = cat_table_df[cat_table_df['Admitted On'] == selected_date2]
@@ -524,7 +545,7 @@ if selected_owner:
 
 st.divider()
 
-col1, col2, col3, col4, col5, col6 = st.columns([4.4,1.2,1,1,1,1.6])
+col1, col2, col3, col4, col5, col6 = st.columns([4.4,1,1,1,1,1.6])
 
 #Add a new cat button
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
@@ -540,7 +561,7 @@ if cat_table["selection"]["rows"]: #if a row is selected
     # print("filteredRow: ", filteredRow)
 
     # print("selected row is :", selectedRow) -- PA-0001
-    view = col3.button("View", on_click= view_cat_dialog) # 👀 🧐
+    view = col3.button(" View ", on_click= view_cat_dialog) # 👀 🧐
     update = col4.button("Update  ", on_click= update_cat_dialog) # 📝
     delete = col5.button("Delete  ", on_click= delete_cat_dialog) #🗑️
 

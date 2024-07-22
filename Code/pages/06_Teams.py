@@ -25,8 +25,8 @@ from yaml.loader import SafeLoader
 # Right now it only works for the 7 people that should also be in the database
 
 # Note the double backslashes
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-# server = 'DESKTOP-HT3NB74' # EMAN
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'PawRescue'

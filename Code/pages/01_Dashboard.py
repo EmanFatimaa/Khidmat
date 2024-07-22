@@ -1,14 +1,19 @@
-import streamlit as st
-import pandas as pd
-import plotly.express as px # for pie chart
-from st_pages import Page, show_pages, add_page_title, hide_pages
+#standard imports
 from PIL import Image
 
+# third party imports
+import pandas as pd
+import streamlit as st
 import sqlalchemy as sa
+import plotly.express as px # for pie chart
 
 # custom imports
+from millify import prettify
 from sqlalchemy.engine import URL
 from sqlalchemy import create_engine
+
+# custom streamlit imports
+from st_pages import Page, show_pages, add_page_title, hide_pages
 
 # streamlit-authenticator package
 import streamlit_authenticator as stauth
@@ -18,8 +23,8 @@ from yaml.loader import SafeLoader
 # database information ; will change when db hosting
 
 # Note the double backslashes
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-# server = 'DESKTOP-HT3NB74' # EMAN
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'PawRescue'
@@ -27,9 +32,11 @@ connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};D
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
 engine = create_engine(connection_url)
 
-st.set_page_config(page_title="Dashboard", page_icon="📊", initial_sidebar_state="expanded", layout="wide") # I think we should keep it wide and make it work this way? More information maybe or something.
+st.set_page_config(page_title="Dashboard", page_icon="📊", initial_sidebar_state="expanded" ,layout = "wide") # I think we should keep it wide and make it work this way? More information maybe or something.
 
-# connectivity remains
+# logo
+logo = Image.open("assets/logo.png")
+st.logo(logo)
 
 # Button Styling
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
@@ -59,46 +66,72 @@ show_pages(
 
 hide_pages(["Login"])
 
-# logo
-logo = Image.open("assets/logo.png")
-st.logo(logo)
-
 #title
 st.header("Dashboard" , divider='orange')
 
 # Boxes
-
-# Read the CSV file
-df = pd.read_csv('assets/Cats_IDs.csv')
-
-# Count the number of cats by status
-status_counts = df['Status'].value_counts().to_dict()
-
-# Calculate the values
-total_cats_treated = len(df)
-recovered = status_counts.get('Healthy in lower portion', 0) + status_counts.get('Move To healthy area', 0) + status_counts.get('Adopted', 0) + status_counts.get('Ready To discharge', 0)
-expired = status_counts.get('Expired', 0)
-discharged = status_counts.get('Discharged', 0)
+st.write("From database:")
 
 # Creating columns
 col1, col2, col3, col4 = st.columns(4)
 
-# Create a container for each metric
-with col1:
-    with st.container( border= True):
-        st.metric(label="Total Cats Treated", value=f"{total_cats_treated:,}")
+query = """
+select count( CATS.statusID) as 'Total Cats treated' from Cats join CatStatus on cats.statusID = CatStatus.statusID where cats.statusID in (2,11)
+"""
+with col1: # need to fix logic
+    with st.container( border = True):
+        with engine.begin() as conn:
+            total_cats_treated = pd.read_sql_query(sa.text(query), conn)
+        st.metric( label = "Total cats treated", value = prettify(int(total_cats_treated.iat[0,0] )))
 
-with col2:
-    with st.container(border= True):
-        st.metric(label="Recovered", value=f"{recovered:,}")
+with col2: # need to fix logic
+    with st.container( border = True):
+        pass
+        st.metric( label = "Recovered", value = 0)
 
-with col3:
-    with st.container(border= True):
-        st.metric(label="Expired", value=f"{expired:,}")
+with col3: # status id = 1
+    with st.container( border = True):
+        with engine.begin() as conn:
+            total_cats_expired = pd.read_sql_query(sa.text("select count( CATS.statusID) as 'Total Cats treated' from Cats join CatStatus on cats.statusID = CatStatus.statusID where cats.statusID = 1"), conn)
+        st.metric( label = "Expired", value = prettify(int(total_cats_expired.iat[0,0] )))
+       
+with col4: # status id = 4
+    with st.container( border = True):
+        with engine.begin() as conn:
+            total_cats_discharged = pd.read_sql_query(sa.text("select count( CATS.statusID) as 'Total Cats treated' from Cats join CatStatus on cats.statusID = CatStatus.statusID where cats.statusID = 4"), conn)
+        st.metric( label = "Discharged", value = prettify(int(total_cats_discharged.iat[0,0] )))
 
-with col4:
-    with st.container(border= True):
-        st.metric(label="Discharged", value=f"{discharged:,}")
+st.write("Everything else is non database: ")    
+#### OLD LOGIC:
+
+# # Read the CSV file
+# df = pd.read_csv('assets/Cats_IDs.csv')
+
+# # Count the number of cats by status
+# status_counts = df['Status'].value_counts().to_dict()
+
+# # Calculate the values
+# total_cats_treated = len(df)
+# recovered = status_counts.get('Healthy in lower portion', 0) + status_counts.get('Move To healthy area', 0) + status_counts.get('Adopted', 0) + status_counts.get('Ready To discharge', 0)
+# expired = status_counts.get('Expired', 0)
+# discharged = status_counts.get('Discharged', 0)
+
+# # Create a container for each metric
+# with col1:
+#     with st.container( border= True):
+#         st.metric(label="Total Cats Treated", value=f"{total_cats_treated:,}")
+
+# with col2:
+#     with st.container(border= True):
+#         st.metric(label="Recovered", value=f"{recovered:,}")
+
+# with col3:
+#     with st.container(border= True):
+#         st.metric(label="Expired", value=f"{expired:,}")
+
+# with col4:
+#     with st.container(border= True):
+#         st.metric(label="Discharged", value=f"{discharged:,}")
 
 # Donation graph
 
@@ -115,7 +148,7 @@ df = pd.DataFrame(data)
 with st.container(border = True,height= 500):
     
     # Title of the Streamlit app
-    st.write("#### Donations Received Monthly")
+    st.write("#### :white[Donations Received Monthly]")
     # Create a line chart using Plotly
     fig = px.line(
         df,
@@ -154,7 +187,7 @@ status_counts.columns = ['Status', 'Count']
 #Contaier:
 with st.container(border= True, height= 500):
     # Title of the Streamlit app
-    st.write("#### Cats Status Summary")
+    st.write("#### :white[Cats Status Summary]")
 
     # Create a pie chart using Plotly
     fig = px.pie(status_counts, values='Count', names='Status')
@@ -176,8 +209,8 @@ top_owners = owner_counts.head(5)
 
 # with col6:
 with st.container(border= True):
-    st.write("#### Top 5 Owners/ Reporters")
-    st.dataframe(top_owners,hide_index = True, width= 700)
+    st.write("#### :white[Top 5 Owners/ Reporters]")
+    st.dataframe(top_owners,hide_index = True, width= 1000)
 
 with open('../config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
