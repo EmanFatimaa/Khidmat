@@ -1,5 +1,6 @@
 #standard imports
 from PIL import Image
+import time
 
 # third party imports
 import pandas as pd
@@ -70,7 +71,7 @@ hide_pages(["Login"])
 st.header("Dashboard" , divider='orange')
 
 # Boxes
-st.write("From database:")
+st.warning("Everything except for pie chart is connected to database :)")
 
 # Creating columns
 col1, col2, col3, col4 = st.columns(4)
@@ -85,9 +86,10 @@ with col1: # need to fix logic
         st.metric( label = "Total cats treated", value = prettify(int(total_cats_treated.iat[0,0] )))
 
 with col2: # need to fix logic
-    with st.container( border = True):
-        pass
-        st.metric( label = "Recovered", value = 0)
+    with st.container( border = True): 
+        with engine.begin() as conn:
+            total_cats_treated = pd.read_sql_query(sa.text("select count( CATS.statusID) as 'Total Cats treated' from Cats join CatStatus on cats.statusID = CatStatus.statusID where cats.statusID in (11)"), conn)
+        st.metric( label = "Recovered",value = prettify(int(total_cats_treated.iat[0,0] )))
 
 with col3: # status id = 1
     with st.container( border = True):
@@ -101,44 +103,38 @@ with col4: # status id = 4
             total_cats_discharged = pd.read_sql_query(sa.text("select count( CATS.statusID) as 'Total Cats treated' from Cats join CatStatus on cats.statusID = CatStatus.statusID where cats.statusID = 4"), conn)
         st.metric( label = "Discharged", value = prettify(int(total_cats_discharged.iat[0,0] )))
 
-st.write("Everything else is non database: ")    
-#### OLD LOGIC:
-
-# # Read the CSV file
-# df = pd.read_csv('assets/Cats_IDs.csv')
-
-# # Count the number of cats by status
-# status_counts = df['Status'].value_counts().to_dict()
-
-# # Calculate the values
-# total_cats_treated = len(df)
-# recovered = status_counts.get('Healthy in lower portion', 0) + status_counts.get('Move To healthy area', 0) + status_counts.get('Adopted', 0) + status_counts.get('Ready To discharge', 0)
-# expired = status_counts.get('Expired', 0)
-# discharged = status_counts.get('Discharged', 0)
-
-# # Create a container for each metric
-# with col1:
-#     with st.container( border= True):
-#         st.metric(label="Total Cats Treated", value=f"{total_cats_treated:,}")
-
-# with col2:
-#     with st.container(border= True):
-#         st.metric(label="Recovered", value=f"{recovered:,}")
-
-# with col3:
-#     with st.container(border= True):
-#         st.metric(label="Expired", value=f"{expired:,}")
-
-# with col4:
-#     with st.container(border= True):
-#         st.metric(label="Discharged", value=f"{discharged:,}")
-
 # Donation graph
+with engine.begin() as conn:
+    jan = conn.execute(sa.text("select sum(amount) from donations where month(date) = 1")).fetchall()[0][0]
+    feb = conn.execute(sa.text("select sum(amount)  from donations where month(date) = 2")).fetchall()[0][0]
+    march = conn.execute(sa.text("select sum(amount)  from donations where month(date) = 3")).fetchall()[0][0]
+    april = conn.execute(sa.text("select sum(amount)  from donations where month(date) = 4")).fetchall()[0][0]
+    may = conn.execute(sa.text("select sum(amount)  from donations where month(date) = 5")).fetchall()[0][0]
+    june = conn.execute(sa.text("select sum(amount)  from donations where month(date) = 6")).fetchall()[0][0]
+    july = conn.execute(sa.text("select sum(amount)  from donations where month(date) = 7")).fetchall()[0][0]
+    aug = conn.execute(sa.text("select sum(amount)  from donations where month(date) = 8")).fetchall()[0][0]
+    sep = conn.execute(sa.text("select sum(amount)  from donations where month(date) = 9")).fetchall()[0][0]
+    oct = conn.execute(sa.text("select sum(amount)  from donations where month(date) = 10")).fetchall()[0][0]
+    nov = conn.execute(sa.text("select sum(amount)  from donations where month(date) = 11")).fetchall()[0][0]
+    dec = conn.execute(sa.text("select sum(amount)  from donations where month(date) = 12")).fetchall()[0][0]
 
-# Example data
+lstDonations = [jan, feb, march, april, may, june, july, aug, sep, oct, nov, dec]
+
+# Iterate over the list and replace None values with 0
+for i in range(len(lstDonations)):
+    if lstDonations[i] is None:
+        lstDonations[i] = 0
+
+max = max(lstDonations)
+# print(max)
+
+# # Print each element in the list
+# for donation in lstDonations:
+#     print(donation)
+
 data = {
     "Month": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-    "Donations": [5000, 7000, 10000, 22000, 15000, 17000, 11000, 5000, 16000, 14000, 15000, 13000]
+    "Donations": lstDonations
 }
 
 # Create a DataFrame
@@ -167,7 +163,7 @@ with st.container(border = True,height= 500):
         yaxis=dict(title="Donations", showgrid=False),
         xaxis=dict(title="Month", showgrid=False)
     )
-    fig.update_yaxes(range=[0, 25000])
+    fig.update_yaxes(range=[0, max+10000])
 
     # Display the chart in Streamlit
     st.plotly_chart(fig)
@@ -195,22 +191,25 @@ with st.container(border= True, height= 500):
     # Display the pie chart in Streamlit
     st.plotly_chart(fig)
 
-# top reporter
+# Top reporter
+query = """
+select top 5 name as 'Name', count (catID) as 'Count' 
+from cats join Externals
+on cats.externalID = externals.externalID
+where cats.externalID is not NULL
+GROUP BY cats.externalID, name
+order by count(catID) desc
+"""
+with engine.begin() as conn:
+    reporter_table = pd.read_sql_query(sa.text(query), conn)
+# print(reporter_table)
+reporter_table.columns = ['Name','Number of Cats' ]
 
-# Load the CSV file
-df = pd.read_csv('assets/Cats_IDs.csv')
-
-# Group the data by Owner name and count the number of cats
-owner_counts = df['Owner name'].value_counts().reset_index()
-owner_counts.columns = ['Name', 'Number of Cats']
-
-# Get the top 5 owners
-top_owners = owner_counts.head(5)
-
-# with col6:
-with st.container(border= True):
+with st.container(border=True):
     st.write("#### :white[Top 5 Owners/ Reporters]")
-    st.dataframe(top_owners,hide_index = True, width= 1000)
+    st.dataframe(reporter_table, hide_index=True, width=1000)
+
+    st.info("What if multiple owners with count as 1... kis basis pe top choose krna hai phir")
 
 with open('../config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
@@ -237,3 +236,6 @@ else:
 if st.sidebar.button("🔓 Logout"):
     authenticator.logout(location = "unrendered")
     st.switch_page("LoginScreen.py")
+
+# with st.spinner('Logging out...'):
+#         time.sleep(2)

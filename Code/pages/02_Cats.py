@@ -126,7 +126,7 @@ def add_cat():
         with engine.begin()as conn:
             currentCatID = int(pd.read_sql_query(sa.text("select top 1 catID from Cats order by catID desc"), conn).iat[0,0]) + 1
             #TODO:
-            catCodestr = "PA-000" + str(currentCatID) #need to fix this logic , explore prettify
+            catCodestr = "PA-" + str(currentCatID).zfill(4) # catCodestr = "PA-000" + str(currentCatID) #need to fix this logic , explore prettify
         st.text_input("Cat ID", value = catCodestr, disabled= True)
 
         # Age field
