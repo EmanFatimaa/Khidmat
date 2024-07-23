@@ -368,14 +368,19 @@ def delete_cat(id):
     
     col1, col2, col3, col4, col5, col6 = st.columns(6)
 
+    yes = col3.button("Yes")
+    no = col4.button("No")
     # have to delete from treatments too to maintain referential integrity
-    if col3.button("Yes"):
+    if yes:
         with engine.begin() as conn:
             conn.execute(sa.text("update cats set catName = NULL,  age = NULL, genderID = NULL, typeID = NULL, cageID = NULL, externalID = NULL, statusID = NULL, admittedOn = NULL where catID = :catID"),  {"catID" :  extract_cat_number(id)})
             # conn.execute(sa.text("update treatment set catID = Null, dateTime = NULL, temperature = NULL, treatment = NULL where catID = :catID"),  {"catID" : extract_cat_number(id)})
+            with st.spinner('Deleting...'):
+                time.sleep(3)
+            st.success(f"Cat ID: {id} has been deleted successfully")
         st.rerun()
 
-    if col4.button("No ", key = "no"):
+    if no:
         st.session_state.show_delete_cat_dialog = False
         st.rerun()
 
