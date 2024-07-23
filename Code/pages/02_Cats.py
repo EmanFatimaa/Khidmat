@@ -194,15 +194,15 @@ def add_cat():
     st.caption(':orange[Press Esc to Cancel]')
 
     # Logic for inserting the data
-    if st.button("Add cat"):
+    if st.button("Add"):
        
         # Checks
         everythingFilled = False
 
         # Check if any of the fields are left unfilled
         if not (age and type and name and gender and cageNum and status and ownerName and ownerContact and address):
-            st.error("Please fill in all fields before submitting.")
-            print("Please fill in all fields.")
+            st.error("Please fill in all the fields before submitting.")
+            print("Please fill in all the fields.")
         else:
             everythingFilled = True
 
@@ -234,6 +234,11 @@ def add_cat():
 
             with st.spinner('Adding...'): # is this really necessary? lmao
                 time.sleep(2)
+
+            container = st.empty()
+            container.success(f"Cat ID: {id} has been added successfully") # Create a success alert
+            time.sleep(4)  # Wait  4seconds
+            container.empty()  # Clear the success alert
 
             st.rerun()
             
@@ -375,9 +380,14 @@ def delete_cat(id):
         with engine.begin() as conn:
             conn.execute(sa.text("update cats set catName = NULL,  age = NULL, genderID = NULL, typeID = NULL, cageID = NULL, externalID = NULL, statusID = NULL, admittedOn = NULL where catID = :catID"),  {"catID" :  extract_cat_number(id)})
             # conn.execute(sa.text("update treatment set catID = Null, dateTime = NULL, temperature = NULL, treatment = NULL where catID = :catID"),  {"catID" : extract_cat_number(id)})
+            
             with st.spinner('Deleting...'):
-                time.sleep(3)
-            st.success(f"Cat ID: {id} has been deleted successfully")
+                time.sleep(2)
+            # st.success(f"Cat ID: {id} has been deleted successfully")
+            container = st.empty()
+            container.success(f"Cat ID: {id} has been deleted successfully") # Create a success alert
+            time.sleep(4)  # Wait  4seconds
+            container.empty()  # Clear the success alert
         st.rerun()
 
     if no:
@@ -549,7 +559,18 @@ if selected_status:
 if selected_owner:
     filtered_df = filtered_df[filtered_df['Owner/Reporter'] == selected_owner]
 
+col1, col2, col3, col4, col5, col6 = st.columns([5,1,1,1,1,1.6])
+
+clear_filters = col6.button("Clear filters")
+
+if clear_filters:
+    container = st.empty()
+    container.info("Functionality missing as of now...")  # Create a success alert
+    time.sleep(2)  # Wait 2 seconds
+    container.empty()  # Clear the success alert
+
 st.divider()
+
 
 col1, col2, col3, col4, col5, col6 = st.columns([4.4,1,1,1,1,1.6])
 
