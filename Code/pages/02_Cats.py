@@ -534,6 +534,8 @@ cat_table_df['Cat ID'] = cat_table_df['Cat ID'].apply(lambda x: f"PA-{str(x).zfi
 # Generate cage for each catID
 cat_table_df['Cage ID'] = cat_table_df['Cage ID'].apply(lambda x: f"GW-C-{str(x).zfill(2)}")
 
+st.info("Add, view, delete are done (without checks & conditions), thora sa update left...")
+
 st.write(" ")
 st.write('##### :orange[Filters:]')
 dates2 = cat_table_df['Admitted On'].unique()

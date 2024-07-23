@@ -71,7 +71,7 @@ hide_pages(["Login"])
 st.header("Dashboard" , divider='orange')
 
 # Boxes
-st.warning("Everything except for pie chart is connected to database :)")
+st.success("Everything is connected to the database, wohooo :)", icon="🎉")
 
 # Creating columns
 col1, col2, col3, col4 = st.columns(4)
@@ -102,6 +102,8 @@ with col4: # status id = 4
         with engine.begin() as conn:
             total_cats_discharged = pd.read_sql_query(sa.text("select count( CATS.statusID) as 'Total Cats treated' from Cats join CatStatus on cats.statusID = CatStatus.statusID where cats.statusID = 4"), conn)
         st.metric( label = "Discharged", value = prettify(int(total_cats_discharged.iat[0,0] )))
+
+st.info("Need to confirm the logic for these metrics, abhi tak have done jo samjh aya..")
 
 # Donation graph
 with engine.begin() as conn:
@@ -172,24 +174,47 @@ col5, col6 = st.columns(2)
 
 # Cats pie chart
 
-# Read the CSV file
-df = pd.read_csv('assets/Cats_IDs.csv')
+# SQL query to fetch data
+catsQuery = """
+select count(cats.statusID) as 'Count', statusType
+from cats join CatStatus 
+on cats.statusID = CatStatus.StatusID
+group by cats.statusID, statusType
+"""
 
-# Count the number of cats by status
-status_counts = df['Status'].value_counts().reset_index()
-status_counts.columns = ['Status', 'Count']
+# Fetch data from the database into a Pandas DataFrame
+with engine.begin() as conn:
+    status_df= pd.read_sql_query(sa.text(catsQuery), conn)
+print(status_df)
 
-# with col5:
-#Contaier:
-with st.container(border= True, height= 500):
-    # Title of the Streamlit app
+# Streamlit container
+with st.container(border=True, height=500):
+
+    #Title
     st.write("#### :white[Cats Status Summary]")
 
-    # Create a pie chart using Plotly
-    fig = px.pie(status_counts, values='Count', names='Status')
-
-    # Display the pie chart in Streamlit
+    # Create the pie chart
+    fig = px.pie(status_df, values='Count', names='statusType')
     st.plotly_chart(fig)
+
+# # Read the CSV file
+# df = pd.read_csv('assets/Cats_IDs.csv')
+
+# # Count the number of cats by status
+# status_counts = df['Status'].value_counts().reset_index()
+# status_counts.columns = ['Status', 'Count']
+
+# # with col5:
+# #Contaier:
+# with st.container(border= True, height= 500):
+#     # Title of the Streamlit app
+#     st.write("#### :white[Cats Status Summary]")
+
+#     # Create a pie chart using Plotly
+#     fig = px.pie(status_counts, values='Count', names='Status')
+
+#     # Display the pie chart in Streamlit
+#     st.plotly_chart(fig)
 
 # Top reporter
 query = """
