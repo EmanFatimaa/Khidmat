@@ -432,7 +432,7 @@ for index, row in wards_df.iterrows():
                     Ward ON Cage.wardID = Ward.wardID
                 INNER JOIN 
                     cageStatus ON Cage.cageStatusID = cageStatus.cageStatusID
-                INNER JOIN 
+                LEFT JOIN 
                     Cats ON Cage.cageID = Cats.cageID 
                 WHERE name = :name"""), {"name": ward_name}).fetchall())
     
