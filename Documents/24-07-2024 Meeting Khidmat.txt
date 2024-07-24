@@ -1,0 +1,43 @@
+Meeting Minutes:
+
+Dashboard:
+-All the Cats are admitted, all the count Cats
+-Total cats Treated monthly need a table too in Dashboard
+-Metric of Donations should be 2lakh max
+-Cat Status Summary should be monthly as well.
+-Need a Filter for the whole Dashboard, weekly, monthly, yearly
+-Give Maida all cats so that she tells which tells us Recovered
+
+Cats:
+-Till Date instead of empty in All Filters.
+-PR instead of PA
+-Remove Delete everywhere
+-View men remove Treatment ka table or make it st.data_editor
+-Cat Pictures maybe in the dataframe as well.. lmao
+
+Treatment:
+-Add CatID sahi se, even in Add Treatment do CatID honestly.
+-Given By should be disabled and Only jis ne login kia hai should be there
+-Cat name instead of Treatment ID ; remove Treatment ID
+-We can remove it fakeha dumb question...
+-Delete here should be there. (Basically if not a admin then not able to select rows.)
+
+Wards:
+-Cages ID should be string (honestly CatID should be string as well)
+-Capacity should be removed hi.. Bas available and free cages only..
+-Edit Ward is fine bas wohi capacity gone
+-Available Cages should be Capacity hi..
+-Cat should be transferred in the Transfer button in the Cages Table.
+-Delete Doesn't show if Cage is Occupied.
+-Delete Wards men checks aane chaiye
+
+Finances:
+-To and From Date for everthing though
+
+Team:
+-Delete Member should be here as well.
+-Logs... lmao
+
+-They dont really need a lot of ID, like treatmentIDs, DOnationsiDs etc
+-Admin Rights for each page (update for Admin and Delete removed everywhere)
+-Aesthestics Logo from Figma everything..
