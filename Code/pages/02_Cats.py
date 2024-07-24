@@ -24,9 +24,9 @@ from yaml.loader import SafeLoader
 # database information ; will change when db hosting
 
 # Note the double backslashes
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -146,7 +146,7 @@ def add_cat():
 
         # Cage no field
         with engine.begin() as conn:
-            cageID = pd.read_sql_query(sa.text("SELECT cageID FROM Cage WHERE cageID NOT IN (SELECT cageID FROM Cats)"), conn)  # OR: select cageID from Cage where cageStatus = 'Free'
+            cageID = pd.read_sql_query(sa.text("select cageID from Cage where cageStatusID = 2"), conn)  # OR: select cageID from Cage where cageStatus = 'Free'
             wardID =pd.read_sql_query(sa.text("Select wardID from ward where wardID in (select WardID from cage)"),conn)
         cageNum = st.selectbox("Cage Number", cageID["cageID"].tolist())  # This should also show which Ward it is in and that Cage is free or not ofc.
         
@@ -196,6 +196,11 @@ def add_cat():
        
         # Checks
         everythingFilled = False
+        valid_catname = False
+        valid_age = False
+        valid_ownername = False
+        valid_contact = False
+        valid_address = False
 
         # Check if any of the fields are left unfilled
         if not (age and type and name and gender and cageNum and status and ownerName and ownerContact and address):
@@ -204,7 +209,32 @@ def add_cat():
         else:
             everythingFilled = True
 
-        if everythingFilled:
+        if all(x.isalpha() or x.isspace() for x in name):
+                valid_catname = True
+        else:
+            st.error("Please enter a valid cat name.")
+
+        if age>0:
+            valid_age = True
+        else:
+            st.error("Please enter a valid age for the cat.")
+
+        if all(x.isalpha() or x.isspace() for x in ownerName):
+                valid_ownername = True
+        else:
+            st.error("Please enter a valid Owner name.")
+
+        if len(ownerContact)>0 and len(ownerContact)<12 and ownerContact.isnumeric:
+            valid_contact = True
+        else:
+            st.error("Please enter a valid contact number.")
+
+        if all(x.isalpha() or x.isspace() or x.isnumeric() for x in address):
+                valid_address = True
+        else:
+            st.error("Please enter a valid address.")
+
+        if (everythingFilled and valid_catname and valid_age and valid_ownername and valid_contact and valid_address):
             with engine.begin() as conn:
                 conn.execute(sa.text(""" 
                 IF NOT EXISTS (SELECT externalID FROM Externals WHERE name = :name)
@@ -362,7 +392,48 @@ def update_cat(id):
     address = st.text_area("Address", value = addressFromDB , placeholder = "Enter your address" )
 
     if st.button("Update"):
-        st.rerun()
+        #checks
+        everythingFilled = False
+        valid_catname = False
+        valid_age = False
+        valid_ownername = False
+        valid_contact = False
+        valid_address = False
+
+        # Check if any of the fields are left unfilled
+        if not (age and type and name and gender and cageNum and status and ownerName and ownerContact and address):
+            st.error("Please fill in all the fields before submitting.")
+            print("Please fill in all the fields.")
+        else:
+            everythingFilled = True
+
+        if all(x.isalpha() or x.isspace() for x in name):
+                valid_catname = True
+        else:
+            st.error("Please enter a valid cat name.")
+
+        if age>0:
+            valid_age = True
+        else:
+            st.error("Please enter a valid age for the cat.")
+
+        if all(x.isalpha() or x.isspace() for x in ownerName):
+                valid_ownername = True
+        else:
+            st.error("Please enter a valid Owner name.")
+
+        if len(ownerContact)>0 and len(ownerContact)<12 and ownerContact.isnumeric:
+            valid_contact = True
+        else:
+            st.error("Please enter a valid contact number.")
+
+        if all(x.isalpha() or x.isspace() or x.isnumeric() for x in address):
+                valid_address = True
+        else:
+            st.error("Please enter a valid address.")
+
+        if (everythingFilled and valid_catname and valid_age and valid_contact and valid_ownername and valid_address):
+            st.rerun()
     
     st.caption(':orange[Press Esc to Cancel]')
     st.session_state.show_update_cat_dialog = False
@@ -382,6 +453,7 @@ def delete_cat(id):
     if yes:
         with engine.begin() as conn:
             conn.execute(sa.text("update cats set catName = NULL,  age = NULL, genderID = NULL, typeID = NULL, cageID = NULL, externalID = NULL, statusID = NULL, admittedOn = NULL where catID = :catID"),  {"catID" :  extract_cat_number(id)})
+            # conn.execute(sa.text("update Cage set cageStatusID = 2 where catID = :catID"), {"catID" :  extract_cat_number(id)})
             # conn.execute(sa.text("update treatment set catID = Null, dateTime = NULL, temperature = NULL, treatment = NULL where catID = :catID"),  {"catID" : extract_cat_number(id)})
             
             with st.spinner('Deleting...'):
@@ -540,7 +612,7 @@ cat_table_df['Cat ID'] = cat_table_df['Cat ID'].apply(lambda x: f"PA-{str(x).zfi
 # Generate cage for each catID
 cat_table_df['Cage ID'] = cat_table_df['Cage ID'].apply(lambda x: f"GW-C-{str(x).zfill(2)}")
 
-st.info("Add, view, delete are done (without checks & conditions), thora sa update left...")
+st.info("Add, view, delete are done (conditions done in add and update), thora sa update left...")
 
 st.write(" ")
 st.write('##### :orange[Filters:]')
@@ -569,7 +641,7 @@ if selected_owner:
 
 st.divider()
 
-col1, col2, col3, col4, col5, col6 = st.columns([4.4,1,0.6,0.6,0.6,0.8])
+col1, col2, col3, col4, col5, col6 = st.columns([1,1,1,2,1,4])
 
 #Add a new cat button
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)

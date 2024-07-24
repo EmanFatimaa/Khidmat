@@ -21,9 +21,9 @@ import yaml
 from yaml.loader import SafeLoader
 
 # Note the double backslashes
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -77,7 +77,7 @@ def add_treatment():
     print("adding")
     with engine.begin() as conn:
         treatmentid = int(pd.read_sql_query(sa.text("SELECT TOP 1 treatmentID FROM Treatment ORDER BY treatmentID DESC"), conn).iat[0,0]) + 1
-        df = pd.read_sql_query("SELECT catName FROM Cats", conn)
+        df = pd.read_sql_query("SELECT catName FROM Cats where catName IS NOT NULL", conn)
         cat_name = df['catName'].tolist()
 
     col1, col2 = st.columns(2)
@@ -314,7 +314,7 @@ new_transaction = col6.button("✙ New Treatment", on_click=add_treatment_dialog
 
 # Display the filtered table
 treatment_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, on_select='rerun', selection_mode='single-row')
-
+# filtered_df.style.applymap(lambda x: 'background-color : orange')
 if st.session_state.show_add_treatment_dialog:
     add_treatment()
 

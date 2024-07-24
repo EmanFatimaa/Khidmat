@@ -16,9 +16,9 @@ import yaml
 from yaml.loader import SafeLoader
 
 # Note the double backslashes
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -380,9 +380,7 @@ with col6:
 wards_df = combined_wards_df
 
 for index, row in wards_df.iterrows():
-
     ward_name = row['name']
-
     with st.expander(f"**{ward_name}**", expanded=False):
         col1, col2, col3, col4, col5, col6= st.columns([0.2,0.7 ,1,5,0.65,0.6])  # Adjusted column widths
 
@@ -436,8 +434,28 @@ for index, row in wards_df.iterrows():
                 LEFT JOIN 
                     Cats ON Cage.cageID = Cats.cageID 
                 WHERE name = :name"""), {"name": ward_name}).fetchall())
+            
+        st.write('##### :orange[Filters:]')
+        dates2 = result['Date'].unique()
+        status_id = result['Status'].unique()
+
+        col1, col2 = st.columns(2)
+        with col1:
+            selected_date2 = st.selectbox("Select Date", options=[""] + list(dates2), index=0, placeholder='Choose an option')
+        with col2:
+            selected_status2 = st.selectbox("Select Status", options=[""] + list(status_id), index=0, placeholder='Choose an option', key=f"{ward_name}_status")
+
+        if selected_date2:
+            filtered_df = result[result['Date'] == selected_date2]
+        else:
+            filtered_df = result
+
+        if selected_status2:
+            filtered_df = filtered_df[filtered_df['Status'] == selected_status2]
+
+        st.divider()
     
-        cages_table = st.dataframe(result, width=1500, height=300, hide_index = True, selection_mode="single-row", on_select='rerun', key = ward_name)
+        cages_table = st.dataframe(filtered_df, width=1500, height=300, hide_index = True, selection_mode="single-row", on_select='rerun', key = ward_name)
 
         if cages_table["selection"]["rows"]:
 
