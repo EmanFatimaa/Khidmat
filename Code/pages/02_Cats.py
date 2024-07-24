@@ -24,11 +24,11 @@ from yaml.loader import SafeLoader
 # database information ; will change when db hosting
 
 # Note the double backslashes
-# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
-database = 'PawRescue'
+database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
 engine = create_engine(connection_url)
@@ -59,9 +59,7 @@ hide_pages(["Login"])
 col1, col2, col3, col4 = st.columns(4)
 
 #Title
-#with col1:
 st.header("Cats", divider = "orange")
-
 
 #Functions
 def add_cat_dialog():
@@ -224,7 +222,10 @@ def add_cat():
                 :cageID, 
                 (SELECT externalID FROM Externals WHERE name = :name), 
                 (SELECT statusID FROM CatStatus WHERE statusType = :status), 
-                :admittedOn)"""),
+                :admittedOn)
+                                     
+                update cage set cageStatusID = 1 where cageID = :cageID -- updating the cage status as well while adding the cat
+                                     """),
                 {
                     "catID": currentCatID, "catName": name, "age": age, "gender": gender, 
                     "type": type, "cageID": cageNum, "name": ownerName, 
@@ -236,8 +237,8 @@ def add_cat():
                 time.sleep(2)
 
             container = st.empty()
-            container.success(f"Cat ID: {id} has been added successfully") # Create a success alert
-            time.sleep(4)  # Wait  4seconds
+            container.success(f"Cat ID: {catCodestr} has been added successfully") # Create a success alert
+            time.sleep(2)  # Wait  4seconds
             container.empty()  # Clear the success alert
 
             st.rerun()
@@ -281,36 +282,35 @@ def update_cat(id):
 
     with col1:
         
-        #Cat ID Field
-        catID = st.text_input("Cat ID", value = id) # disable if id should not be editable
+        # Cat ID Field
+        catID = st.text_input("Cat ID", value = id, disabled=True) # disable if id should not be editable
         
         # Age field
         with engine.begin() as conn:
             ageValue= conn.execute(sa.text("Select age from cats where catID = :catID") ,{"catID": extract_cat_number(id)}).fetchall()[0][0]
         age = st.number_input("Age (in years)", step = 0.1, value = float(ageValue))
 
-         # Type field -- IBAD : selected type hai iopar
+        # Type field
         with engine.begin() as conn:
-            typeSelection = pd.read_sql_query(sa.text("SELECT type FROM Type"), conn)
-        type = st.selectbox("Type", typeSelection["type"].tolist())
+            type_list = pd.read_sql_query(sa.text("SELECT type FROM Type"), conn)
+            type_value = pd.read_sql_query(sa.text("SELECT type FROM Type where typeID in (select typeID from cats where catID = :catID)"), conn, params = {"catID": extract_cat_number(id)}).iat[0,0]
+        type_df = type_list["type"].tolist()
+        final_type_index = type_df.index(type_value)
+        type = st.selectbox("Type", type_df, index = final_type_index)
 
     with col2:
-        #Cat name field
+
+        # Cat name field
         name = st.text_input("Cat Name", value = selectedCatName)
 
-        # # Gender field
         # Gender field
         with engine.begin() as conn:
-            genderSelection = pd.read_sql_query(sa.text("SELECT gender FROM Gender"), conn)
-        gender = st.selectbox("Gender", genderSelection["gender"].tolist())
+            gender_list = pd.read_sql_query(sa.text("SELECT gender FROM Gender"), conn)
+            gender_value = pd.read_sql_query(sa.text(""" SELECT gender from gender where genderID in (select genderID from cats where catID = :catID)"""), conn, params = {"catID": extract_cat_number(id)}).iat[0,0]
+        gender_df = gender_list["gender"].tolist()
+        final_gender_index = gender_df.index(gender_value)
+        gender = st.selectbox("Gender", gender_df, index = final_gender_index)
 
-        # with engine.begin() as conn:
-        #     genderSelection = pd.read_sql_query(sa.text("SELECT gender FROM Gender"), conn)
-        #     genderValue = conn.execute(sa.text("SELECT genderid from cats where catID = :catID"), {"catID": id}).fetchall()[0][0]
-        # genderDF = genderSelection["gender"].tolist() 
-        # finalGenderIndex = genderDF.index(genderValue)
-        # gender = st.selectbox("Gender", genderDF, index = finalGenderIndex)
-     
         # Cage no field
         with engine.begin() as conn:
             cageID = pd.read_sql_query(sa.text("SELECT cageID FROM Cage WHERE cageID NOT IN (SELECT cageID FROM Cats)"), conn)  # OR: select cageID from Cage where cageStatus = 'Free'
@@ -318,10 +318,13 @@ def update_cat(id):
         cageNum = st.selectbox("Cage Number", cageID["cageID"].tolist())  # This should also show which Ward it is in and that Cage is free or not ofc.
         
     with engine.begin() as conn:
-        statusSelection = pd.read_sql_query(sa.text("SELECT statusType FROM CatStatus"), conn)
-        status = st.selectbox("Status", statusSelection["statusType"].tolist())
+        status_list = pd.read_sql_query(sa.text("SELECT statusType FROM CatStatus"), conn)
+        status_value = pd.read_sql_query(sa.text("SELECT statusType from catstatus where statusID in (select statusID from cats where catID = :catID)"), conn, params = {"catID": extract_cat_number(id)}).iat[0,0]
+    status_df = status_list['statusType'].tolist()
+    final_status_index = status_df.index(status_value)
+    status = st.selectbox("Status", status_df, index = final_status_index)
 
-       # Owner related info (in the form)
+    # Owner related info (in the form)
     st.write(" :orange[Owner related details]")
 
     col1, col2 = st.columns(2)  # redefining to enter owner related details after cat details
@@ -500,9 +503,12 @@ def view_cat(id):
             # print("ID = ", id)
 
             treatment_table_df["Date/Time"] =pd.to_datetime(treatment_table_df["Date/Time"]).dt.strftime('%d %b %Y, %I:%M %p')
-            st.write("Table:")
-            st.table(treatment_table_df)
-            st.write("Dataframe:")
+
+            # st.write("Table:")
+            # st.table(treatment_table_df)
+            
+            # I think the dataframe looks fine though
+            # st.write("Dataframe:")
             st.dataframe(treatment_table_df, width = 600, height = 110, hide_index = True)
 
         # st.caption('_:orange[Press Esc to Cancel]_') 
@@ -561,24 +567,13 @@ if selected_status:
 if selected_owner:
     filtered_df = filtered_df[filtered_df['Owner/Reporter'] == selected_owner]
 
-col1, col2, col3, col4, col5, col6 = st.columns([5,1,1,1,1,1.6])
-
-clear_filters = col6.button("Clear filters")
-
-if clear_filters:
-    container = st.empty()
-    container.info("Functionality missing as of now...")  # Create a success alert
-    time.sleep(2)  # Wait 2 seconds
-    container.empty()  # Clear the success alert
-
 st.divider()
 
-
-col1, col2, col3, col4, col5, col6 = st.columns([4.4,1,1,1,1,1.6])
+col1, col2, col3, col4, col5, col6 = st.columns([4.4,1,0.6,0.6,0.6,0.8])
 
 #Add a new cat button
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-new_cat = col6.button("✙ Add New Cat", on_click = add_cat_dialog) # ✙, ⊹, ➕
+new_cat = col6.button("✙ New Cat", on_click = add_cat_dialog) # ✙, ⊹, ➕
 
 # Display the DataFrame
 cat_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, on_select="rerun", selection_mode="single-row")

@@ -21,11 +21,11 @@ import yaml
 from yaml.loader import SafeLoader
 
 # Note the double backslashes
-# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
-database = 'PawRescue'
+database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
 engine = create_engine(connection_url)
@@ -286,7 +286,7 @@ with engine.begin() as conn:
 
 treatment_table_df['Date'] = pd.to_datetime(treatment_table_df['Date']).dt.strftime('%d %b %Y')
 # --------------------------------------------------------------------------------------------------------------------------------filters code start
-st.write("Filters")
+st.write('##### :orange[Filters:]')
 dates2 = treatment_table_df['Date'].unique()
 cat_id = treatment_table_df['CatID'].unique()
 
@@ -306,11 +306,11 @@ if selected_mode2:
 
 st.divider()
 
-col1, col2, col3, col4, col5, col6 = st.columns(6)
+col1, col2, col3, col4, col5, col6 = st.columns([4.4,1,0.6,0.6,0.6,1.1])
 
  # Add a New Transaction Button
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-new_transaction = col6.button("✙ Add Treatment", on_click=add_treatment_dialog)
+new_transaction = col6.button("✙ New Treatment", on_click=add_treatment_dialog)
 
 # Display the filtered table
 treatment_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, on_select='rerun', selection_mode='single-row')
@@ -323,8 +323,8 @@ if treatment_table["selection"]["rows"]: # if a row is selected
         row_selected = int(filtered_df.iat[treatment_table['selection']['rows'][0], 0])
         # print(treatment_table_df)
 
-        update_button = col4.button("Update Treatment", on_click = update_treatment_dialog)
-        delete_button = col5.button("Delete Treatment", on_click = delete_treatment_dialog)
+        update_button = col4.button("Update", on_click = update_treatment_dialog)
+        delete_button = col5.button("Delete", on_click = delete_treatment_dialog)
 
         if st.session_state.show_update_treatment_dialog:
             update_treatment(row_selected)

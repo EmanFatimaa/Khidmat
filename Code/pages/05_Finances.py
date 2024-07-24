@@ -23,11 +23,11 @@ from yaml.loader import SafeLoader
 # database information ; will change when db hosting
 
 # Note the double backslashes
-# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
-database = 'PawRescue'
+database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
 engine = create_engine(connection_url)
@@ -332,7 +332,7 @@ with Donations:
 
     donation_table_df['Date'] = pd.to_datetime(donation_table_df['Date']).dt.strftime('%d %b %Y')
 
-    st.write("Filters")
+    st.write('##### :orange[Filters:]')
     dates = donation_table_df['Date'].unique()
     modes = donation_table_df['Mode'].unique()
 
@@ -353,11 +353,11 @@ with Donations:
 
     st.divider()
 
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
+    col1, col2, col3, col4, col5, col6 = st.columns([4.4,1,0.6,0.6,0.6,1.1])
     
     # Add a New Donation Button
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    new_donation = col6.button("✙ Add Donation", on_click = add_donation_dialog)
+    new_donation = col6.button("✙ New Donation", on_click = add_donation_dialog)
 
     if st.session_state.show_add_donation_dialog:
         add_donation()
@@ -371,8 +371,8 @@ with Donations:
         row_selected = int(filtered_df.iat[donation_table['selection']['rows'][0], 0])
         # print([donation_table['selection']['rows'][0], 0])
 
-        update_button = col4.button("Update Donation", on_click = update_donation_dialog)
-        delete_button = col5.button("Delete Donation", on_click = delete_donation_dialog)
+        update_button = col4.button("Update", on_click = update_donation_dialog)
+        delete_button = col5.button("Delete", on_click = delete_donation_dialog)
 
         if st.session_state.show_update_donation_dialog:
             update_donation(row_selected)
@@ -645,7 +645,7 @@ with Revenue:
     revenue_table_df['Date'] = pd.to_datetime(revenue_table_df['Date']).dt.strftime('%d %b %Y')
 
     # Filtering and Final Table
-    st.write("Filters")
+    st.write('##### :orange[Filters:]')
     dates = revenue_table_df['Date'].unique()
     modes = revenue_table_df['Mode'].unique()
 
@@ -668,11 +668,11 @@ with Revenue:
 
     st.divider()
 
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
+    col1, col2, col3, col4, col5, col6 = st.columns([4.4,1,0.6,0.6,0.6,1.1])
     
     # Add a New Revenue Button
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    new_revenue = col6.button("✙ Add Revenue", on_click=add_revenue_dialog, key = "add_revenue")
+    new_revenue = col6.button("✙ New Revenue", on_click=add_revenue_dialog, key = "add_revenue")
 
     if st.session_state.show_add_revenue_dialog:
         add_revenue()
@@ -685,8 +685,8 @@ with Revenue:
 
         row_selected = int(filtered_df.iat[revenue_table['selection']['rows'][0], 0])
 
-        update_button = col4.button("Update Revenue", on_click = update_revenue_dialog)
-        delete_button = col5.button("Delete Revenue", on_click = delete_revenue_dialog)
+        update_button = col4.button("Update", on_click = update_revenue_dialog, key = 'update_revenue')
+        delete_button = col5.button("Delete", on_click = delete_revenue_dialog, key = 'delete_revenue')
 
         if st.session_state.show_update_revenue_dialog:
             update_revenue(row_selected)
@@ -914,7 +914,7 @@ with Transactions:
 
     
     # Filtering and Final Table
-    st.write("Filters")
+    st.write('##### :orange[Filters:]')
     dates2 = transaction_table_df['Date'].unique()
     modes2 = transaction_table_df['Mode'].unique()
 
@@ -934,11 +934,11 @@ with Transactions:
 
     st.divider()
     
-    col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 2, 2, 1, 2])
+    col1, col2, col3, col4, col5, col6 = st.columns([4.4,1,0.6,0.6,0.6,1.15])
 
     # Add a New Transaction Button
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    new_transaction = col6.button("✙ Add Transaction", on_click=add_transaction_dialog , key = "add_transaction")
+    new_transaction = col6.button("✙ New Transaction", on_click=add_transaction_dialog , key = "add_transaction")
 
     if st.session_state.show_add_transaction_dialog:
         add_transaction()
@@ -951,8 +951,8 @@ with Transactions:
 
         row_selected = int(filtered_df.iat[transaction_table['selection']['rows'][0], 0])
 
-        update_button = col4.button("Update Transaction", on_click = update_transaction_dialog)
-        delete_button = col5.button("Delete Transaction", on_click = delete_transaction_dialog)
+        update_button = col4.button("Update", on_click = update_transaction_dialog, key = 'update_trans')
+        delete_button = col5.button("Delete", on_click = delete_transaction_dialog, key = 'delete_trans')
 
         if st.session_state.show_update_transaction_dialog:
             update_transaction(row_selected)

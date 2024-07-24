@@ -24,11 +24,11 @@ from yaml.loader import SafeLoader
 # database information ; will change when db hosting
 
 # Note the double backslashes
-# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
-database = 'PawRescue'
+database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
 engine = create_engine(connection_url)
@@ -71,7 +71,7 @@ hide_pages(["Login"])
 st.header("Dashboard" , divider='orange')
 
 # Boxes
-st.success("Everything is connected to the database, wohooo :)", icon="🎉")
+# st.success("Everything is connected to the database, wohooo :)", icon="🎉") yes!
 
 # Creating columns
 col1, col2, col3, col4 = st.columns(4)
@@ -259,8 +259,10 @@ else:
     st.switch_page("LoginScreen.py")
 
 if st.sidebar.button("🔓 Logout"):
+    with st.sidebar:
+        with st.spinner('Logging out...'):
+            time.sleep(2)
+
     authenticator.logout(location = "unrendered")
     st.switch_page("LoginScreen.py")
 
-# with st.spinner('Logging out...'):
-#         time.sleep(2)

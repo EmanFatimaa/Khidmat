@@ -16,11 +16,11 @@ import yaml
 from yaml.loader import SafeLoader
 
 # Note the double backslashes
-# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
-database = 'PawRescue' # EMAN :'Khidmat'
+database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
 engine = create_engine(connection_url)
@@ -289,6 +289,7 @@ def add_cages():
                     """), {"cageID": cage_id + i, "wardID": wardID, "cageStatusID": 2, "date": date})
 
             st.rerun()
+
     st.session_state.show_add_cages_dialog = False
     st.caption('_:orange[Press Esc to Cancel]_')
 
@@ -360,7 +361,7 @@ if st.session_state.show_add_cages_dialog:
     add_cages()
 
 # "Add Ward" button
-col1, col2, col3, col4, col5, col6 = st.columns([1.5,5,2,1,1,1.6])
+col1, col2, col3, col4, col5, col6 = st.columns([1,5.1,2,1,1.4,1.3])
 
 #Add a new cat button
 with col1:
@@ -369,11 +370,11 @@ with col1:
 with col2:
     deleteWard = st.button("Delete Ward", on_click=delete_ward_dialog)
 
-with col3:
+with col5:
     deleteWard = st.button("Increase Cages", on_click=add_cages_dialog)
 
 with col6:
-    newWard = st.button("✙ Add Ward", on_click=add_ward_dialog)
+    newWard = st.button("✙ New Ward", on_click=add_ward_dialog)
 
 # Display the ward information
 wards_df = combined_wards_df
@@ -383,7 +384,7 @@ for index, row in wards_df.iterrows():
     ward_name = row['name']
 
     with st.expander(f"**{ward_name}**", expanded=False):
-        col1, col2, col3, col4, col5, col6= st.columns([0.1, 0.5, 0.7, 0.7, 1, 1])  # Adjusted column widths
+        col1, col2, col3, col4, col5, col6= st.columns([0.2,0.7 ,1,5,0.65,0.6])  # Adjusted column widths
 
         with col1:
             st.write("")  # Placeholder for the button

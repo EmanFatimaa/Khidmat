@@ -25,16 +25,16 @@ from yaml.loader import SafeLoader
 # Right now it only works for the 7 people that should also be in the database
 
 # Note the double backslashes
-# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
-database = 'PawRescue'
+database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
 engine = create_engine(connection_url)
 
-st.set_page_config(page_title="Teams", page_icon="👥", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Teams", page_icon="👥", initial_sidebar_state="expanded", layout="centered")
 
 # logo
 logo = Image.open("assets/logo.png")
@@ -67,11 +67,11 @@ def edit_team_dialog():
     st.session_state.show_add_team_dialog = False
     st.session_state.show_edit_team_dialog = True
 
-col1, col2 = st.columns([1, 3])
-with col1:
-    add_button = st.button("✙ Add New Member", on_click=add_team_dialog)
+col1, col2, col3 = st.columns([6.2, 2.1, 2])
 with col2:
-    update_button = st.button("Update Member Details", on_click = edit_team_dialog)
+    add_button = st.button("✙ New Member", on_click=add_team_dialog)
+with col3:
+    update_button = st.button("Update Details", on_click = edit_team_dialog)
 
 query = "SELECT userName, email, roleDesc, picture FROM Users inner join InternalRole on InternalRole.internalRoleID = Users.internalRoleID"  # Adjust the query to your database structure
 with engine.begin() as conn:
