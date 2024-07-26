@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import datetime
+import time
 
 from st_pages import Page, show_pages, add_page_title, hide_pages
 from PIL import Image
@@ -17,8 +17,8 @@ from yaml.loader import SafeLoader
 
 # Note the double backslashes
 # server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-# server = 'DESKTOP-HT3NB74' # EMAN
-server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HT3NB74' # EMAN
+# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -496,5 +496,9 @@ else:
     st.switch_page("LoginScreen.py")
 
 if st.sidebar.button("🔓 Logout"):
+    with st.sidebar:
+        with st.spinner('Logging out...'):
+            time.sleep(2)
+
     authenticator.logout(location = "unrendered")
     st.switch_page("LoginScreen.py")

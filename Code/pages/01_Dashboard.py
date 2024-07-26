@@ -25,8 +25,8 @@ from yaml.loader import SafeLoader
 
 # Note the double backslashes
 # server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-# server = 'DESKTOP-HT3NB74' # EMAN
-server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HT3NB74' # EMAN
+# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -77,33 +77,33 @@ st.header("Dashboard" , divider='orange')
 col1, col2, col3, col4 = st.columns(4)
 
 query = """
-select count( CATS.statusID) as 'Total Cats treated' from Cats join CatStatus on cats.statusID = CatStatus.statusID where cats.statusID in (2,11)
+select count( CATS.statusID) as 'Total Cats admitted' from Cats join CatStatus on cats.statusID = CatStatus.statusID 
 """
 with col1: # need to fix logic
     with st.container( border = True):
         with engine.begin() as conn:
             total_cats_treated = pd.read_sql_query(sa.text(query), conn)
-        st.metric( label = "Total cats treated", value = prettify(int(total_cats_treated.iat[0,0] )))
+        st.metric( label = "Total cats admitted", value = prettify(int(total_cats_treated.iat[0,0] )))
 
 with col2: # need to fix logic
     with st.container( border = True): 
         with engine.begin() as conn:
-            total_cats_treated = pd.read_sql_query(sa.text("select count( CATS.statusID) as 'Total Cats treated' from Cats join CatStatus on cats.statusID = CatStatus.statusID where cats.statusID in (11)"), conn)
-        st.metric( label = "Recovered",value = prettify(int(total_cats_treated.iat[0,0] )))
+            total_cats_recovered = pd.read_sql_query(sa.text("select count( CATS.statusID) as 'Total Cats recovered' from Cats join CatStatus on cats.statusID = CatStatus.statusID where cats.statusID in (2, 3, 4, 6, 8, 11)"), conn)
+        st.metric( label = "Recovered",value = prettify(int(total_cats_recovered.iat[0,0] )))
 
 with col3: # status id = 1
     with st.container( border = True):
         with engine.begin() as conn:
-            total_cats_expired = pd.read_sql_query(sa.text("select count( CATS.statusID) as 'Total Cats treated' from Cats join CatStatus on cats.statusID = CatStatus.statusID where cats.statusID = 1"), conn)
+            total_cats_expired = pd.read_sql_query(sa.text("select count( CATS.statusID) as 'Total Cats expired' from Cats join CatStatus on cats.statusID = CatStatus.statusID where cats.statusID  = 1"), conn)
         st.metric( label = "Expired", value = prettify(int(total_cats_expired.iat[0,0] )))
        
 with col4: # status id = 4
     with st.container( border = True):
         with engine.begin() as conn:
-            total_cats_discharged = pd.read_sql_query(sa.text("select count( CATS.statusID) as 'Total Cats treated' from Cats join CatStatus on cats.statusID = CatStatus.statusID where cats.statusID = 4"), conn)
+            total_cats_discharged = pd.read_sql_query(sa.text("select count( CATS.statusID) as 'Total Cats discharged' from Cats join CatStatus on cats.statusID = CatStatus.statusID where cats.statusID = 4"), conn)
         st.metric( label = "Discharged", value = prettify(int(total_cats_discharged.iat[0,0] )))
 
-st.info("Need to confirm the logic for these metrics, abhi tak have done jo samjh aya..")
+# st.info("Need to confirm the logic for these metrics, abhi tak have done jo samjh aya..")
 
 # Donation graph
 with engine.begin() as conn:
@@ -143,7 +143,7 @@ data = {
 df = pd.DataFrame(data)
 
 # Create a container for the donation graph
-with st.container(border = True,height= 500):
+with st.container(border = True,height= 570):
     
     # Title of the Streamlit app
     st.write("#### :white[Donations Received Monthly]")
@@ -151,8 +151,7 @@ with st.container(border = True,height= 500):
     fig = px.line(
         df,
         x="Month",
-        y="Donations",
-        title= " ",
+        y="Donations", #  title= " ",
         markers=True,
         template="plotly_dark"
     )
@@ -160,12 +159,24 @@ with st.container(border = True,height= 500):
     # Customize the chart to match the style in the image
     fig.update_traces(marker=dict(size=10, color="yellow"), line=dict(color="white", width=2))
     fig.update_layout(
-        title_font_size=20,
-        title_x=0.5,
-        yaxis=dict(title="Donations", showgrid=False),
-        xaxis=dict(title="Month", showgrid=False)
+        yaxis=dict(
+        title="Donations",
+        showgrid=False,
+        showline=True,  # Add this line to show the y-axis line
+        linecolor="grey",  # Color of the y-axis line
+        linewidth= 1.9  # Width of the y-axis line
+        ),
+        xaxis=dict(
+        title="Month",
+        showgrid=False
+        )
+
+        # title_font_size=20,
+        # title_x=0.5,
+        # yaxis=dict(title="Donations", showgrid=False),
+        # xaxis=dict(title="Month", showgrid=False)
     )
-    fig.update_yaxes(range=[0, max+10000])
+    fig.update_yaxes(range=[0, max+ (max/2)])
 
     # Display the chart in Streamlit
     st.plotly_chart(fig)
@@ -188,7 +199,7 @@ with engine.begin() as conn:
 print(status_df)
 
 # Streamlit container
-with st.container(border=True, height=500):
+with st.container(border=True, height=570):
 
     #Title
     st.write("#### :white[Cats Status Summary]")
@@ -196,25 +207,6 @@ with st.container(border=True, height=500):
     # Create the pie chart
     fig = px.pie(status_df, values='Count', names='statusType')
     st.plotly_chart(fig)
-
-# # Read the CSV file
-# df = pd.read_csv('assets/Cats_IDs.csv')
-
-# # Count the number of cats by status
-# status_counts = df['Status'].value_counts().reset_index()
-# status_counts.columns = ['Status', 'Count']
-
-# # with col5:
-# #Contaier:
-# with st.container(border= True, height= 500):
-#     # Title of the Streamlit app
-#     st.write("#### :white[Cats Status Summary]")
-
-#     # Create a pie chart using Plotly
-#     fig = px.pie(status_counts, values='Count', names='Status')
-
-#     # Display the pie chart in Streamlit
-#     st.plotly_chart(fig)
 
 # Top reporter
 query = """
@@ -234,7 +226,7 @@ with st.container(border=True):
     st.write("#### :white[Top 5 Owners/ Reporters]")
     st.dataframe(reporter_table, hide_index=True, width=1000)
 
-    st.info("What if multiple owners with count as 1... kis basis pe top choose krna hai phir")
+    # st.info("What if multiple owners with count as 1... kis basis pe top choose krna hai phir")
 
 with open('../config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)

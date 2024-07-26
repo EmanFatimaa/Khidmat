@@ -25,8 +25,8 @@ from yaml.loader import SafeLoader
 
 # Note the double backslashes
 # server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-# server = 'DESKTOP-HT3NB74' # EMAN
-server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HT3NB74' # EMAN
+# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -66,25 +66,25 @@ def add_cat_dialog():
     st.session_state.show_add_cat_dialog = True
     st.session_state.show_view_cat_dialog = False
     st.session_state.update_cat_dialog = False
-    st.session_state.delete_cat_dialog = False
+    # st.session_state.delete_cat_dialog = False
 
 def view_cat_dialog():
     st.session_state.show_add_cat_dialog = False
     st.session_state.show_view_cat_dialog = True
     st.session_state.show_update_cat_dialog = False
-    st.session_state.show_delete_cat_dialog = False
+    # st.session_state.show_delete_cat_dialog = False
 
 def update_cat_dialog():
     st.session_state.show_add_cat_dialog = False
     st.session_state.show_view_cat_dialog = False
     st.session_state.show_update_cat_dialog = True
-    st.session_state.show_delete_cat_dialog = False
+    # st.session_state.show_delete_cat_dialog = False
 
-def delete_cat_dialog():
-    st.session_state.show_add_cat_dialog = False
-    st.session_state.show_view_cat_dialog = False
-    st.session_state.show_update_cat_dialog =  False
-    st.session_state.show_delete_cat_dialog = True
+# def delete_cat_dialog():
+#     st.session_state.show_add_cat_dialog = False
+#     st.session_state.show_view_cat_dialog = False
+#     st.session_state.show_update_cat_dialog =  False
+#     st.session_state.show_delete_cat_dialog = True
 
 # Load custom CSS
 def load_css(file_name):
@@ -124,7 +124,7 @@ def add_cat():
         with engine.begin()as conn:
             currentCatID = int(pd.read_sql_query(sa.text("select top 1 catID from Cats order by catID desc"), conn).iat[0,0]) + 1
             #TODO:
-            catCodestr = "PA-" + str(currentCatID).zfill(4) # catCodestr = "PA-000" + str(currentCatID) #need to fix this logic , explore prettify
+            catCodestr = "PA-" + str(currentCatID).zfill(5) # catCodestr = "PA-000" + str(currentCatID) #need to fix this logic , explore prettify
         st.text_input("Cat ID", value = catCodestr, disabled= True)
 
         # Age field
@@ -480,8 +480,8 @@ if 'show_view_cat_dialog' not in st.session_state:
     st.session_state.show_view_cat_dialog = False
 if 'show_update_cat_dialog' not in st.session_state:
     st.session_state.show_update_cat_dialog = False
-if 'show_delete_cat_dialog' not in st.session_state:
-    st.session_state.show_delete_cat_dialog = False
+# if 'show_delete_cat_dialog' not in st.session_state:
+#     st.session_state.show_delete_cat_dialog = False
 # ------------------------------------------------------------
 #VIEW CAT DETAILS
 @st.experimental_dialog("View Cat's Details")
@@ -517,30 +517,51 @@ def view_cat(id):
     # Tabs
     with general_info:
         with st.container(border= True):
-            st.write("***Name:***",selectedCatName )
-            st.write("***Cage ID:***", selectedCage)
-            st.write("***Admitted On:***",selectedDate)
+            col1, col2 = st.columns(2)
 
-            if str(int(genderDB[0])) == "1":
-                st.write("***Gender:***", "Male")
+            with col1:
+                st.text_input("***Name:***", value = selectedCatName, disabled= True)
+                st.text_input("***Admitted On:***", value = selectedDate, disabled= True)
+                st.text_input("***Age:***", value = str(ageDB[0]) + " yr(s)", disabled= True)
+            # st.write("***Name:***",selectedCatName )
+            
+            with col2:
+                st.text_input("***Cage ID:***", selectedCage, disabled= True)
+            # st.write("***Cage ID:***", selectedCage)
+            # st.write("***Admitted On:***",selectedDate)
 
-            elif str(int(genderDB[0])) == "2":
-                st.write("***Gender:***", "Female")
+                if str(int(genderDB[0])) == "1":
+                    # st.write("***Gender:***", "Male")
+                    st.text_input("***Gender:***", value = "Male", disabled= True)
 
-            st.write("***Age:***", str(ageDB[0]), "yr(s)")
-            st.write("***Status:***",selectedStatus)
+                elif str(int(genderDB[0])) == "2":
+                    # st.write("***Gender:***", "Female")
+                    st.text_input("***Gender:***", value = "Female", disabled= True)
+
+                st.text_input("***Status:***", value = selectedStatus, disabled= True)
+            # st.write("***Age:***", str(ageDB[0]), "yr(s)")
+            # st.write("***Status:***",selectedStatus)
 
     with owner_info:
         with st.container( border = True):
-                st.write("***Name:***", selectedOwnerName)
-                st.write("***Contact Number:***", selectedOwnerContact)
-                st.write("***Address:***", str(addressDB[0]))
-                st.write("***Pet Type:***", selectedType)
+            col1, col2 = st.columns(2)
+
+            with col1:
+                
+                st.text_input("***Name:***", value = selectedOwnerName, disabled= True)
+                st.text_input("***Address:***", value = str(addressDB[0]), disabled= True)
+
+            with col2:
+                st.text_input("***Contact Number:***", value = selectedOwnerContact, disabled= True)
+                st.text_input("***Pet Type:***", value = selectedType, disabled= True)
+                # st.write("***Name:***", selectedOwnerName)
+                # st.write("***Contact Number:***", selectedOwnerContact)
+                # st.write("***Address:***", str(addressDB[0]))
+                # st.write("***Pet Type:***", selectedType)
         
     with treatment_info:
         with st.container( border = True):
-            # with st.table():
-            # st.write("*To add a new treatment kindly click the button below to be redirected to treatments page*" )
+            
             col1, col2= st.columns([1.7, 1])
             
             with col2:
@@ -607,12 +628,12 @@ cat_table_df['Admitted On'] = pd.to_datetime(cat_table_df['Admitted On']).dt.str
 cat_table_df['Contact Number'] = cat_table_df['Contact Number'].apply(format_contact_number)
 
 # Generate catCodestr for each catID
-cat_table_df['Cat ID'] = cat_table_df['Cat ID'].apply(lambda x: f"PA-{str(x).zfill(4)}")
+cat_table_df['Cat ID'] = cat_table_df['Cat ID'].apply(lambda x: f"PA-{str(x).zfill(5)}")
 
 # Generate cage for each catID
 cat_table_df['Cage ID'] = cat_table_df['Cage ID'].apply(lambda x: f"GW-C-{str(x).zfill(2)}")
 
-st.info("Add, view, delete are done (conditions done in add and update), thora sa update left...")
+# st.info("Add, view, delete are done (conditions done in add and update), thora sa update left...")
 
 st.write(" ")
 st.write('##### :orange[Filters:]')
@@ -641,7 +662,7 @@ if selected_owner:
 
 st.divider()
 
-col1, col2, col3, col4, col5, col6 = st.columns([4.4,1,0.6,0.6,0.6,0.8])
+col1, col2, col3, col4, col5, col6 = st.columns([3.1,0.2,0.1,0.4,0.6,0.8]) # updated: [3.1,0.6,0.6,0.6,0.6,0.8] , prev: [4.4,1,0.6,0.6,0.6,0.8]
 
 #Add a new cat button
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
@@ -657,9 +678,9 @@ if cat_table["selection"]["rows"]: #if a row is selected
     # print("filteredRow: ", filteredRow)
 
     # print("selected row is :", selectedRow) -- PA-0001
-    view = col3.button(" View ", on_click= view_cat_dialog) # 👀 🧐
-    update = col4.button("Update  ", on_click= update_cat_dialog) # 📝
-    delete = col5.button("Delete  ", on_click= delete_cat_dialog) #🗑️
+    view = col4.button(" View ", on_click= view_cat_dialog) # 👀 🧐
+    update = col5.button("Update  ", on_click= update_cat_dialog) # 📝
+    # delete = col5.button("Delete  ", on_click= delete_cat_dialog) #🗑️
 
     if st.session_state.show_view_cat_dialog:
         view_cat(selectedRow)
@@ -667,8 +688,8 @@ if cat_table["selection"]["rows"]: #if a row is selected
     if st.session_state.show_update_cat_dialog:
         update_cat(selectedRow)
 
-    if st.session_state.show_delete_cat_dialog:
-        delete_cat(selectedRow)
+    # if st.session_state.show_delete_cat_dialog:
+    #     delete_cat(selectedRow)
 else:
     print("No row selected")
 
@@ -694,10 +715,14 @@ if name is not None:
 else:
     st.switch_page("LoginScreen.py")
 
+
 if st.sidebar.button("🔓 Logout"):
+    with st.sidebar:
+        with st.spinner('Logging out...'):
+            time.sleep(2)
+
     authenticator.logout(location = "unrendered")
     st.switch_page("LoginScreen.py")
-
 # ---------------------------------------------------------------------------------------------------------------------------#
 
 # Edit and Delete Remains
