@@ -61,6 +61,7 @@ col1, col2, col3, col4 = st.columns(4)
 #Title
 st.header("Cats", divider = "orange")
 
+# st.info("Need to change the status of the cage once the cat is added / removed") already happening
 #Functions
 def add_cat_dialog():
     st.session_state.show_add_cat_dialog = True
@@ -100,7 +101,7 @@ def format_contact_number(contact):
 #Funciton to extract number from cat id
 def extract_cat_number(cat_id_str):
     # Remove the prefix "PA-"
-    numberStr = cat_id_str.replace("PA-", "")
+    numberStr = cat_id_str.replace("PR-", "")
     
     # Convert to integer
     numberInt = int(numberStr)
@@ -124,7 +125,7 @@ def add_cat():
         with engine.begin()as conn:
             currentCatID = int(pd.read_sql_query(sa.text("select top 1 catID from Cats order by catID desc"), conn).iat[0,0]) + 1
             #TODO:
-            catCodestr = "PA-" + str(currentCatID).zfill(5) # catCodestr = "PA-000" + str(currentCatID) #need to fix this logic , explore prettify
+            catCodestr = "PR-" + str(currentCatID).zfill(5) # catCodestr = "PA-000" + str(currentCatID) #need to fix this logic , explore prettify
         st.text_input("Cat ID", value = catCodestr, disabled= True)
 
         # Age field
@@ -147,7 +148,9 @@ def add_cat():
         # Cage no field
         with engine.begin() as conn:
             cageID = pd.read_sql_query(sa.text("select cageID from Cage where cageStatusID = 2"), conn)  # OR: select cageID from Cage where cageStatus = 'Free'
-            wardID =pd.read_sql_query(sa.text("Select wardID from ward where wardID in (select WardID from cage)"),conn)
+            # wardCode = conn.execute(sa.text("Select code from ward where wardID in (select wardID from cage where cageID = cageID)"),  {"cageID": cageID}).fetchall()[0][0]
+            # print("cage id haha:", cageID)
+            # print("Ward code haha:", wardCode)
         cageNum = st.selectbox("Cage Number", cageID["cageID"].tolist())  # This should also show which Ward it is in and that Cage is free or not ofc.
         
         
@@ -613,13 +616,27 @@ def view_cat(id):
 with engine.begin() as conn:
     cat_table_df = pd.read_sql_query(sa.text(""" 
                         select catID as 'Cat ID', catName as 'Cat Name', Externals.name as 'Owner/Reporter', Externals.contactNum as 'Contact Number', admittedOn as 'Admitted On',
-                                Type.type as 'Type', Cage.cageID as 'Cage ID', CatStatus.statusType as 'Status'
+                                Type.type as 'Type', cage.cageID as 'Cage ID', ward.code as 'Ward Code', CatStatus.statusType as 'Status'
 
-                        from Cats, Externals, Type, Cage, CatStatus 
+                        from Cats, Externals, Type, Cage, ward, CatStatus
                         where Cats.externalID = Externals.externalID and 
                         Type.typeID = Cats.typeID and 
                         Cage.cageID = Cats.cageID and
+                        Cage. wardID = ward.wardID and
                         Cats.statusID = CatStatus.StatusID"""), conn)
+
+# """ 
+#                         select catID as 'Cat ID', catName as 'Cat Name', Externals.name as 'Owner/Reporter', Externals.contactNum as 'Contact Number', admittedOn as 'Admitted On',
+#                                 Type.type as 'Type', Cage.cageID as 'Cage ID', CatStatus.statusType as 'Status'
+
+#                         from Cats, Externals, Type, Cage, CatStatus 
+#                         where Cats.externalID = Externals.externalID and 
+#                         Type.typeID = Cats.typeID and 
+#                         Cage.cageID = Cats.cageID and
+#                         Cats.statusID = CatStatus.StatusID"""
+# Print column names and first few rows to debug
+print(cat_table_df.columns)
+print(cat_table_df.head())
 
 # Convert 'Admitted On' to datetime and format as "date month year"
 cat_table_df['Admitted On'] = pd.to_datetime(cat_table_df['Admitted On']).dt.strftime('%d %b %Y')
@@ -628,10 +645,16 @@ cat_table_df['Admitted On'] = pd.to_datetime(cat_table_df['Admitted On']).dt.str
 cat_table_df['Contact Number'] = cat_table_df['Contact Number'].apply(format_contact_number)
 
 # Generate catCodestr for each catID
-cat_table_df['Cat ID'] = cat_table_df['Cat ID'].apply(lambda x: f"PA-{str(x).zfill(5)}")
+cat_table_df['Cat ID'] = cat_table_df['Cat ID'].apply(lambda x: f"PR-{str(x).zfill(5)}")
 
-# Generate cage for each catID
-cat_table_df['Cage ID'] = cat_table_df['Cage ID'].apply(lambda x: f"GW-C-{str(x).zfill(2)}")
+# # Generate cage for each catID
+# cat_table_df['Cage ID'] = cat_table_df['Cage ID'].apply(lambda x: f"GW-C-{str(x).zfill(2)}")
+
+# Merge Cage ID and Ward Code into one column
+cat_table_df['Cage ID'] = cat_table_df.apply(lambda row: f"{row['Ward Code']}-C-{str(row['Cage ID']).zfill(2)}", axis=1)
+
+# Drop the 'Ward Code' column as it is now integrated into the 'Cage ID'
+cat_table_df.drop(columns=['Ward Code'], inplace=True)
 
 # st.info("Add, view, delete are done (conditions done in add and update), thora sa update left...")
 
@@ -714,6 +737,7 @@ if name is not None:
     st.sidebar.write(f"Role: _:orange[{role}]_")
 else:
     st.switch_page("LoginScreen.py")
+
 
 
 if st.sidebar.button("🔓 Logout"):
