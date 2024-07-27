@@ -41,3 +41,7 @@ Team:
 -They dont really need a lot of ID, like treatmentIDs, DOnationsiDs etc
 -Admin Rights for each page (update for Admin and Delete removed everywhere)
 -Aesthestics Logo from Figma everything..
+
+-Put username and role into session_state and remove the unnecc code.
+-if admin only then have the ability to select the rows
+-st.button alignments sahi se

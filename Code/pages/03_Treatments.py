@@ -22,8 +22,8 @@ import yaml
 from yaml.loader import SafeLoader
 
 # Note the double backslashes
-# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
@@ -286,7 +286,9 @@ with engine.begin() as conn:
 
 
 treatment_table_df['Date'] = pd.to_datetime(treatment_table_df['Date']).dt.strftime('%d %b %Y')
+
 # --------------------------------------------------------------------------------------------------------------------------------filters code start
+
 st.write('##### :orange[Filters:]')
 dates2 = treatment_table_df['Date'].unique()
 cat_id = treatment_table_df['CatID'].unique()
@@ -309,12 +311,16 @@ st.divider()
 
 col1, col2, col3, col4, col5, col6 = st.columns([4.4,1,0.6,0.6,0.6,1.1])
 
- # Add a New Transaction Button
+# Add a New Transaction Button
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
 new_transaction = col6.button("✙ New Treatment", on_click=add_treatment_dialog)
 
+st.write(st.session_state.user_name)
+
 # Display the filtered table
 treatment_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, on_select='rerun', selection_mode='single-row')
+
+
 # filtered_df.style.applymap(lambda x: 'background-color : orange')
 if st.session_state.show_add_treatment_dialog:
     add_treatment()
