@@ -27,8 +27,8 @@ from yaml.loader import SafeLoader
 
 # Note the double backslashes
 # server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+# server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -63,16 +63,28 @@ st.markdown(
 def add_team_dialog():
     st.session_state.show_add_team_dialog = True
     st.session_state.show_edit_team_dialog = False
+    st.session_state.show_delete_team_dialog = False
 
 def edit_team_dialog():
     st.session_state.show_add_team_dialog = False
     st.session_state.show_edit_team_dialog = True
+    st.session_state.show_delete_team_dialog = False
+
+def delete_team_dialog():
+    st.session_state.show_add_team_dialog = False
+    st.session_state.show_edit_team_dialog = False
+    st.session_state.show_delete_team_dialog = True
+    
+
 
 col1, col2, col3 = st.columns([6.2, 2.1, 2])
 with col2:
+    delete_button = st.button('Delete Member', on_click=delete_team_dialog)
+with col1:
     add_button = st.button("✙ New Member", on_click=add_team_dialog)
 with col3:
     update_button = st.button("Update Details", on_click = edit_team_dialog)
+
 
 query = "SELECT userName, email, roleDesc, picture FROM Users inner join InternalRole on InternalRole.internalRoleID = Users.internalRoleID"  # Adjust the query to your database structure
 with engine.begin() as conn:
@@ -293,16 +305,39 @@ def edit_team():
     st.session_state.show_edit_team_dialog = False
     st.caption('_:orange[Press Esc to Cancel]_')
 
+@st.experimental_dialog("Delete Team Member")
+def delete_team():
+    with engine.begin() as conn:
+        df = pd.read_sql_query("SELECT userName FROM Users where userName is NOT NULL", conn)
+        user = df['userName'].tolist()
+    member = st.selectbox("Member", user)
+
+    delete = st.button('Delete Member', key = 'delete')
+    if delete:
+        with engine.begin() as conn:
+            conn.execute(sa.text("update Users set userName = NULL, email = NULL, password = NULL, picture = NULL, internalRoleID = NULL where userName = :userName"), {"userName": member})
+        
+        st.success(f'Team Member, {member} deleted successfully!')
+        st.rerun()
+    
+    st.session_state.show_delete_team_dialog = False
+    st.caption('_:orange[Press Esc to Cancel]_') 
+
 if 'show_add_team_dialog' not in st.session_state:
     st.session_state.show_add_team_dialog = False
 if 'show_edit_team_dialog' not in st.session_state:
     st.session_state.show_edit_team_dialog = False
+if 'show_delete_team_dialog' not in st.session_state:
+    st.session_state.show_delete_team_dialog = False
 
 if st.session_state.show_add_team_dialog:
     addScreen()
 
 if st.session_state.show_edit_team_dialog:
     edit_team()
+
+if st.session_state.show_delete_team_dialog:
+    delete_team()
 
 with open('../config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)

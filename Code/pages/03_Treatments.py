@@ -23,8 +23,8 @@ from yaml.loader import SafeLoader
 
 # Note the double backslashes
 # server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+# server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -78,14 +78,16 @@ def add_treatment():
     print("adding")
     with engine.begin() as conn:
         treatmentid = int(pd.read_sql_query(sa.text("SELECT TOP 1 treatmentID FROM Treatment ORDER BY treatmentID DESC"), conn).iat[0,0]) + 1
-        df = pd.read_sql_query("SELECT catName FROM Cats where catName IS NOT NULL", conn)
-        cat_name = df['catName'].tolist()
+        df = pd.read_sql_query("SELECT catID FROM Cats where catID IS NOT NULL", conn)
+        cat_id = df['catID'].tolist()
 
     col1, col2 = st.columns(2)
     with col1:
-        selected_cat_name = st.selectbox("Select Cat", cat_name)
+        selected_cat_id = st.selectbox("Select CatID", cat_id)
     with col2:
-        id = st.text_input("Treatment ID", value=treatmentid, disabled=True)
+        with engine.begin() as conn:
+            name = conn.execute(sa.text("select catName from Cats where catID= :catID"), {"catID": selected_cat_id}).fetchall()[0][0]
+        selected_cat_name = st.text_input('Cat Name', value = name)
 
     col1, col2 = st.columns(2)
     
@@ -152,14 +154,14 @@ def update_treatment(ID_to_update):
         df = pd.read_sql_query("SELECT CatID FROM Cats", conn)
         cat_ids = df['CatID'].tolist()
 
-    col1, col2 = st.columns(2)
-    with col1:
-        treat_id =st.text_input("TreatmentID", value=ID_to_update, disabled=True)
-    with col2:
-        with engine.begin() as conn:
-            current_catID = int(conn.execute(sa.text("select catId from Treatment where treatmentid = :t"), {"t":ID_to_update}).fetchall()[0][0])
-            # print(current_catID)
-        selected_cat_id = st.selectbox("Select Cat ID", cat_ids, index = current_catID - 1)
+    # col1, col2 = st.columns(2)
+    # with col1:
+    #     treat_id =st.text_input("TreatmentID", value=ID_to_update, disabled=True)
+    # with col2:
+    with engine.begin() as conn:
+        current_catID = int(conn.execute(sa.text("select catId from Treatment where treatmentid = :t"), {"t":ID_to_update}).fetchall()[0][0])
+        # print(current_catID)
+    selected_cat_id = st.selectbox("Select Cat ID", cat_ids, index = current_catID - 1)
 
     col1, col2 = st.columns(2)
         
@@ -217,7 +219,7 @@ def update_treatment(ID_to_update):
         else:
             st.error("Please enter valid treatment details for updation.")
 
-        if not (treat_id and selected_cat_id and Time and date and user and temperature and treatment):
+        if not (selected_cat_id and Time and date and user and temperature and treatment):
             st.error("Please fill in all fields before submitting.")
         else:
             date_and_time = datetime.combine(date, Time)
@@ -267,7 +269,7 @@ if 'show_delete_treatment_dialog' not in st.session_state:
 with engine.begin() as conn:
     treatment_table_df = pd.read_sql_query(sa.text("""
     SELECT 
-        treatmentID as TreatmentID,
+        treatmentID as ID,  
         Cats.CatID, 
         Cats.CatName AS Name, 
         Cats.CageID AS CageNo, 
@@ -295,16 +297,16 @@ cat_id = treatment_table_df['CatID'].unique()
 
 col1, col2 = st.columns(2)
 with col1:
-    selected_date2 = st.selectbox("Select Date", options=[""] + list(dates2), index=0, placeholder='Choose an option')
+    selected_date2 = st.selectbox("Select Date", options=["No Filters"] + list(dates2), index=0, placeholder='Choose an option')
 with col2:
-    selected_mode2 = st.selectbox("Select CatID", options=[""] + list(cat_id), index=0, placeholder='Choose an option')
+    selected_mode2 = st.selectbox("Select CatID", options=["No Filters"] + list(cat_id), index=0, placeholder='Choose an option')
 
-if selected_date2:
-    filtered_df = treatment_table_df[treatment_table_df['Date'] == selected_date2]
-else:
+if selected_date2 == 'No Filters':
     filtered_df = treatment_table_df
+else:
+    filtered_df = treatment_table_df[treatment_table_df['Date'] == selected_date2]
 
-if selected_mode2:
+if selected_mode2!='No Filters':
     filtered_df = filtered_df[filtered_df['CatID'] == selected_mode2]
 
 st.divider()
@@ -315,10 +317,9 @@ col1, col2, col3, col4, col5, col6 = st.columns([4.4,1,0.6,0.6,0.6,1.1])
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
 new_transaction = col6.button("✙ New Treatment", on_click=add_treatment_dialog)
 
-st.write(st.session_state.user_name)
 
 # Display the filtered table
-treatment_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, on_select='rerun', selection_mode='single-row')
+treatment_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True,column_config={"B": None}, on_select='rerun', selection_mode='single-row')
 
 
 # filtered_df.style.applymap(lambda x: 'background-color : orange')

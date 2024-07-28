@@ -4,6 +4,7 @@ import time
 
 from st_pages import Page, show_pages, add_page_title, hide_pages
 from PIL import Image
+from datetime import datetime
 
 import sqlalchemy as sa
 from millify import prettify
@@ -17,8 +18,8 @@ from yaml.loader import SafeLoader
 
 # Note the double backslashes
 # server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+# server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -65,7 +66,7 @@ def add_ward_dialog():
     st.session_state.show_add_ward_dialog = True # True
     st.session_state.show_update_ward_dialog = False
     st.session_state.show_delete_ward_dialog = False
-    st.session_state.show_add_cages_dialog = False
+    # st.session_state.show_add_cages_dialog = False
     st.session_state.show_update_cages_dialog = False
     st.session_state.show_delete_cages_dialog = False
 
@@ -73,7 +74,7 @@ def update_ward_dialog():
     st.session_state.show_add_ward_dialog = False
     st.session_state.show_update_ward_dialog = True # True
     st.session_state.show_delete_ward_dialog = False
-    st.session_state.show_add_cages_dialog = False
+    # st.session_state.show_add_cages_dialog = False
     st.session_state.show_update_cages_dialog = False
     st.session_state.show_delete_cages_dialog = False
 
@@ -81,23 +82,23 @@ def delete_ward_dialog():
     st.session_state.show_add_ward_dialog = False
     st.session_state.show_update_ward_dialog = False
     st.session_state.show_delete_ward_dialog = True # True
-    st.session_state.show_add_cages_dialog = False
+    # st.session_state.show_add_cages_dialog = False
     st.session_state.show_update_cages_dialog = False
     st.session_state.show_delete_cages_dialog = False
 
-def add_cages_dialog():
-    st.session_state.show_add_ward_dialog = False
-    st.session_state.show_update_ward_dialog = False
-    st.session_state.show_delete_ward_dialog = False
-    st.session_state.show_add_cages_dialog = True # True
-    st.session_state.show_update_cages_dialog = False
-    st.session_state.show_delete_cages_dialog = False
+# def add_cages_dialog():
+#     st.session_state.show_add_ward_dialog = False
+#     st.session_state.show_update_ward_dialog = False
+#     st.session_state.show_delete_ward_dialog = False
+#     st.session_state.show_add_cages_dialog = True # True
+#     st.session_state.show_update_cages_dialog = False
+#     st.session_state.show_delete_cages_dialog = False
 
 def update_cages_dialog():
     st.session_state.show_add_ward_dialog = False
     st.session_state.show_update_ward_dialog = False
     st.session_state.show_delete_ward_dialog = False
-    st.session_state.show_add_cages_dialog = False
+    # st.session_state.show_add_cages_dialog = False
     st.session_state.show_update_cages_dialog = True # True
     st.session_state.show_delete_cages_dialog = False
 
@@ -105,7 +106,7 @@ def delete_cages_dialog():
     st.session_state.show_add_ward_dialog = False
     st.session_state.show_update_ward_dialog = False
     st.session_state.show_delete_ward_dialog = False
-    st.session_state.show_add_cages_dialog = False
+    # st.session_state.show_add_cages_dialog = False
     st.session_state.show_update_cages_dialog = False
     st.session_state.show_delete_cages_dialog = True # True
 
@@ -125,6 +126,8 @@ def add_ward():
         valid_wardName = False
         valid_code = False
         valid_cages = False
+        current_date_str = datetime.now().strftime("%d-%m-%Y")
+        date = datetime.strptime(current_date_str, "%d-%m-%Y").date()
 
         if not (new_code and new_name and new_cage):
                 st.error("Please fill in all fields before submitting.")
@@ -153,10 +156,22 @@ def add_ward():
                     values (:wardID, :name, :code, :CapacityCages)
                 """), {"wardID": new_id, "name": new_name, "code": new_code, "CapacityCages": new_cage})
 
+
+            with engine.begin() as conn:
+                cage_id = 1
+                # cage_id = int(pd.read_sql_query(sa.text("select top 1 cageID from Cage order by cageID desc"), conn).iloc[0][0]) + 1
+                for i in range(new_cage):
+                    conn.execute(sa.text("""
+                        INSERT INTO Cage (cageID, wardID, cageStatusID, date)
+                        VALUES (:cageID, :wardID, :cageStatusID, :date)
+                    """), {"cageID": cage_id + i, "wardID": new_id, "cageStatusID": 2, "date": date})
+
             new_row = pd.DataFrame({"code": [new_code], "total_cages": [new_cage]}, index=[new_name])
             st.session_state.wards_df = pd.concat([st.session_state.wards_df, new_row])
             st.session_state.show_add_ward_dialog = False
             st.rerun()
+
+            
         
     st.session_state.show_add_ward_dialog = False
     st.caption('_:orange[Press Esc to Cancel]_')
@@ -177,12 +192,19 @@ def edit_ward():
         edit_total_cages = conn.execute(sa.text("select capacityCages from Ward where name = :name"), {"name": index}).fetchall()[0][0]
     final_total_cages = st.number_input("Total Cages", edit_total_cages)
 
+    with engine.begin() as conn:
+        wardid = conn.execute(sa.text("select wardID from Ward where name = :name"), {"name": index}).fetchall()[0][0]
+    # st.write(wardid)
+
     # print(index, final_name, final_code, final_total_cages)
 
     if st.button("Save", key='save'):
         everything_filled = False
         valid_code = False
         valid_cages = False
+        current_date_str = datetime.now().strftime("%d-%m-%Y")
+        date = datetime.strptime(current_date_str, "%d-%m-%Y").date()
+        loop = final_total_cages-edit_total_cages
 
         if not (final_code and final_total_cages):
                 st.error("Please fill in all fields before submitting.")
@@ -208,6 +230,15 @@ def edit_ward():
                 SET name = :name, code = :code, capacityCages = :total_cages
                 WHERE name  = :name
             """), {"code": final_code, "total_cages": final_total_cages, "name": index})
+                
+            with engine.begin() as conn:
+                cage_id = int(pd.read_sql_query(sa.text("select top 1 cageID from Cage order by cageID desc"), conn).iloc[0][0]) + 1
+                for i in range(loop):
+                    conn.execute(sa.text("""
+                        INSERT INTO Cage (cageID, wardID, cageStatusID, date)
+                        VALUES (:cageID, :wardID, :cageStatusID, :date)
+                    """), {"cageID": cage_id + i, "wardID": wardid, "cageStatusID": 2, "date": date})
+
             st.rerun()
 
     st.session_state.show_update_ward_dialog = False
@@ -246,52 +277,52 @@ def delete_ward():
     st.session_state.show_delete_ward_dialog = False
     st.caption('_:orange[Press Esc to Cancel]_')
 
-@st.experimental_dialog("Add Cages")
-def add_cages():
-    with engine.begin() as conn:
-        cage_id = int(pd.read_sql_query(sa.text("select top 1 cageID from Cage order by cageID desc"), conn).iloc[0][0]) + 1
-    cageid = st.text_input("Cage ID", value=cage_id, disabled=True)
+# @st.experimental_dialog("Add Cages")
+# def add_cages():
+#     with engine.begin() as conn:
+#         cage_id = int(pd.read_sql_query(sa.text("select top 1 cageID from Cage order by cageID desc"), conn).iloc[0][0]) + 1
+#     cageid = st.text_input("Cage ID", value=cage_id, disabled=True)
 
-    with engine.begin() as conn:
-        df = pd.read_sql_query("SELECT * FROM Ward WHERE name IS NOT NULL", conn)
-        selected_name = df['name'].tolist()
-    name = st.selectbox("Ward Name", selected_name)
+#     with engine.begin() as conn:
+#         df = pd.read_sql_query("SELECT * FROM Ward WHERE name IS NOT NULL", conn)
+#         selected_name = df['name'].tolist()
+#     name = st.selectbox("Ward Name", selected_name)
 
-    with engine.begin() as conn:
-        ward_data = conn.execute(sa.text("SELECT wardID, capacityCages FROM Ward WHERE name = :name"), {"name": name}).fetchone()
-        occupied = conn.execute(sa.text("""select count(cageID) as total_cages from Cage
-                        inner join Ward on Cage.wardID = Ward.wardID where name = :name"""), {"name": name}).fetchall()
+#     with engine.begin() as conn:
+#         ward_data = conn.execute(sa.text("SELECT wardID, capacityCages FROM Ward WHERE name = :name"), {"name": name}).fetchone()
+#         occupied = conn.execute(sa.text("""select count(cageID) as total_cages from Cage
+#                         inner join Ward on Cage.wardID = Ward.wardID where name = :name"""), {"name": name}).fetchall()
         
-    wardID = ward_data[0]
-    capacity = ward_data[1]
-    occupied = occupied[0][0]
+#     wardID = ward_data[0]
+#     capacity = ward_data[1]
+#     occupied = occupied[0][0]
 
-    new_cages = st.number_input("Add Cages", step=1, min_value=0, max_value=(capacity-occupied))
-    date = st.date_input("Date of Cage Addition")
+#     new_cages = st.number_input("Add Cages", step=1, min_value=0, max_value=(capacity-occupied))
+#     date = st.date_input("Date of Cage Addition")
 
-    add_new_cages = st.button("Add Cage", key='add_cage')
-    if add_new_cages:
+#     add_new_cages = st.button("Add Cage", key='add_cage')
+#     if add_new_cages:
 
-        valid_cages = False
+#         valid_cages = False
 
-        if new_cages==0:
-            st.error("Please select number of cages to add")
-        else: 
-            valid_cages = True
+#         if new_cages==0:
+#             st.error("Please select number of cages to add")
+#         else: 
+#             valid_cages = True
 
 
-        if valid_cages:
-            with engine.begin() as conn:
-                for i in range(new_cages):
-                    conn.execute(sa.text("""
-                        INSERT INTO Cage (cageID, wardID, cageStatusID, date)
-                        VALUES (:cageID, :wardID, :cageStatusID, :date)
-                    """), {"cageID": cage_id + i, "wardID": wardID, "cageStatusID": 2, "date": date})
+#         if valid_cages:
+#             with engine.begin() as conn:
+#                 for i in range(new_cages):
+#                     conn.execute(sa.text("""
+#                         INSERT INTO Cage (cageID, wardID, cageStatusID, date)
+#                         VALUES (:cageID, :wardID, :cageStatusID, :date)
+#                     """), {"cageID": cage_id + i, "wardID": wardID, "cageStatusID": 2, "date": date})
 
-            st.rerun()
+#             st.rerun()
 
-    st.session_state.show_add_cages_dialog = False
-    st.caption('_:orange[Press Esc to Cancel]_')
+#     st.session_state.show_add_cages_dialog = False
+#     st.caption('_:orange[Press Esc to Cancel]_')
 
 @st.experimental_dialog("Update Cages")
 def update_cages(id_to_update):
@@ -341,8 +372,8 @@ if 'show_update_ward_dialog' not in st.session_state:
 if 'show_delete_ward_dialog' not in st.session_state:
     st.session_state.show_delete_ward_dialog = False
 
-if 'show_add_cages_dialog' not in st.session_state:
-    st.session_state.show_add_cages_dialog = False
+# if 'show_add_cages_dialog' not in st.session_state:
+#     st.session_state.show_add_cages_dialog = False
 if 'show_update_cages_dialog' not in st.session_state:
     st.session_state.show_update_cages_dialog = False
 if 'show_delete_cages_dialog' not in st.session_state:
@@ -357,8 +388,8 @@ if st.session_state.show_update_ward_dialog:
 if st.session_state.show_delete_ward_dialog:
     delete_ward()
 
-if st.session_state.show_add_cages_dialog:
-    add_cages()
+# if st.session_state.show_add_cages_dialog:
+#     add_cages()
 
 # "Add Ward" button
 col1, col2, col3, col4, col5, col6 = st.columns([1,5.1,2,1,1.4,1.3])
@@ -370,8 +401,8 @@ with col1:
 with col2:
     deleteWard = st.button("Delete Ward", on_click=delete_ward_dialog)
 
-with col5:
-    deleteWard = st.button("Increase Cages", on_click=add_cages_dialog)
+# with col5:
+#     deleteWard = st.button("Increase Cages", on_click=add_cages_dialog)
 
 with col6:
     newWard = st.button("✙ New Ward", on_click=add_ward_dialog)
@@ -381,6 +412,8 @@ wards_df = combined_wards_df
 
 for index, row in wards_df.iterrows():
     ward_name = row['name']
+    if pd.isna(ward_name):
+        continue
     with st.expander(f"**{ward_name}**", expanded=False):
         col1, col2, col3, col4, col5, col6= st.columns([0.2,0.7 ,1,5,0.65,0.6])  # Adjusted column widths
 
@@ -394,17 +427,15 @@ for index, row in wards_df.iterrows():
         with col3:
             with engine.begin() as conn:
                 totalCages = conn.execute(sa.text("""
-                    select count(cageID)as total_cages from Cage
-                    inner join Ward on Cage.wardID = Ward.wardID
-                    where code = :code
-                """), {"code": row['code']}).fetchall()
+                    select capacityCages from Ward where name = :name
+                """), {"name": row['name']}).fetchall()
             totalCages = totalCages[0][0]
-            st.write(f"Available Cages: {totalCages}")
+            st.write(f"Total Cages: {totalCages}")
 
         with col4:
             with engine.begin() as conn:
                 freeCage = conn.execute(sa.text("""
-                    select count(cageID)as free_cages from Cage
+                    select count(cageID) as free_cages from Cage
                     inner join Ward on Cage.wardID = Ward.wardID
                     where cageStatusID = :cageStatusID and code = :code
                 """), {"cageStatusID": 2, "code": row['code']}).fetchall()
@@ -412,10 +443,10 @@ for index, row in wards_df.iterrows():
             freeCage = freeCage[0][0]
             st.write(f"Free Cages: {freeCage}")
         
-        with engine.begin() as conn:
-            capacity = conn.execute(sa.text("select capacityCages from Ward where name = :name"), {"name": f"{row['name']}"}).fetchall()[0][0]
+        # with engine.begin() as conn:
+        #     capacity = conn.execute(sa.text("select capacityCages from Ward where name = :name"), {"name": f"{row['name']}"}).fetchall()[0][0]
         
-        total = st.text_input("Capacity", value=capacity, disabled=True)
+        # total = st.text_input("Capacity", value=capacity, disabled=True)
         
         with engine.begin() as conn: # there is a problem here!
             result = pd.DataFrame(conn.execute(sa.text(""" 
@@ -441,16 +472,18 @@ for index, row in wards_df.iterrows():
 
         col1, col2 = st.columns(2)
         with col1:
-            selected_date2 = st.selectbox("Select Date", options=[""] + list(dates2), index=0, placeholder='Choose an option')
+            selected_date2 = st.selectbox("Select Date", options=["No Filters"] + list(dates2), index=0, placeholder='Choose an option')
         with col2:
-            selected_status2 = st.selectbox("Select Status", options=[""] + list(status_id), index=0, placeholder='Choose an option', key=f"{ward_name}_status")
+            selected_status2 = st.selectbox("Select Status", options=["No Filters"] + list(status_id), index=0, placeholder='Choose an option', key=f"{ward_name}_status")
 
-        if selected_date2:
-            filtered_df = result[result['Date'] == selected_date2]
-        else:
+
+        if selected_date2 == 'No Filters':
             filtered_df = result
+        else:
+            filtered_df = result[result['Date'] == selected_date2]
+        
 
-        if selected_status2:
+        if selected_status2 != 'No Filters':
             filtered_df = filtered_df[filtered_df['Status'] == selected_status2]
 
         st.divider()

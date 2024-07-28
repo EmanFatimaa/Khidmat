@@ -25,8 +25,8 @@ from yaml.loader import SafeLoader
 
 # Note the double backslashes
 # server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+# server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -339,17 +339,17 @@ with Donations:
 
     col1, col2 = st.columns(2)
     with col1:
-        selected_date = st.selectbox("Select Date", options=[""] + list(dates), index=0, placeholder='Choose an option', key='donation_date_filter')
+        selected_date = st.selectbox("Select Date", options=["No Filters"] + list(dates), index=0, placeholder='Choose an option', key='donation_date_filter')
     with col2:
-        selected_mode = st.selectbox("Select Mode", options=[""] + list(modes), index=0, placeholder='Choose an option', key='donation_mode_filter')
+        selected_mode = st.selectbox("Select Mode", options=["No Filters"] + list(modes), index=0, placeholder='Choose an option', key='donation_mode_filter')
 
     # Apply filters
-    if selected_date:
-        filtered_df = donation_table_df[donation_table_df['Date'] == selected_date]
-    else:
+    if selected_date == 'No Filters':
         filtered_df = donation_table_df
+    else:
+        filtered_df = donation_table_df[donation_table_df['Date'] == selected_date]
 
-    if selected_mode:
+    if selected_mode != "No Filters":
         filtered_df = filtered_df[filtered_df['Mode'] == selected_mode]
 
     st.divider()
@@ -653,18 +653,18 @@ with Revenue:
     col1, col2 = st.columns(2)
 
     with col1:
-        selected_date = st.selectbox("Select Date", options=[""] + list(dates), index=0, placeholder='Choose a Date')
+        selected_date = st.selectbox("Select Date", options=["No Filters"] + list(dates), index=0, placeholder='Choose a Date')
 
     with col2:
-        selected_mode = st.selectbox("Select Mode", options=[""] + list(modes), index=0, placeholder='Choose a Mode')
+        selected_mode = st.selectbox("Select Mode", options=["No Filters"] + list(modes), index=0, placeholder='Choose a Mode')
 
     # Apply filters
-    if selected_date:
-        filtered_df = revenue_table_df[revenue_table_df['Date'] == selected_date]
-    else:
+    if selected_date == 'No Filters':
         filtered_df = revenue_table_df
+    else:
+        filtered_df = revenue_table_df[revenue_table_df['Date'] == selected_date]
 
-    if selected_mode:
+    if selected_mode!='No Filters':
         filtered_df = filtered_df[filtered_df['Mode'] == selected_mode]
 
     st.divider()
@@ -921,16 +921,16 @@ with Transactions:
 
     col1, col2 = st.columns(2)
     with col1:
-        selected_date2 = st.selectbox("Select Date", options=[""] + list(dates2), index=0, placeholder='Choose a Date', key='date_filter')
+        selected_date2 = st.selectbox("Select Date", options=["No Filters"] + list(dates2), index=0, placeholder='Choose a Date', key='date_filter')
     with col2:
-        selected_mode2 = st.selectbox("Select Mode", options=[""] + list(modes2), index=0, placeholder='Choose a Mode', key='mode_filter')
+        selected_mode2 = st.selectbox("Select Mode", options=["No Filters"] + list(modes2), index=0, placeholder='Choose a Mode', key='mode_filter')
 
-    if selected_date2:
-        filtered_df = transaction_table_df[transaction_table_df['Date'] == selected_date2]
-    else:
+    if selected_date2 =='No Filters':
         filtered_df = transaction_table_df
+    else:
+        filtered_df = transaction_table_df[transaction_table_df['Date'] == selected_date2]
 
-    if selected_mode2:
+    if selected_mode2 != 'No Filters':
         filtered_df = filtered_df[filtered_df['Mode'] == selected_mode2]
 
     st.divider()

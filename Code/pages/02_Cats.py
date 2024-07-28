@@ -25,8 +25,8 @@ from yaml.loader import SafeLoader
 
 # Note the double backslashes
 # server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+# server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -666,22 +666,25 @@ owner = cat_table_df['Owner/Reporter'].unique()
 
 col1, col2, col3 = st.columns(3)
 with col1:
-    selected_date2 = st.selectbox(":white[Select Date:]", options=[""] + list(dates2), index=0, placeholder='Choose an option', key='cat_date_filter')
+    selected_date2 = st.selectbox(":white[Select Date:]", options=["No Filters"] + list(dates2), index=0, placeholder='Choose an option', key='cat_date_filter')
 with col2:
-    selected_status = st.selectbox(":white[Select Status:]", options=[""] + list(status), index=0, placeholder='Choose an option', key='cat_status_filter')
+    selected_status = st.selectbox(":white[Select Status:]", options=["No Filters"] + list(status), index=0, placeholder='Choose an option', key='cat_status_filter')
 with col3:
-    selected_owner = st.selectbox(":white[Select Owner/Reporter:]", options= [""] + list(owner), index=0, placeholder='Choose an option', key='cat_owner_filter')
+    selected_owner = st.selectbox(":white[Select Owner/Reporter:]", options= ["No Filters"] + list(owner), index=0, placeholder='Choose an option', key='cat_owner_filter')
 
-if selected_date2:
-    filtered_df = cat_table_df[cat_table_df['Admitted On'] == selected_date2]
-else:
+
+if selected_date2 == 'No Filters':
     filtered_df = cat_table_df
+else:
+    filtered_df = cat_table_df[cat_table_df['Admitted On'] == selected_date2]
 
-if selected_status:
+if selected_status!='No Filters':
     filtered_df = filtered_df[filtered_df['Status'] == selected_status]
 
-if selected_owner:
+
+if selected_owner!="No Filters":
     filtered_df = filtered_df[filtered_df['Owner/Reporter'] == selected_owner]
+
 
 st.divider()
 
