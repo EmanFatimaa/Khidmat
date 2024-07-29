@@ -158,8 +158,8 @@ def add_ward():
 
 
             with engine.begin() as conn:
-                cage_id = 1
-                # cage_id = int(pd.read_sql_query(sa.text("select top 1 cageID from Cage order by cageID desc"), conn).iloc[0][0]) + 1
+                # cage_id = 1
+                cage_id = int(pd.read_sql_query(sa.text("select top 1 cageID from Cage order by cageID desc"), conn).iloc[0][0]) + 1
                 for i in range(new_cage):
                     conn.execute(sa.text("""
                         INSERT INTO Cage (cageID, wardID, cageStatusID, date)
@@ -453,7 +453,7 @@ for index, row in wards_df.iterrows():
                     SELECT 
                     Cage.cageID as CageID,
                     Cats.catID as CatID,
-                    Cats.catName as CatName,
+                    Cats.catName as 'CatName',
                     Cage.date as Date,
                     cageStatus.cageStatus as Status
                 FROM 

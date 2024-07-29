@@ -153,10 +153,11 @@ def update_treatment(ID_to_update):
     with engine.begin() as conn:
         df = pd.read_sql_query("SELECT CatID FROM Cats", conn)
         cat_ids = df['CatID'].tolist()
+        st.write(ID_to_update)
 
     # col1, col2 = st.columns(2)
     # with col1:
-    #     treat_id =st.text_input("TreatmentID", value=ID_to_update, disabled=True)
+    # treat_id =st.text_input("TreatmentID", value=ID_to_update, disabled=True)
     # with col2:
     with engine.begin() as conn:
         current_catID = int(conn.execute(sa.text("select catId from Treatment where treatmentid = :t"), {"t":ID_to_update}).fetchall()[0][0])
@@ -288,7 +289,7 @@ with engine.begin() as conn:
 
 
 treatment_table_df['Date'] = pd.to_datetime(treatment_table_df['Date']).dt.strftime('%d %b %Y')
-
+# treatment_table_df.drop(columns = ['ID'], inplace = True)
 # --------------------------------------------------------------------------------------------------------------------------------filters code start
 
 st.write('##### :orange[Filters:]')
@@ -319,7 +320,7 @@ new_transaction = col6.button("✙ New Treatment", on_click=add_treatment_dialog
 
 
 # Display the filtered table
-treatment_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True,column_config={"B": None}, on_select='rerun', selection_mode='single-row')
+treatment_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, column_order = ("CatID", "Name", "CageNo", "Temperature", "Treatment", "Time", "Date", "GivenBy"), on_select='rerun', selection_mode='single-row', )
 
 
 # filtered_df.style.applymap(lambda x: 'background-color : orange')

@@ -45,13 +45,13 @@ credentials:
       failed_login_attempts: 0
       logged_in: false
       name: Ibad Nadeem
-      password: nadeem12345
+      password: $2b$12$vJBZP5JhHjO8Yo2ZjmMQc.77PQZmHg8DEqEdrD25okFG5LY47Tdsm
     maida butt:
       email: maida.aftab.butt@gmail.com
       failed_login_attempts: 0
       logged_in: false
       name: Maida Butt
-      password: $2b$12$v67mf5ISXQmoTNad7EaWc.hQEMDn77YJyTba8Dwy06LSxKRMpgcnW
+      password: aftab12345
     muhammad ibad:
       email: ibad.nadeem@gmail.com
       failed_login_attempts: 0

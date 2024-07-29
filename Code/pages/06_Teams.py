@@ -201,7 +201,7 @@ def addScreen():
 @st.experimental_dialog("Edit Team Member")
 def edit_team():
     with engine.begin() as conn:
-            df = pd.read_sql_query("SELECT userName FROM Users", conn)
+            df = pd.read_sql_query("SELECT userName FROM Users where userName is NOT NULL", conn)
             user_value = df['userName'].tolist()
     user_name = str(st.selectbox("Member Name", user_value))
 
