@@ -23,8 +23,8 @@ from yaml.loader import SafeLoader
 
 # Note the double backslashes
 # server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-# server = 'DESKTOP-HT3NB74' # EMAN
-server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HT3NB74' # EMAN
+# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -271,22 +271,34 @@ with engine.begin() as conn:
     treatment_table_df = pd.read_sql_query(sa.text("""
     SELECT 
         treatmentID as ID,  
-        Cats.CatID, 
+        Cats.CatID,
         Cats.CatName AS Name, 
         Cats.CageID AS CageNo, 
+        ward.code AS 'Ward Code', 
         Treatment.Temperature AS Temperature, 
         Treatment.Treatment AS Treatment, 
         CONVERT(VARCHAR, Treatment.DateTime, 108) AS Time, 
         convert(date, dateTime) as Date,
         Users.UserName AS GivenBy
     FROM 
-        Cats
-    INNER JOIN 
-        Treatment ON Treatment.CatID = Cats.CatID
-    INNER JOIN 
-        Users ON Treatment.UserID = Users.UserID
+        Cats, Treatment, Users, Cage, Ward
+        where Treatment.CatID = Cats.CatID and Treatment.UserID = Users.UserID and
+        Cage.cageID = Cats.cageID and Cage. wardID = ward.wardID 
+
+    
     """), conn)
 
+# JOIN 
+#         Treatment ON Treatment.CatID = Cats.CatID
+#     JOIN 
+#         Users ON Treatment.UserID = Users.UserID
+#     JOIN
+#         Cage ON  Cage.cageID = Cats.cageID 
+#     JOIN
+#         Ward ON Cage. wardID = ward.wardID 
+
+# Generate catCodestr for each catID
+treatment_table_df['CatID'] = treatment_table_df['CatID'].apply(lambda x: f"PR-{str(x).zfill(5)}")
 
 treatment_table_df['Date'] = pd.to_datetime(treatment_table_df['Date']).dt.strftime('%d %b %Y')
 # treatment_table_df.drop(columns = ['ID'], inplace = True)

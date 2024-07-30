@@ -27,8 +27,8 @@ from yaml.loader import SafeLoader
 
 # Note the double backslashes
 # server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-# server = 'DESKTOP-HT3NB74' # EMAN
-server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HT3NB74' # EMAN
+# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
