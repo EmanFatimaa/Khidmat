@@ -16,10 +16,8 @@ import yaml
 from yaml.loader import SafeLoader
 
 # database information ; will change when db hosting
-
-# Note the double backslashes
-# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
@@ -29,39 +27,36 @@ engine = create_engine(connection_url)
 
 st.set_page_config(page_title="Login", page_icon="🔐", layout="wide", initial_sidebar_state="collapsed")
 
-# Button Styling
-st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
+def implement_markdown():
+    # Button Styling
+    orange_button = '''
+    <style>
+    div.stButton > button:first-child {
+        background-color: #FFA500; 
+        color: black}
+    </style>
+    '''
+    st.markdown(orange_button, unsafe_allow_html=True)
 
-with open('../config.yaml') as file:
-    config = yaml.load(file, Loader=SafeLoader)
+    # Hide the fullscreen button
+    hide_img_fs = '''
+    <style>
+    button[title="View fullscreen"]{
+        visibility: hidden;}
+    </style>
+    '''
+    st.markdown(hide_img_fs, unsafe_allow_html=True)
 
-authenticator = stauth.Authenticate(
-    config['credentials'],
-    config['cookie']['name'],
-    config['cookie']['key'],
-    config['cookie']['expiry_days'],
-    config['pre-authorized']
-)
-
-hide_img_fs = '''
-<style>
-button[title="View fullscreen"]{
-    visibility: hidden;}
-</style>
-'''
-
-st.markdown(hide_img_fs, unsafe_allow_html=True)
-
-fixed_sidebar_width = '''
-       <style>
-       [data-testid="stSidebar"][aria-expanded="true"]{
-           min-width: 250px;
-           max-width: 250px;
-       }
-       '''
-
-st.markdown(fixed_sidebar_width, unsafe_allow_html=True)
-
+    # Fix the sidebar width
+    fixed_sidebar_width = '''
+        <style>
+        [data-testid="stSidebar"][aria-expanded="true"]{
+            min-width: 250px;
+            max-width: 250px;
+        }
+        '''
+    st.markdown(fixed_sidebar_width, unsafe_allow_html=True)
+    
 @st.experimental_dialog("Reset Your Password")
 def reset_pass_dialog():
     st.warning('Contact the administrator to reset your password', icon="ℹ️")
@@ -76,6 +71,21 @@ def reset_pass_dialog():
     elif cancel:
         st.rerun()
 
+# ---------------------------------------------------------- #
+
+implement_markdown()
+
+with open('../config.yaml') as file:
+    config = yaml.load(file, Loader=SafeLoader)
+
+authenticator = stauth.Authenticate(
+    config['credentials'],
+    config['cookie']['name'],
+    config['cookie']['key'],
+    config['cookie']['expiry_days'],
+    config['pre-authorized']
+)
+
 logo = Image.open("assets/logo.png")
 st.logo(logo)
 
@@ -85,17 +95,19 @@ show_pages(
         Page("pages/01_Dashboard.py", "Dashboard", ":books:"),
     ]
 )
-
 hide_pages(["Dashboard"])
 
 # Create two columns
 picture, login = st.columns([1,1])  # Adjust the ratio as needed
 
 with picture:
-    st.image("assets/cat.jpg", use_column_width=True)
+    st.image("assets/cat.jpg", width=580)
+    pass
 
 with login:
-    st.image("assets/logo.png", width= 350)
+    col1, col2, col3 = st.columns([1,1,1])
+    with col2:
+        st.image("assets/logo.png", width= 250)
 
     name, logged_in, user_name = authenticator.login(max_concurrent_users = 1, fields={'Form name':'Login', 'Username':'Username', 'Password':'Password', 'Login':'Login'})
 
@@ -113,15 +125,9 @@ with login:
 
         st.switch_page("pages/01_Dashboard.py")
     
-    elif not logged_in: # change condition...smth like wronguser name or wrong password ka check ho then aye ye msg.. u can copy opar container wala method for time delay
-        st.info('Please enter your correct username and password')     
+    # elif not logged_in: # change condition...smth like wronguser name or wrong password ka check ho then aye ye msg.. u can copy opar container wala method for time delay
+    #     st.info('Please enter your correct username and password')     
         
-        # container = st.empty()
-        # container.info('Please enter your correct username and password')
-        # time.sleep(3)  # Wait 3  seconds
-        # container.empty()  # Clear the success alert
-
-    # col1, col2, col3, col4= st.columns(4)
     forget_button = st.button("Forgot Password?")
     
     if forget_button: # ask Maida if we actually need to add reset password functionality.
