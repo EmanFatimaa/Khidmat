@@ -22,10 +22,8 @@ import yaml
 from yaml.loader import SafeLoader
 
 # database information ; will change when db hosting
-
-# Note the double backslashes
-# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
@@ -52,6 +50,9 @@ st.markdown(
        """,
         unsafe_allow_html=True,
 )
+
+# Sidebar better
+st.sidebar.markdown(""" <style> [data-testid='stSidebarNav'] > ul { min-height: 54vh; } </style> """, unsafe_allow_html=True) 
 
 hide_pages(["Login"])
 
@@ -106,22 +107,6 @@ with Donations:
             st.session_state.show_add_revenue_dialog = False
             st.session_state.show_update_donation_dialog = False
             st.session_state.show_delete_donation_dialog = True
-
-
-    def display_unique_filters(dynamic_filters, filters_name, num_columns=2):
-        unique_keys = {filter_name: f"{filters_name}_{filter_name}" for filter_name in dynamic_filters.filters}
-        
-        col1, col2 = st.columns(num_columns)
-        with col1:
-            for filter_name in dynamic_filters.filters:
-                options = sorted(dynamic_filters.df[filter_name].dropna().unique())
-                selected = st.multiselect(
-                    f"Select {filter_name}", 
-                    options, 
-                    key=unique_keys[filter_name]
-                )
-                dynamic_filters.df = dynamic_filters.df[dynamic_filters.df[filter_name].isin(selected) | (dynamic_filters.df[filter_name].isna())]
-        return dynamic_filters.df
 
     @st.experimental_dialog("Add New Donation")
     def add_donation():
@@ -296,16 +281,16 @@ with Donations:
     def delete_donation(id_to_delete):
         st.write('Are you sure you want to delete donation of ID:', id_to_delete, '?')
 
-        col1, col2 = st.columns(2)
+        blank, col1, col2 = st.columns([3,1,1])
 
-        if col1.button("Yes"):
+        if col1.button("Yes", use_container_width=True):
             with engine.begin() as conn:
                 # we cannot actually delete any donations but rather just set it to Null and amount to 0.
                 # when showing the donations we will filter out the ones with donorID = Null
                 conn.execute(sa.text("update Donations set donorID = NULL, modeID = NULL, amount = 0, date = NULL where donationID = :donationID"), {"donationID": id_to_delete})
             st.rerun()
         
-        if col2.button("No", key = 'no'):
+        if col2.button("No", key = 'no', use_container_width=True):
             st.rerun()
         
         st.session_state.show_delete_donation_dialog = False
@@ -354,35 +339,37 @@ with Donations:
 
     st.divider()
 
-    col1, col2, col3, col4, col5, col6 = st.columns([4.4,1,0.6,0.6,0.6,1.1])
+    col1, col2, col3, col4, col5, col6 = st.columns([2,2,2,1,1,1.4])
     
     # Add a New Donation Button
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    new_donation = col6.button("✙ New Donation", on_click = add_donation_dialog)
+    new_donation = col6.button("✙ New Donation", on_click = add_donation_dialog, use_container_width=True)
 
     if st.session_state.show_add_donation_dialog:
         add_donation()
 
-    # Display the Table
-    donation_table = st.dataframe(filtered_df, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row") 
+    if st.session_state.role == 'Administrator':
 
-    # Update and Delete Buttons (Only for Admin though)
-    if donation_table["selection"]["rows"]: # if a row is selected
-        
-        row_selected = int(filtered_df.iat[donation_table['selection']['rows'][0], 0])
-        # print([donation_table['selection']['rows'][0], 0])
+        # Display the Table
+        donation_table = st.dataframe(filtered_df, width=1500, height=600, hide_index = True, on_select = "rerun", selection_mode = "single-row", use_container_width=True, column_order = ('Donor Name', 'Contact Number', 'Amount', 'Mode','Date')) 
 
-        update_button = col4.button("Update", on_click = update_donation_dialog)
-        delete_button = col5.button("Delete", on_click = delete_donation_dialog)
+        # Update and Delete Buttons (Only for Admin though)
+        if donation_table["selection"]["rows"]: # if a row is selected
+            
+            row_selected = int(filtered_df.iat[donation_table['selection']['rows'][0], 0])
+            # print([donation_table['selection']['rows'][0], 0])
 
-        if st.session_state.show_update_donation_dialog:
-            update_donation(row_selected)
+            update_button = col4.button("Update", on_click = update_donation_dialog, use_container_width=True)
+            delete_button = col5.button("Delete", on_click = delete_donation_dialog, use_container_width=True)
 
-        if st.session_state.show_delete_donation_dialog:
-            delete_donation(row_selected)
+            if st.session_state.show_update_donation_dialog:
+                update_donation(row_selected)
 
+            if st.session_state.show_delete_donation_dialog:
+                delete_donation(row_selected)
     else:
-        print("No row selected")
+        # Display the Table
+        donation_table = st.dataframe(filtered_df, width=1500, height=600, hide_index = True, use_container_width=True)
 
 # --------------------------------------------------------------------------------------------------------------------------- #
 
@@ -542,7 +529,7 @@ with Revenue:
                 remarks_value = conn.execute(sa.text("select remarks from Revenue where revenueID = :revenueID"), {"revenueID": id_to_update}).fetchall()[0][0]
             remarks = st.text_area("Remarks", placeholder="", value = remarks_value)
         
-        update_rev_button = st.button("Update Revenue", key = 'update_revenue')
+        update_rev_button = st.button("Update Revenue", key = 'update_rev_inside_dialog')
 
         if update_rev_button:
 
@@ -608,16 +595,16 @@ with Revenue:
     def delete_revenue(id_to_delete):
         st.write('Are you sure you want to delete revenue of ID:', id_to_delete, '?')
 
-        col1, col2 = st.columns(2)
+        blank, col1, col2 = st.columns([3,1,1])
 
-        if col1.button("Yes", key = 'yes_revenue_delete'):
+        if col1.button("Yes", key = 'yes_revenue_delete', use_container_width=True):
             with engine.begin() as conn:
                 # we cannot actually delete any revenue but rather just set it to Null and amount to 0.
                 # when showing the revenue we will filter out the ones with buyerID = Null
                 conn.execute(sa.text("update Revenue set buyerID = NULL, modeID = NULL, amount = 0, date = NULL, remarks = NULL where revenueID = :revenueID"), {"revenueID": id_to_delete})
             st.rerun()
         
-        if col2.button("No", key = 'no_revenue_delete'):
+        if col2.button("No", key = 'no_revenue_delete', use_container_width=True):
             st.rerun()
         
         st.session_state.show_delete_revenue_dialog = False
@@ -669,34 +656,34 @@ with Revenue:
 
     st.divider()
 
-    col1, col2, col3, col4, col5, col6 = st.columns([4.4,1,0.6,0.6,0.6,1.1])
+    col1, col2, col3, col4, col5, col6 = st.columns([2,2,2,1,1,1.4])
     
     # Add a New Revenue Button
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    new_revenue = col6.button("✙ New Revenue", on_click=add_revenue_dialog, key = "add_revenue")
+    new_revenue = col6.button("✙ New Revenue", on_click=add_revenue_dialog, key = "add_revenue", use_container_width=True)
 
     if st.session_state.show_add_revenue_dialog:
         add_revenue()
     
-    # Display the Table
-    revenue_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, on_select="rerun", selection_mode="single-row")
+    if st.session_state.role == 'Administrator':
 
-    # Update and Delete Buttons (Only for Admin though)
-    if revenue_table["selection"]["rows"]: # if a row is selected
+        revenue_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, on_select="rerun", selection_mode="single-row", column_order = ('Name', 'Contact Number', 'Amount', 'Mode', 'Remark', 'Date'))
 
-        row_selected = int(filtered_df.iat[revenue_table['selection']['rows'][0], 0])
+        if revenue_table["selection"]["rows"]: # if a row is selected
 
-        update_button = col4.button("Update", on_click = update_revenue_dialog, key = 'update_revenue')
-        delete_button = col5.button("Delete", on_click = delete_revenue_dialog, key = 'delete_revenue')
+            row_selected = int(filtered_df.iat[revenue_table['selection']['rows'][0], 0])
 
-        if st.session_state.show_update_revenue_dialog:
-            update_revenue(row_selected)
-        
-        if st.session_state.show_delete_revenue_dialog:
-            delete_revenue(row_selected)
+            update_button = col4.button("Update", on_click = update_revenue_dialog, key = 'update_revenue', use_container_width=True)
+            delete_button = col5.button("Delete", on_click = delete_revenue_dialog, key = 'delete_revenue', use_container_width=True)
 
+            if st.session_state.show_update_revenue_dialog:
+                update_revenue(row_selected)
+            
+            if st.session_state.show_delete_revenue_dialog:
+                delete_revenue(row_selected)
     else:
-        print("No row selected")
+        
+        revenue_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, column_order = ('Name', 'Contact Number', 'Amount', 'Mode', 'Remark', 'Date'))
 
 # ----------------------------------------------------------------------------------------------------------------------------- #
 
@@ -881,16 +868,16 @@ with Transactions:
     def delete_transaction(id_to_delete):
         st.write('Are you sure you want to delete transaction of ID:', id_to_delete, '?')
 
-        col1, col2 = st.columns(2)
+        blank, col1, col2 = st.columns([3,1,1])
 
-        if col1.button("Yes", key = 'yes_transaction_delete'):
+        if col1.button("Yes", key = 'yes_transaction_delete', use_container_width=True):
             with engine.begin() as conn:
                 # we cannot actually delete any transactions but rather just set it to Null and amount to 0.
                 # when showing the transactions we will filter out the ones with transactionID = Null
                 conn.execute(sa.text("update Transactions set modeID = NULL, amount = 0, billFor = NULL, date = NULL, remarks = NULL where transactionID = :transactionID"), {"transactionID": id_to_delete})
             st.rerun()
         
-        if col2.button("No", key = 'no_transaction_delete'):
+        if col2.button("No", key = 'no_transaction_delete', use_container_width=True):
             st.rerun()
         
         st.session_state.show_delete_transaction_dialog = False
@@ -913,7 +900,6 @@ with Transactions:
 
     transaction_table_df['Date'] = pd.to_datetime(transaction_table_df['Date']).dt.strftime('%d %b %Y')
 
-    
     # Filtering and Final Table
     st.write('##### :orange[Filters:]')
     dates2 = transaction_table_df['Date'].unique()
@@ -935,34 +921,38 @@ with Transactions:
 
     st.divider()
     
-    col1, col2, col3, col4, col5, col6 = st.columns([4.4,1,0.6,0.6,0.6,1.15])
+    col1, col2, col3, col4, col5, col6 = st.columns([2,2,2,1,1,1.5])
 
     # Add a New Transaction Button
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-    new_transaction = col6.button("✙ New Transaction", on_click=add_transaction_dialog , key = "add_transaction")
+    new_transaction = col6.button("✙ New Transaction", on_click=add_transaction_dialog , key = "add_transaction", use_container_width=True)
 
     if st.session_state.show_add_transaction_dialog:
         add_transaction()
     
-    # Display the Table
-    transaction_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, on_select="rerun", selection_mode="single-row") 
+    if st.session_state.role == 'Administrator':
 
-    # Update and Delete Buttons (Only for Admin though)
-    if transaction_table["selection"]["rows"]: # if a row is selected
+        # Display the Table
+        transaction_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, on_select="rerun", selection_mode="single-row", column_order=('Bill For', 'Amount', 'Mode','Remarks', 'Date')) 
 
-        row_selected = int(filtered_df.iat[transaction_table['selection']['rows'][0], 0])
+        # Update and Delete Buttons (Only for Admin though)
+        if transaction_table["selection"]["rows"]: # if a row is selected
 
-        update_button = col4.button("Update", on_click = update_transaction_dialog, key = 'update_trans')
-        delete_button = col5.button("Delete", on_click = delete_transaction_dialog, key = 'delete_trans')
+            row_selected = int(filtered_df.iat[transaction_table['selection']['rows'][0], 0])
 
-        if st.session_state.show_update_transaction_dialog:
-            update_transaction(row_selected)
+            update_button = col4.button("Update", on_click = update_transaction_dialog, key = 'update_trans', use_container_width=True)
+            delete_button = col5.button("Delete", on_click = delete_transaction_dialog, key = 'delete_trans', use_container_width=True)
 
-        if st.session_state.show_delete_transaction_dialog:
-            delete_transaction(row_selected)
+            if st.session_state.show_update_transaction_dialog:
+                update_transaction(row_selected)
 
-    else:
-        print("No row selected")
+            if st.session_state.show_delete_transaction_dialog:
+                delete_transaction(row_selected)
+
+    else:        
+        # Display the Table
+        transaction_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, column_order=('Bill For', 'Amount', 'Mode','Remarks', 'Date')) 
+
 
 with open('../config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
@@ -985,6 +975,11 @@ if name is not None:
     st.sidebar.write(f"Role: _:orange[{role}]_")
 else:
     st.switch_page("LoginScreen.py")
+
+# empty
+st.sidebar.write(" ")
+st.sidebar.write(" ")
+st.sidebar.write(" ")
 
 if st.sidebar.button("🔓 Logout"):
     with st.sidebar:

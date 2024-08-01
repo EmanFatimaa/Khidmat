@@ -22,12 +22,8 @@ import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
 
-# Make the file from the database each time and every time we update or add a new user!
-# Right now it only works for the 7 people that should also be in the database
-
-# Note the double backslashes
-# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
@@ -46,6 +42,9 @@ st.header("Team", divider='orange')
 
 # Button Styling
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
+
+# Sidebar better
+st.sidebar.markdown(""" <style> [data-testid='stSidebarNav'] > ul { min-height: 54vh; } </style> """, unsafe_allow_html=True) 
 
 hide_pages(["Login"])
 
@@ -74,22 +73,19 @@ def delete_team_dialog():
     st.session_state.show_add_team_dialog = False
     st.session_state.show_edit_team_dialog = False
     st.session_state.show_delete_team_dialog = True
-    
 
-
-col1, col2, col3 = st.columns([6.2, 2.1, 2])
-with col2:
-    delete_button = st.button('Delete Member', on_click=delete_team_dialog)
-with col1:
-    add_button = st.button("✙ New Member", on_click=add_team_dialog)
-with col3:
-    update_button = st.button("Update Details", on_click = edit_team_dialog)
-
+if st.session_state.role == 'Administrator':
+    col1, blank, col2, col3 = st.columns([1,1.9,1,1])
+    with col2:
+        delete_button = st.button('Delete Member', on_click=delete_team_dialog, use_container_width=True)
+    with col1:
+        add_button = st.button("✙ New Member", on_click=add_team_dialog, use_container_width=True)
+    with col3:
+        update_button = st.button("Update Details", on_click = edit_team_dialog, use_container_width=True)
 
 query = "SELECT userName, email, roleDesc, picture FROM Users inner join InternalRole on InternalRole.internalRoleID = Users.internalRoleID"  # Adjust the query to your database structure
 with engine.begin() as conn:
     team_member_df = pd.read_sql_query(query, conn)
-
 
 cols = st.columns(4)
 for i, member in team_member_df.iterrows():
@@ -101,7 +97,6 @@ for i, member in team_member_df.iterrows():
             st.write(f"**<center>{member['userName']}</center>**", unsafe_allow_html=True)
             st.caption(f"<center>{member['roleDesc']}</center>", unsafe_allow_html=True)
             st.caption(f"<center>{member['email']}</center>", unsafe_allow_html=True)
-
 
 @st.experimental_dialog("Add a New Member")
 def addScreen():
@@ -212,11 +207,6 @@ def edit_team():
         st.image(current_image, caption= "Current Photo", width=150)
     new_image = st.file_uploader("Upload New Photo", type='png')
 
-    # with col1:
-    #     with engine.begin() as conn:
-    #         name_value = conn.execute(sa.text("select userName from Users where userID = :userID"), {"userID": user_id}).fetchall()[0][0]
-    #     current_name = st.text_input("Name", value = name_value)
-
     with engine.begin() as conn:
         role = conn.execute(sa.text("select roleDesc from InternalRole where internalRoleID = (Select internalRoleID from Users where userName = :userName)"), {"userName": user_name}).fetchall()[0][0]
         df = pd.read_sql_query("SELECT roleDesc FROM InternalRole", conn)
@@ -241,8 +231,6 @@ def edit_team():
         everything_filled = False
         valid_email = False
         valid_password = False
-        # Check if any of the fields are left unfilled
-
 
         if not (current_email and current_password):
             st.error("Please fill in all fields before submitting.")
@@ -287,7 +275,7 @@ def edit_team():
                         "password": current_password,
                         "internalRoleID": internal_role_id,
                     })
-            
+
             # Update the user in the config file
             config['credentials']['usernames'][user_name.lower()] = {
                 'email': current_email,
@@ -313,10 +301,23 @@ def delete_team():
     member = st.selectbox("Member", user)
 
     delete = st.button('Delete Member', key = 'delete')
+
     if delete:
         with engine.begin() as conn:
             conn.execute(sa.text("update Users set userName = NULL, email = NULL, password = NULL, picture = NULL, internalRoleID = NULL where userName = :userName"), {"userName": member})
-        
+
+            # Update the user in the config file
+            config['credentials']['usernames'][member.lower()] = {
+                'email': '',
+                'failed_login_attempts': 0,
+                'logged_in': False,
+                'name': '',
+                'password': 'this person has been deletedd'
+            }
+            
+            with open('../config.yaml', 'w') as file:
+                yaml.dump(config, file, default_flow_style=False)
+            
         st.success(f'Team Member, {member} deleted successfully!')
         st.rerun()
     
@@ -361,6 +362,11 @@ if name is not None:
 else:
     st.switch_page("LoginScreen.py")
 
+# empty
+st.sidebar.write(" ")
+st.sidebar.write(" ")
+st.sidebar.write(" ")
+
 if st.sidebar.button("🔓 Logout"):
     with st.sidebar:
         with st.spinner('Logging out...'):
@@ -368,3 +374,7 @@ if st.sidebar.button("🔓 Logout"):
 
     authenticator.logout(location = "unrendered")
     st.switch_page("LoginScreen.py")
+
+# TODO:
+# nothing..
+# there is a problem in other where buttons are a bit slow, esp wards. I think the orientation is the problem. correct it this in teams and check again pls.

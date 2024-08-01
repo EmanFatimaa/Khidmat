@@ -32,6 +32,7 @@ Wards:
 -Delete Wards men checks aane chaiye
 
 Finances:
+-Remove DonationID, RevenueID, TransactionID
 -To and From Date for everthing though
 
 Team:
@@ -45,3 +46,4 @@ Team:
 -Put username and role into session_state and remove the unnecc code.
 -if admin only then have the ability to select the rows
 -st.button alignments sahi se
+-st.sidebar size neeche please

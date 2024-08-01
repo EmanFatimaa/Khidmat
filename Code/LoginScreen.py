@@ -112,16 +112,18 @@ with login:
     name, logged_in, user_name = authenticator.login(max_concurrent_users = 1, fields={'Form name':'Login', 'Username':'Username', 'Password':'Password', 'Login':'Login'})
 
     if logged_in:
+        
+        with engine.connect() as conn:
+            role = conn.execute(sa.text("select roleDesc from InternalRole, Users where Users.internalRoleID = InternalRole.internalRoleID and Users.userName = :name"), {"name":name}).fetchone()[0]    
+
+        st.session_state['role'] = role
         st.session_state['user_name'] = user_name
         st.session_state['logged_in'] = True
 
-        with st.spinner('Logging in...'): # is this really necessary? lmao
-            time.sleep(2)
-
-        container = st.empty()
-        container.success(f'Welcome, {user_name.title()}!') # Create a success alert
-        time.sleep(3)  # Wait 3  seconds
-        container.empty()  # Clear the success alert
+        # container = st.empty()
+        st.success(f'Welcome, {user_name.title()}!') # Create a success alert
+        # time.sleep(3)  # Wait 3  seconds
+        # container.empty()  # Clear the success alert
 
         st.switch_page("pages/01_Dashboard.py")
     
@@ -130,8 +132,9 @@ with login:
         
     forget_button = st.button("Forgot Password?")
     
-    if forget_button: # ask Maida if we actually need to add reset password functionality.
+    if forget_button:
         reset_pass_dialog()
 
-    # Do something about the forgotten password thingy
-    # Do something about the login attempts. if not zero then show Login Failed or something.
+# TODO:
+# Do something about the forgotten password thingy ; maybe..
+# Do something about the login attempts. if not zero then show Login Failed or something.

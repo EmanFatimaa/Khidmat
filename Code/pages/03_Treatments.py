@@ -21,9 +21,8 @@ import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
 
-# Note the double backslashes
-# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
@@ -51,12 +50,25 @@ st.markdown(
         unsafe_allow_html=True,
 )
 
+# Sidebar better
+st.sidebar.markdown(""" <style> [data-testid='stSidebarNav'] > ul { min-height: 54vh; } </style> """, unsafe_allow_html=True) 
+
 hide_pages(["Login"])
 
 # Creating columns for better formatting
 col1, col2, col3, col4 = st.columns(4)
 
 st.header("Treatment", divider='orange')
+
+#Funciton to extract number from cat id
+def extract_cat_number(cat_id_str):
+    # Remove the prefix "PA-"
+    numberStr = cat_id_str.replace("PR-", "")
+    
+    # Convert to integer
+    numberInt = int(numberStr)
+    
+    return numberInt
 
 def add_treatment_dialog():
     st.session_state.show_add_treatment_dialog = True
@@ -75,15 +87,18 @@ def delete_treatment_dialog():
 
 @st.experimental_dialog("Add Treatment")
 def add_treatment():
-    print("adding")
+
     with engine.begin() as conn:
         treatmentid = int(pd.read_sql_query(sa.text("SELECT TOP 1 treatmentID FROM Treatment ORDER BY treatmentID DESC"), conn).iat[0,0]) + 1
         df = pd.read_sql_query("SELECT catID FROM Cats where catID IS NOT NULL", conn)
-        cat_id = df['catID'].tolist()
+        df['catID'] = df['catID'].apply(lambda x: f"PR-{str(x).zfill(5)}")
+        catcode_id = df['catID'].tolist()
 
     col1, col2 = st.columns(2)
     with col1:
-        selected_cat_id = st.selectbox("Select CatID", cat_id)
+        selected_cat_id = st.selectbox("Select CatID", catcode_id)
+        selected_cat_id = extract_cat_number(selected_cat_id)
+
     with col2:
         with engine.begin() as conn:
             name = conn.execute(sa.text("select catName from Cats where catID= :catID"), {"catID": selected_cat_id}).fetchall()[0][0]
@@ -155,13 +170,8 @@ def update_treatment(ID_to_update):
         cat_ids = df['CatID'].tolist()
         st.write(ID_to_update)
 
-    # col1, col2 = st.columns(2)
-    # with col1:
-    # treat_id =st.text_input("TreatmentID", value=ID_to_update, disabled=True)
-    # with col2:
     with engine.begin() as conn:
         current_catID = int(conn.execute(sa.text("select catId from Treatment where treatmentid = :t"), {"t":ID_to_update}).fetchall()[0][0])
-        # print(current_catID)
     selected_cat_id = st.selectbox("Select Cat ID", cat_ids, index = current_catID - 1)
 
     col1, col2 = st.columns(2)
@@ -186,19 +196,13 @@ def update_treatment(ID_to_update):
     
     with col2:
         with engine.begin() as conn:
-            # current_givenby = conn.execute(sa.text("select mode from Mode where modeID = (select modeID from Donations where treatmentID = :t)"), {"t": ID_to_update}).fetchall()[0][0]
             user_value = conn.execute(sa.text("select userName from Users where userID = (select userID from Treatment where treatmentID = :treatmentID)"), {"treatmentID": ID_to_update}).fetchall()[0][0]
             df = pd.read_sql_query("SELECT userName FROM Users", conn)
             update_user = df['userName'].tolist()
+
         final_user_index = update_user.index(user_value)
         # print(final_user_index)
         user = st.selectbox("Given By", update_user, index = final_user_index)
-
-            # with engine.begin() as conn:
-            #     donation_mode = pd.read_sql_query(sa.text("select mode from Mode"), conn)
-            #     mode_value = conn.execute(sa.text("select mode from Mode where modeID = (select modeID from Donations where donationID = :donationID)"), {"donationID": id_to_update}).fetchall()[0][0]
-            #     final_mode_value = 1 if mode_value == 'Cash' else 0
-            # mode = st.selectbox("Donation Mode", donation_mode["mode"].tolist(), index = final_mode_value)
 
         with engine.begin() as conn:
             Userid = conn.execute(sa.text("""SELECT UserID FROM Users WHERE userName = :userName"""), {"userName": user}).fetchall()[0][0]
@@ -242,16 +246,16 @@ def update_treatment(ID_to_update):
 
 @st.experimental_dialog("Delete Treatment")
 def delete_treatment(Id_to_delete):
-    st.write('Are you sure you want to delete treatment of ID:', Id_to_delete, '?')
+    st.write('Are you sure you want to delete treatment of ID:', f"PR-{str(Id_to_delete).zfill(5)}", '?')
 
-    col1, col2 = st.columns(2)
-    if col1.button("Yes"):
+    blank, col1, col2 = st.columns([3,1,1])
+    if col1.button("Yes", use_container_width=True):
         with engine.begin() as conn:
             # conn.execute(sa.text("update Treatment set catID = NULL, temperature = NULL, dateTime = NULL, treatment = NULL FROM Treatment where treatmentID = :treatmentID"), {"treatmentID": Id_to_delete})
             conn.execute(sa.text("update Treatment set catID = NULL, userID = NULL, dateTime = NULL, temperature = NULL, treatment = NULL where treatmentID = :treatmentID"), {"treatmentID": Id_to_delete})
         st.rerun()
 
-    if col2.button("No", key = 'no'):
+    if col2.button("No", key = 'no', use_container_width=True):
         st.rerun()
 
     st.session_state.show_delete_treatment_dialog = False
@@ -288,21 +292,14 @@ with engine.begin() as conn:
     
     """), conn)
 
-# JOIN 
-#         Treatment ON Treatment.CatID = Cats.CatID
-#     JOIN 
-#         Users ON Treatment.UserID = Users.UserID
-#     JOIN
-#         Cage ON  Cage.cageID = Cats.cageID 
-#     JOIN
-#         Ward ON Cage. wardID = ward.wardID 
+# ----------------------------------------------------------- #
 
 # Generate catCodestr for each catID
 treatment_table_df['CatID'] = treatment_table_df['CatID'].apply(lambda x: f"PR-{str(x).zfill(5)}")
 
 treatment_table_df['Date'] = pd.to_datetime(treatment_table_df['Date']).dt.strftime('%d %b %Y')
-# treatment_table_df.drop(columns = ['ID'], inplace = True)
-# --------------------------------------------------------------------------------------------------------------------------------filters code start
+
+# ----------------- filters code start -----------------------#
 
 st.write('##### :orange[Filters:]')
 dates2 = treatment_table_df['Date'].unique()
@@ -324,37 +321,35 @@ if selected_mode2!='No Filters':
 
 st.divider()
 
-col1, col2, col3, col4, col5, col6 = st.columns([4.4,1,0.6,0.6,0.6,1.1])
+col1, col2, col3, col4, col5, col6 = st.columns([2,2,2,1,1,1.4])
 
 # Add a New Transaction Button
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-new_transaction = col6.button("✙ New Treatment", on_click=add_treatment_dialog)
-
+new_transaction = col6.button("✙ New Treatment", on_click=add_treatment_dialog, use_container_width=True)
 
 # Display the filtered table
-treatment_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, column_order = ("CatID", "Name", "CageNo", "Temperature", "Treatment", "Time", "Date", "GivenBy"), on_select='rerun', selection_mode='single-row', )
+if st.session_state.role == 'Administrator':
+    treatment_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, column_order = ("CatID", "Name", "CageNo", "Temperature", "Treatment", "Time", "Date", "GivenBy"), on_select='rerun', selection_mode='single-row', use_container_width=True)
 
-
-# filtered_df.style.applymap(lambda x: 'background-color : orange')
-if st.session_state.show_add_treatment_dialog:
-    add_treatment()
-
-if treatment_table["selection"]["rows"]: # if a row is selected
+    if treatment_table["selection"]["rows"]: # if a row is selected
         
         row_selected = int(filtered_df.iat[treatment_table['selection']['rows'][0], 0])
         # print(treatment_table_df)
 
-        update_button = col4.button("Update", on_click = update_treatment_dialog)
-        delete_button = col5.button("Delete", on_click = delete_treatment_dialog)
+        update_button = col4.button("Update", on_click = update_treatment_dialog, use_container_width=True)
+        delete_button = col5.button("Delete", on_click = delete_treatment_dialog, use_container_width=True)
 
         if st.session_state.show_update_treatment_dialog:
             update_treatment(row_selected)
 
         if st.session_state.show_delete_treatment_dialog:
             delete_treatment(row_selected)
-
 else:
-    print("No row selected")
+    treatment_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, column_order = ("CatID", "Name", "CageNo", "Temperature", "Treatment", "Time", "Date", "GivenBy"), use_container_width=True)
+
+# filtered_df.style.applymap(lambda x: 'background-color : orange')
+if st.session_state.show_add_treatment_dialog:
+    add_treatment()
 
 with open('../config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
@@ -378,6 +373,10 @@ if name is not None:
 else:
     st.switch_page("LoginScreen.py")
 
+# empty
+st.sidebar.write(" ")
+st.sidebar.write(" ")
+st.sidebar.write(" ")
 
 if st.sidebar.button("🔓 Logout"):
     with st.sidebar:

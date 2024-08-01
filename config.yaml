@@ -40,24 +40,24 @@ credentials:
       logged_in: false
       name: Hunain Theba
       password: $2b$12$6LWaaRMP14MQPAuGRMIHluWCthMcqNzA63dYeQYgm2gdNhN1KkmHO
-    ibad nadeem:
-      email: in@gmail.com
-      failed_login_attempts: 0
-      logged_in: false
-      name: Ibad Nadeem
-      password: $2b$12$vJBZP5JhHjO8Yo2ZjmMQc.77PQZmHg8DEqEdrD25okFG5LY47Tdsm
     maida butt:
       email: maida.aftab.butt@gmail.com
       failed_login_attempts: 0
       logged_in: false
       name: Maida Butt
-      password: aftab12345
+      password: $2b$12$gJAmXe1xns.yfdzPSNNXuO3g1Bx89B0R2mkPTPvzsVIc8n1EdkAzC
     muhammad ibad:
       email: ibad.nadeem@gmail.com
       failed_login_attempts: 0
       logged_in: false
       name: Muhammad Ibad
       password: $2b$12$14KalSr6PwrUCCMed.MfheeE7E1eYU7f9prO/Xh0zcck5OoMAR5a.
+    naeem saad:
+      email: ''
+      failed_login_attempts: 0
+      logged_in: false
+      name: ''
+      password: this person has been deletedd
     syeda maryum:
       email: syeda.marry@gmail.com
       failed_login_attempts: 0

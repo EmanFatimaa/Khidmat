@@ -22,10 +22,8 @@ import yaml
 from yaml.loader import SafeLoader
 
 # database information ; will change when db hosting
-
-# Note the double backslashes
-# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
@@ -53,6 +51,9 @@ st.markdown(
         unsafe_allow_html=True,
 )
 
+# Sidebar better
+st.sidebar.markdown(""" <style> [data-testid='stSidebarNav'] > ul { min-height: 54vh; } </style> """, unsafe_allow_html=True) 
+
 hide_pages(["Login"])
 
 #Creating columns for better formatting
@@ -61,7 +62,6 @@ col1, col2, col3, col4 = st.columns(4)
 #Title
 st.header("Cats", divider = "orange")
 
-# st.info("Need to change the status of the cage once the cat is added / removed") already happening
 #Functions
 def add_cat_dialog():
     st.session_state.show_add_cat_dialog = True
@@ -80,12 +80,6 @@ def update_cat_dialog():
     st.session_state.show_view_cat_dialog = False
     st.session_state.show_update_cat_dialog = True
     # st.session_state.show_delete_cat_dialog = False
-
-# def delete_cat_dialog():
-#     st.session_state.show_add_cat_dialog = False
-#     st.session_state.show_view_cat_dialog = False
-#     st.session_state.show_update_cat_dialog =  False
-#     st.session_state.show_delete_cat_dialog = True
 
 # Load custom CSS
 def load_css(file_name):
@@ -147,16 +141,20 @@ def add_cat():
 
         # Cage no field
         with engine.begin() as conn:
-            cageID = pd.read_sql_query(sa.text("select cageID from Cage where cageStatusID = 2"), conn)  # OR: select cageID from Cage where cageStatus = 'Free'
-            # wardCode = conn.execute(sa.text("Select code from ward where wardID in (select wardID from cage where cageID = cageID)"),  {"cageID": cageID}).fetchall()[0][0]
-            # print("cage id haha:", cageID)
-            # print("Ward code haha:", wardCode)
-        cageNum = st.selectbox("Cage Number", cageID["cageID"].tolist())  # This should also show which Ward it is in and that Cage is free or not ofc.
+            cage_code_id_df = pd.read_sql_query(sa.text("select cage.cageID, code,cageNo from ward, cage where ward.wardID = cage.wardID and cageStatusID = 2"), conn)
         
+        cage_code_id_df["cagecodeID"] = cage_code_id_df.apply(lambda row: f"{row['code']}-C-{str(row['cageNo']).zfill(2)}", axis=1)
+        cageID_list = cage_code_id_df["cagecodeID"].tolist()
+
+        cageNum = st.selectbox("Cage Number", cageID_list)  # This should also show which Ward it is in and that Cage is free or not ofc.
+        cageID = int(cage_code_id_df.iat[cageID_list.index(cageNum),0])
         
     with engine.begin() as conn:
         statusSelection = pd.read_sql_query(sa.text("SELECT statusType FROM CatStatus"), conn)
     status = st.selectbox("Status", statusSelection["statusType"].tolist())
+
+    # Date
+    date = st.date_input('Date', value=datetime.date.today(), disabled=False)
 
     # Owner related info (in the form)
     st.write(" :orange[Owner related details]")
@@ -178,9 +176,6 @@ def add_cat():
         # Owner contact text input
         # contactFromDB = format_contact_number(contactFromDB)
         ownerContact = st.text_input("Owner's Contact", value=contactFromDB, placeholder="0300-7413639")
-
-    # Date
-    date = st.date_input('Date', value=datetime.date.today(), disabled=True)
 
     # Address text area
     addressFromDB = ''
@@ -206,7 +201,7 @@ def add_cat():
         valid_address = False
 
         # Check if any of the fields are left unfilled
-        if not (age and type and name and gender and cageNum and status and ownerName and ownerContact and address):
+        if not (age and type and name and gender and cageID and status and ownerName and ownerContact and address):
             st.error("Please fill in all the fields before submitting.")
             print("Please fill in all the fields.")
         else:
@@ -261,7 +256,7 @@ def add_cat():
                                      """),
                 {
                     "catID": currentCatID, "catName": name, "age": age, "gender": gender, 
-                    "type": type, "cageID": cageNum, "name": ownerName, 
+                    "type": type, "cageID": cageID, "name": ownerName, 
                     "contactNum": ownerContact, "address": address, 
                     "status": status, "admittedOn": date
                 })
@@ -277,21 +272,6 @@ def add_cat():
             st.rerun()
             
     st.session_state.show_add_cat_dialog = False
-    
-# with engine.begin() as conn:
-#         catDB = int(pd.read_sql_query(sa.text("select top 1 catID from cats order by catID desc "), conn).iat[0,0])
-#     if catDB == currentCatID:
-#         st.success("Cat with CatID: "+ str(catCodestr)+ " has been added successfully", icon = "🎉")
-#         st.balloons() # why not working
-
-# Check if the session state exists or not
-if 'show_add_cat_dialog' not in st.session_state:
-    st.session_state.show_add_cat_dialog = False
-
-
-if st.session_state.show_add_cat_dialog:
-    add_cat()
-#-------------------------------------------------------------------
 
 #UPDATE DIALOG
 @st.experimental_dialog("Update Cat Details")
@@ -306,7 +286,7 @@ def update_cat(id):
     if cat_table["selection"]["rows"]: #if a row is selected
             # selectedID = cat_table_df.iat[cat_table["selection"]["rows"][0],0]
             selectedCatName = filtered_df.iat[cat_table["selection"]["rows"][0],1]
-            selectedCage = filtered_df.iat[cat_table["selection"]["rows"][0],6]
+            old_cageCode = filtered_df.iat[cat_table["selection"]["rows"][0],6]
             selectedStatus = filtered_df.iat[cat_table["selection"]["rows"][0],7]
             selectedOwnerName = filtered_df.iat[cat_table["selection"]["rows"][0],2]
             selectedOwnerContact = filtered_df.iat[cat_table["selection"]["rows"][0],3]
@@ -346,16 +326,28 @@ def update_cat(id):
 
         # Cage no field
         with engine.begin() as conn:
-            cageID = pd.read_sql_query(sa.text("SELECT cageID FROM Cage WHERE cageID NOT IN (SELECT cageID FROM Cats)"), conn)  # OR: select cageID from Cage where cageStatus = 'Free'
-            wardID =pd.read_sql_query(sa.text("Select wardID from ward where wardID in (select WardID from cage)"),conn)
-        cageNum = st.selectbox("Cage Number", cageID["cageID"].tolist())  # This should also show which Ward it is in and that Cage is free or not ofc.
-        
+            cage_code_id_df = pd.read_sql_query(sa.text("select cage.cageID, code,cageNo from ward, cage where ward.wardID = cage.wardID and cageStatusID = 2"), conn)
+            selected_cage_id_df = pd.read_sql_query(sa.text("select cageID from cage where cageID in (select cageID from cats where catID = :catID)"), conn, params = {"catID": extract_cat_number(id)})
+
+        old_cageID = int(selected_cage_id_df.iat[0,0])
+        cage_code_id_df["cagecodeID"] = cage_code_id_df.apply(lambda row: f"{row['code']}-C-{str(row['cageNo']).zfill(2)}", axis=1)
+        cage_code_id_df = cage_code_id_df._append({"cagecodeID": old_cageCode, "cageID": old_cageID}, ignore_index = True)
+        cageID_list = cage_code_id_df["cagecodeID"].tolist()
+
+        cageCode = st.selectbox("Cage Number", cageID_list, index=cageID_list.index(old_cageCode))
+        cageID = int(cage_code_id_df.iat[cageID_list.index(cageCode),0])
+
     with engine.begin() as conn:
         status_list = pd.read_sql_query(sa.text("SELECT statusType FROM CatStatus"), conn)
         status_value = pd.read_sql_query(sa.text("SELECT statusType from catstatus where statusID in (select statusID from cats where catID = :catID)"), conn, params = {"catID": extract_cat_number(id)}).iat[0,0]
     status_df = status_list['statusType'].tolist()
     final_status_index = status_df.index(status_value)
     status = st.selectbox("Status", status_df, index = final_status_index)
+
+    # Date
+    with engine.begin() as conn:
+        datefromDB = conn.execute(sa.text("Select admittedOn from cats where catID = :catID"), {"catID": extract_cat_number(id)}).fetchone()[0]
+    date = st.date_input('Date', value=datefromDB, disabled=False)
 
     # Owner related info (in the form)
     st.write(" :orange[Owner related details]")
@@ -369,11 +361,6 @@ def update_cat(id):
         ownerName = st.text_input("Owner/Reporter's Name",  value = ownerNameValue)
     
     with col2:
-        # Owner contact text input
-        # with engine.begin() as conn:
-        #     contactValue = conn.execute(sa.text("select contact from externals where externalID in (select externalID from cats where catID = :catID"),{"catID": extract_cat_number(id)}).fetchall()[0][0]
-        # contact = st.text_input("Owner's Contact", value = contact)
-
         contactFromDB = ''
         if ownerName:
             with engine.begin() as conn:
@@ -381,9 +368,6 @@ def update_cat(id):
                 if fetchall:
                     contactFromDB = fetchall[0][0]
         ownerContact = st.text_input("Owner's Contact", value=contactFromDB)
-
-    # Date
-    date = st.date_input('Date', value=datetime.date.today())
 
     # Address text area
     addressFromDB = ''
@@ -404,7 +388,7 @@ def update_cat(id):
         valid_address = False
 
         # Check if any of the fields are left unfilled
-        if not (age and type and name and gender and cageNum and status and ownerName and ownerContact and address):
+        if not (age and type and name and gender and cageID and status and ownerName and ownerContact and address):
             st.error("Please fill in all the fields before submitting.")
             print("Please fill in all the fields.")
         else:
@@ -436,12 +420,53 @@ def update_cat(id):
             st.error("Please enter a valid address.")
 
         if (everythingFilled and valid_catname and valid_age and valid_contact and valid_ownername and valid_address):
+
+            # query to update the cat details
+            with engine.begin() as conn:
+                conn.execute(sa.text(""" 
+                                     
+                update Externals
+                set name = :name, contactNum = :contact, address = :address
+                where externalID = (select externalID from Cats where catID = :catID)
+                                    
+                update cats
+                set 
+                catName = :catName, 
+                age = :age, 
+                genderID = (SELECT genderID FROM Gender WHERE gender = :gender), 
+                typeID = (SELECT typeID FROM Type WHERE type = :type),
+                cageID = :new_cageID,
+                statusID = (SELECT statusID FROM CatStatus WHERE statusType = :status),
+                admittedOn = :date
+                where catID = :catID
+
+                update cage set cageStatusID = 2 where cageID = :old_cageID                      
+                
+                update cage set cageStatusID = 1 where cageID = :new_cageID
+                                     
+                                     """), {"name": ownerName, 
+                                            "contact": ownerContact,
+                                            "address": address,
+                                            "catID": extract_cat_number(id), 
+                                            "catName": name, 
+                                            "age": age, 
+                                            "gender": gender,
+                                            "type": type,
+                                            "new_cageID": cageID,
+                                            "status": status,
+                                            "date": date,
+                                            "old_cageID": old_cageID
+                                            })
+
+            container = st.empty()
+            container.success(f"Cat ID: {catCodestr} has been updated successfully") # Create a success alert
+            time.sleep(2)  # Wait  4seconds
+            container.empty()  # Clear the success alert
+
             st.rerun()
     
     st.caption(':orange[Press Esc to Cancel]')
     st.session_state.show_update_cat_dialog = False
-    
-#------------------------------------------------------------
 
 #DELETE
 @st.experimental_dialog("Delete Cat Details")
@@ -475,17 +500,6 @@ def delete_cat(id):
     st.caption('_:orange[Press Esc to Cancel]_') 
     st.session_state.show_delete_cat_dialog = False
     
-
-# Check if the session state exists or not
-if 'show_add_cat_dialog' not in st.session_state:
-    st.session_state.show_add_cat_dialog = False
-if 'show_view_cat_dialog' not in st.session_state:
-    st.session_state.show_view_cat_dialog = False
-if 'show_update_cat_dialog' not in st.session_state:
-    st.session_state.show_update_cat_dialog = False
-# if 'show_delete_cat_dialog' not in st.session_state:
-#     st.session_state.show_delete_cat_dialog = False
-# ------------------------------------------------------------
 #VIEW CAT DETAILS
 @st.experimental_dialog("View Cat's Details")
 def view_cat(id):
@@ -565,13 +579,6 @@ def view_cat(id):
     with treatment_info:
         with st.container( border = True):
             
-            col1, col2= st.columns([1.7, 1])
-            
-            with col2:
-                treatment = st.button(" ✙ Add Treatment")
-            if treatment:
-                st.switch_page("pages/03_Treatments.py") 
-
             # Define the SQL query with a parameter placeholder
             query = """
             SELECT dateTime AS 'Date/Time', 
@@ -588,35 +595,32 @@ def view_cat(id):
             with engine.begin() as conn:
                 treatment_table_df = pd.read_sql_query(sa.text(query), conn, params={"catID": extract_cat_number(id)})
 
-            # with engine.begin() as conn:
-            #     treatment_table_df = pd.read_sql_query(sa.text("""
-            #     select dateTime as 'Date/Time', temperature as 'Temp', treatment as 'Treatment' , users.userName as 'Given by'
-            #     from treatment
-            #     join cats on treatment.catID = cats.catID
-            #     join users on treatment.userID = users.userID
-            #     where cats.catID = extract_cat_id(id)
-            #     """),conn) #where treatment.catID = :treatment.catID#{"catID":id} 
-            # print("ID = ", id)
-
             treatment_table_df["Date/Time"] =pd.to_datetime(treatment_table_df["Date/Time"]).dt.strftime('%d %b %Y, %I:%M %p')
 
-            # st.write("Table:")
-            # st.table(treatment_table_df)
-            
-            # I think the dataframe looks fine though
-            # st.write("Dataframe:")
             st.dataframe(treatment_table_df, width = 600, height = 110, hide_index = True)
 
-        # st.caption('_:orange[Press Esc to Cancel]_') 
         st.session_state.show_view_cat_dialog = False
 
 # ------------------------------------------------------------ #
+
+# Check if the session state exists or not
+if 'show_add_cat_dialog' not in st.session_state:
+    st.session_state.show_add_cat_dialog = False
+if 'show_add_cat_dialog' not in st.session_state:
+    st.session_state.show_add_cat_dialog = False
+if 'show_view_cat_dialog' not in st.session_state:
+    st.session_state.show_view_cat_dialog = False
+if 'show_update_cat_dialog' not in st.session_state:
+    st.session_state.show_update_cat_dialog = False
+
+if st.session_state.show_add_cat_dialog:
+    add_cat()
 
 # Table for Cats:
 with engine.begin() as conn:
     cat_table_df = pd.read_sql_query(sa.text(""" 
                         select catID as 'Cat ID', catName as 'Cat Name', Externals.name as 'Owner/Reporter', Externals.contactNum as 'Contact Number', admittedOn as 'Admitted On',
-                                Type.type as 'Type', cage.cageID as 'Cage ID', ward.code as 'Ward Code', CatStatus.statusType as 'Status'
+                                Type.type as 'Type', cage.cageNo as 'Cage ID', ward.code as 'Ward Code', CatStatus.statusType as 'Status'
 
                         from Cats, Externals, Type, Cage, ward, CatStatus
                         where Cats.externalID = Externals.externalID and 
@@ -624,19 +628,6 @@ with engine.begin() as conn:
                         Cage.cageID = Cats.cageID and
                         Cage. wardID = ward.wardID and
                         Cats.statusID = CatStatus.StatusID"""), conn)
-
-# """ 
-#                         select catID as 'Cat ID', catName as 'Cat Name', Externals.name as 'Owner/Reporter', Externals.contactNum as 'Contact Number', admittedOn as 'Admitted On',
-#                                 Type.type as 'Type', Cage.cageID as 'Cage ID', CatStatus.statusType as 'Status'
-
-#                         from Cats, Externals, Type, Cage, CatStatus 
-#                         where Cats.externalID = Externals.externalID and 
-#                         Type.typeID = Cats.typeID and 
-#                         Cage.cageID = Cats.cageID and
-#                         Cats.statusID = CatStatus.StatusID"""
-# Print column names and first few rows to debug
-print(cat_table_df.columns)
-print(cat_table_df.head())
 
 # Convert 'Admitted On' to datetime and format as "date month year"
 cat_table_df['Admitted On'] = pd.to_datetime(cat_table_df['Admitted On']).dt.strftime('%d %b %Y')
@@ -646,9 +637,6 @@ cat_table_df['Contact Number'] = cat_table_df['Contact Number'].apply(format_con
 
 # Generate catCodestr for each catID
 cat_table_df['Cat ID'] = cat_table_df['Cat ID'].apply(lambda x: f"PR-{str(x).zfill(5)}")
-
-# # Generate cage for each catID
-# cat_table_df['Cage ID'] = cat_table_df['Cage ID'].apply(lambda x: f"GW-C-{str(x).zfill(2)}")
 
 # Merge Cage ID and Ward Code into one column
 cat_table_df['Cage ID'] = cat_table_df.apply(lambda row: f"{row['Ward Code']}-C-{str(row['Cage ID']).zfill(2)}", axis=1)
@@ -672,7 +660,6 @@ with col2:
 with col3:
     selected_owner = st.selectbox(":white[Select Owner/Reporter:]", options= ["No Filters"] + list(owner), index=0, placeholder='Choose an option', key='cat_owner_filter')
 
-
 if selected_date2 == 'No Filters':
     filtered_df = cat_table_df
 else:
@@ -681,21 +668,19 @@ else:
 if selected_status!='No Filters':
     filtered_df = filtered_df[filtered_df['Status'] == selected_status]
 
-
 if selected_owner!="No Filters":
     filtered_df = filtered_df[filtered_df['Owner/Reporter'] == selected_owner]
 
-
 st.divider()
 
-col1, col2, col3, col4, col5, col6 = st.columns([3.1,0.2,0.1,0.4,0.6,0.8]) # updated: [3.1,0.6,0.6,0.6,0.6,0.8] , prev: [4.4,1,0.6,0.6,0.6,0.8]
+col1, col2, col3, col4, col5, col6 = st.columns([2,2,2,0.8,0.8,1]) # updated: [3.1,0.6,0.6,0.6,0.6,0.8] , prev: [4.4,1,0.6,0.6,0.6,0.8]
 
 #Add a new cat button
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-new_cat = col6.button("✙ New Cat", on_click = add_cat_dialog) # ✙, ⊹, ➕
+new_cat = col6.button("✙ New Cat", on_click = add_cat_dialog, use_container_width=True) # ✙, ⊹, ➕
 
 # Display the DataFrame
-cat_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, on_select="rerun", selection_mode="single-row")
+cat_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, on_select="rerun", selection_mode="single-row", use_container_width=True)
 
 # UPDATE AND DELETE BUTTONS
 if cat_table["selection"]["rows"]: #if a row is selected
@@ -704,20 +689,19 @@ if cat_table["selection"]["rows"]: #if a row is selected
     # print("filteredRow: ", filteredRow)
 
     # print("selected row is :", selectedRow) -- PA-0001
-    view = col4.button(" View ", on_click= view_cat_dialog) # 👀 🧐
-    update = col5.button("Update  ", on_click= update_cat_dialog) # 📝
-    # delete = col5.button("Delete  ", on_click= delete_cat_dialog) #🗑️
+    view = col4.button("View", on_click= view_cat_dialog, use_container_width=True) # 👀 🧐
+
+    # Admin Rights here
+    if st.session_state.role == 'Administrator':
+        update = col5.button("Update", on_click= update_cat_dialog, use_container_width=True) # 📝
+    else:
+        col5.button("Update", on_click= update_cat_dialog, use_container_width=True, disabled = True)
 
     if st.session_state.show_view_cat_dialog:
         view_cat(selectedRow)
         
     if st.session_state.show_update_cat_dialog:
         update_cat(selectedRow)
-
-    # if st.session_state.show_delete_cat_dialog:
-    #     delete_cat(selectedRow)
-else:
-    print("No row selected")
 
 with open('../config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
@@ -741,7 +725,10 @@ if name is not None:
 else:
     st.switch_page("LoginScreen.py")
 
-
+# empty
+st.sidebar.write(" ")
+st.sidebar.write(" ")
+st.sidebar.write(" ")
 
 if st.sidebar.button("🔓 Logout"):
     with st.sidebar:
@@ -750,12 +737,8 @@ if st.sidebar.button("🔓 Logout"):
 
     authenticator.logout(location = "unrendered")
     st.switch_page("LoginScreen.py")
+
 # ---------------------------------------------------------------------------------------------------------------------------#
 
-# Edit and Delete Remains
-# Filtering Remains
-# Lastly, Aesthestics ofc
-# Checks remain for each field as well (Refer to Treatments.py or Finances.py)
-# Error of when inserting a new queryy
-# Wards and Cage should update by their own
-# Code for upfating cage id for managing when cages get free/occupied
+# TODO:
+# Adding, Updating, Viewing, Filtering a cat when NO OWNER ???

@@ -17,8 +17,8 @@ import yaml
 from yaml.loader import SafeLoader
 
 # Note the double backslashes
-# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
@@ -45,6 +45,9 @@ st.markdown(
        """,
         unsafe_allow_html=True,
 )
+
+# Sidebar better
+st.sidebar.markdown(""" <style> [data-testid='stSidebarNav'] > ul { min-height: 54vh; } </style> """, unsafe_allow_html=True) 
 
 hide_pages(["Login"])
 
@@ -170,8 +173,6 @@ def add_ward():
             st.session_state.wards_df = pd.concat([st.session_state.wards_df, new_row])
             st.session_state.show_add_ward_dialog = False
             st.rerun()
-
-            
         
     st.session_state.show_add_ward_dialog = False
     st.caption('_:orange[Press Esc to Cancel]_')
@@ -194,9 +195,6 @@ def edit_ward():
 
     with engine.begin() as conn:
         wardid = conn.execute(sa.text("select wardID from Ward where name = :name"), {"name": index}).fetchall()[0][0]
-    # st.write(wardid)
-
-    # print(index, final_name, final_code, final_total_cages)
 
     if st.button("Save", key='save'):
         everything_filled = False
@@ -221,8 +219,6 @@ def edit_ward():
         else:
             st.error("Please select a higher capcity for Ward then before")
             
-        
-        # print(index, final_name, final_code, final_total_cages)
         if (everything_filled and index and valid_code and valid_cages):
             with engine.begin() as conn:
                 conn.execute(sa.text("""
@@ -262,8 +258,6 @@ def delete_ward():
                     inner join Ward on Ward.wardID = Cage.wardID
                     WHERE cageStatus.cageStatusID = :cageStatusID and name = :name
                 """), {"cageStatusID": 1, "name": name}).fetchall()
-        # print(status)
-        # print(status[0])
             
         if status[0][0] > 0:
             st.warning('You need to delete the cages of this ward from the Cats data first in order to delete this ward', icon="⚠️")
@@ -392,20 +386,20 @@ if st.session_state.show_delete_ward_dialog:
 #     add_cages()
 
 # "Add Ward" button
-col1, col2, col3, col4, col5, col6 = st.columns([1,5.1,2,1,1.4,1.3])
+col1, col2, col3, col4, col5, col6 = st.columns([1,1,1,2.5,2,1])
 
-#Add a new cat button
-with col1:
-    updateWard = st.button("Edit Ward", on_click=update_ward_dialog)
+if st.session_state.role == 'Administrator':
+    with col1:
+        updateWard = st.button("Edit Ward", on_click=update_ward_dialog, use_container_width=True)
 
-with col2:
-    deleteWard = st.button("Delete Ward", on_click=delete_ward_dialog)
+    with col2:
+        deleteWard = st.button("Delete Ward", on_click=delete_ward_dialog, use_container_width=True)
 
 # with col5:
 #     deleteWard = st.button("Increase Cages", on_click=add_cages_dialog)
 
 with col6:
-    newWard = st.button("✙ New Ward", on_click=add_ward_dialog)
+    newWard = st.button("✙ New Ward", on_click=add_ward_dialog, use_container_width=True)
 
 # Display the ward information
 wards_df = combined_wards_df
@@ -415,14 +409,10 @@ for index, row in wards_df.iterrows():
     if pd.isna(ward_name):
         continue
     with st.expander(f"**{ward_name}**", expanded=False):
-        col1, col2, col3, col4, col5, col6= st.columns([0.2,0.7 ,1,5,0.65,0.6])  # Adjusted column widths
-
-        with col1:
-            st.write("")  # Placeholder for the button
+        col2, col3, col4, blank, col5, col6= st.columns([1,1.5,1.5,3,1,1])  # Adjusted column widths
 
         with col2:
-            st.write(f"Code: {row['code']}")
-            # print(f"Code: {row['code']}")
+            st.write(f"###### Code: :orange[{row['code']}]")
 
         with col3:
             with engine.begin() as conn:
@@ -430,7 +420,7 @@ for index, row in wards_df.iterrows():
                     select capacityCages from Ward where name = :name
                 """), {"name": row['name']}).fetchall()
             totalCages = totalCages[0][0]
-            st.write(f"Total Cages: {totalCages}")
+            st.write(f"###### Total Cages: :orange[{totalCages}]")
 
         with col4:
             with engine.begin() as conn:
@@ -441,7 +431,7 @@ for index, row in wards_df.iterrows():
                 """), {"cageStatusID": 2, "code": row['code']}).fetchall()
 
             freeCage = freeCage[0][0]
-            st.write(f"Free Cages: {freeCage}")
+            st.write(f"###### Free Cages: :orange[{freeCage}]")
         
         # with engine.begin() as conn:
         #     capacity = conn.execute(sa.text("select capacityCages from Ward where name = :name"), {"name": f"{row['name']}"}).fetchall()[0][0]
@@ -490,25 +480,30 @@ for index, row in wards_df.iterrows():
             filtered_df = filtered_df[filtered_df['Status'] == selected_status2]
 
         st.divider()
-    
-        cages_table = st.dataframe(filtered_df, width=1500, height=300, hide_index = True, selection_mode="single-row", on_select='rerun', key = ward_name)
 
-        if cages_table["selection"]["rows"]:
+        if st.session_state.role == 'Administrator':
 
-            cage_id_selected = result.iat[cages_table["selection"]["rows"][0],0]
+            cages_table = st.dataframe(filtered_df, width=1500, height=300, hide_index = True, selection_mode="single-row", on_select='rerun', key = ward_name)
 
-            with col5:
-                update_button = col5.button("Transfer", key=str(index)+'update_cages')
-                if update_button:
-                    st.session_state.show_update_cages_dialog = True
-                    update_cages(cage_id_selected)
+            if cages_table["selection"]["rows"]:
 
-            with col6:
-                delete_button = col6.button("Delete", key = str(index)+'delete_cages')
-                if delete_button:
-                    st.session_state.show_delete_cages_dialog = True
-                    delete_cages(cage_id_selected)
-        
+                cage_id_selected = result.iat[cages_table["selection"]["rows"][0],0]
+
+                with col5:
+                    update_button = col5.button("Transfer", key=str(index)+'update_cages', use_container_width=True)
+                    if update_button:
+                        st.session_state.show_update_cages_dialog = True
+                        update_cages(cage_id_selected)
+
+                with col6:
+                    delete_button = col6.button("Delete", key = str(index)+'delete_cages', use_container_width=True)
+                    if delete_button:
+                        st.session_state.show_delete_cages_dialog = True
+                        delete_cages(cage_id_selected)
+        else:
+            
+            cages_table = st.dataframe(filtered_df, width=1500, height=300, hide_index = True, key = ward_name)
+
 with open('../config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
 
@@ -530,6 +525,11 @@ if name is not None:
     st.sidebar.write(f"Role: _:orange[{role}]_")
 else:
     st.switch_page("LoginScreen.py")
+
+# empty
+st.sidebar.write(" ")
+st.sidebar.write(" ")
+st.sidebar.write(" ")
 
 if st.sidebar.button("🔓 Logout"):
     with st.sidebar:

@@ -22,10 +22,8 @@ import yaml
 from yaml.loader import SafeLoader
 
 # database information ; will change when db hosting
-
-# Note the double backslashes
-# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
@@ -33,25 +31,33 @@ connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};D
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
 engine = create_engine(connection_url)
 
-st.set_page_config(page_title="Dashboard", page_icon="📊", initial_sidebar_state="expanded" ,layout = "wide") # I think we should keep it wide and make it work this way? More information maybe or something.
+st.set_page_config(page_title="Dashboard", page_icon="📊", initial_sidebar_state="expanded" ,layout = "wide")
 
 # logo
 logo = Image.open("assets/logo.png")
 st.logo(logo)
 
-# Button Styling
-st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
+def implement_markdown():
+    # Button Styling
+    st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
 
-st.markdown(
-        """
-       <style>
-       [data-testid="stSidebar"][aria-expanded="true"]{
-           min-width: 250px;
-           max-width: 250px;
-       }
-       """,
-        unsafe_allow_html=True,
-)
+    # fix the sidebar width
+    st.markdown(
+            """
+        <style>
+        [data-testid="stSidebar"][aria-expanded="true"]{
+            min-width: 250px;
+            max-width: 250px;
+        }
+        """,
+            unsafe_allow_html=True,
+    )
+
+    st.sidebar.markdown(""" <style> [data-testid='stSidebarNav'] > ul { min-height: 54vh; } </style> """, unsafe_allow_html=True) 
+
+# ----------------------------------------------------------------- #
+
+implement_markdown()
 
 show_pages(
     [
@@ -70,22 +76,16 @@ hide_pages(["Login"])
 #title
 st.header("Dashboard" , divider='orange')
 
-# Boxes
-# st.success("Everything is connected to the database, wohooo :)", icon="🎉") yes!
-
 # Creating columns
 col1, col2, col3, col4 = st.columns(4)
 
-query = """
-select count( CATS.statusID) as 'Total Cats admitted' from Cats join CatStatus on cats.statusID = CatStatus.statusID 
-"""
-with col1: # need to fix logic
+with col1: # fixed
     with st.container( border = True):
         with engine.begin() as conn:
-            total_cats_treated = pd.read_sql_query(sa.text(query), conn)
+            total_cats_treated = pd.read_sql_query(sa.text("select count(*) from cats"), conn)
         st.metric( label = "Total cats admitted", value = prettify(int(total_cats_treated.iat[0,0] )))
 
-with col2: # need to fix logic
+with col2: # fixed
     with st.container( border = True): 
         with engine.begin() as conn:
             total_cats_recovered = pd.read_sql_query(sa.text("select count( CATS.statusID) as 'Total Cats recovered' from Cats join CatStatus on cats.statusID = CatStatus.statusID where cats.statusID in (2, 3, 4, 6, 8, 11)"), conn)
@@ -196,7 +196,7 @@ group by cats.statusID, statusType
 # Fetch data from the database into a Pandas DataFrame
 with engine.begin() as conn:
     status_df= pd.read_sql_query(sa.text(catsQuery), conn)
-print(status_df)
+# print(status_df)
 
 # Streamlit container
 with st.container(border=True, height=570):
@@ -228,6 +228,7 @@ with st.container(border=True):
 
     # st.info("What if multiple owners with count as 1... kis basis pe top choose krna hai phir")
 
+# Login - Logout
 with open('../config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
 
@@ -250,6 +251,11 @@ if name is not None:
 else:
     st.switch_page("LoginScreen.py")
 
+# empty
+st.sidebar.write(" ")
+st.sidebar.write(" ")
+st.sidebar.write(" ")
+
 if st.sidebar.button("🔓 Logout"):
     with st.sidebar:
         with st.spinner('Logging out...'):
@@ -258,3 +264,6 @@ if st.sidebar.button("🔓 Logout"):
     authenticator.logout(location = "unrendered")
     st.switch_page("LoginScreen.py")
 
+# TODO:
+# Autoscale the y-axis of the donation graph
+# Need a Filter for the whole Dashboard. Week, Month, 3-Month, Year.
