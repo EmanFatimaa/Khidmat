@@ -23,10 +23,11 @@ Treatment:
 -Delete here should be there. (Basically if not a admin then not able to select rows.)
 
 Wards:
--Cages ID should be string (honestly CatID should be string as well)
--Capacity should be removed hi.. Bas available and free cages only..
--Edit Ward is fine bas wohi capacity gone
--Available Cages should be Capacity hi..
+-CagesID proper string format using Cage No
+-Cage No being generated correctly for each cage
+-Capacity should be removed. Bas available and free cages only.
+-Edit Ward is fine bas Available Cages in there
+-Available Cages == Capacity
 -Cat should be transferred in the Transfer button in the Cages Table.
 -Delete Doesn't show if Cage is Occupied.
 -Delete Wards men checks aane chaiye
