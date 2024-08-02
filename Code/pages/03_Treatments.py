@@ -21,9 +21,9 @@ import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
 
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -309,27 +309,43 @@ with engine.begin() as conn:
 # Generate catCodestr for each catID
 treatment_table_df['CatID'] = treatment_table_df['CatID'].apply(lambda x: f"PR-{str(x).zfill(5)}")
 
-treatment_table_df['Date'] = pd.to_datetime(treatment_table_df['Date']).dt.strftime('%d %b %Y')
-
-# ----------------- filters code start -----------------------#
+treatment_table_df['Date'] = pd.to_datetime(treatment_table_df['Date']).dt.date
 
 st.write('##### :orange[Filters:]')
-dates2 = treatment_table_df['Date'].unique()
+
+
+dates = treatment_table_df['Date'].unique()
 cat_id = treatment_table_df['CatID'].unique()
 
-col1, col2 = st.columns(2)
-with col1:
-    selected_date2 = st.selectbox("Select Date", options=["No Filters"] + list(dates2), index=0, placeholder='Choose an option')
-with col2:
-    selected_mode2 = st.selectbox("Select CatID", options=["No Filters"] + list(cat_id), index=0, placeholder='Choose an option')
+min_date = min(dates)
+max_date = max(dates)
 
-if selected_date2 == 'No Filters':
+col1, col2, col3 = st.columns(3)
+with col1:
+    start_date = st.date_input("Select From Date", min_value=min_date, max_value=max_date, value=min_date)
+with col2:
+    end_date = st.date_input("Select To Date", min_value=min_date, max_value=max_date, value=max_date)
+with col3:
+    selected_cat_id = st.selectbox("Select CatID", options=["No Filters"] + list(cat_id), index=0, placeholder='Choose an option')
+
+
+reset_filters = st.button("Reset Filters")
+
+
+if reset_filters:
+    start_date = min_date
+    end_date = max_date
+    selected_cat_id = "No Filters"
     filtered_df = treatment_table_df
 else:
-    filtered_df = treatment_table_df[treatment_table_df['Date'] == selected_date2]
+    # Filter DataFrame based on the selected dates and CatID
+    if start_date and end_date:
+        filtered_df = treatment_table_df[(treatment_table_df['Date'] >= start_date) & (treatment_table_df['Date'] <= end_date)]
+    else:
+        filtered_df = treatment_table_df
 
-if selected_mode2!='No Filters':
-    filtered_df = filtered_df[filtered_df['CatID'] == selected_mode2]
+    if selected_cat_id != 'No Filters':
+        filtered_df = filtered_df[filtered_df['CatID'] == selected_cat_id]
 
 st.divider()
 
