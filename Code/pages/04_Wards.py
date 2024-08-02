@@ -538,3 +538,7 @@ if st.sidebar.button("🔓 Logout"):
 
     authenticator.logout(location = "unrendered")
     st.switch_page("LoginScreen.py")
+
+# TODO:
+# Lots of things remain to be done here
+# Main thing being the cageCode by CageNo generation

@@ -119,7 +119,8 @@ def add_treatment():
         with engine.begin() as conn:
             df = pd.read_sql_query("SELECT userName FROM Users", conn)
             user = df['userName'].tolist()
-        givenby = st.selectbox("Given By", user)
+        # givenby = st.selectbox("Given By", user)
+        givenby = st.text_input("Given By", value = st.session_state.user_name.title(), disabled=True)
     
     treatment_details = st.text_area("Treatment Details", placeholder="IV given, dressing done", value = '')
 
@@ -165,14 +166,22 @@ def add_treatment():
 
 @st.experimental_dialog("Update Treatment")
 def update_treatment(ID_to_update):
-    with engine.begin() as conn:
-        df = pd.read_sql_query("SELECT CatID FROM Cats", conn)
-        cat_ids = df['CatID'].tolist()
-        st.write(ID_to_update)
+
+
+    col1, col2 = st.columns(2)
 
     with engine.begin() as conn:
+        df = pd.read_sql_query("SELECT CatID FROM Cats", conn)
         current_catID = int(conn.execute(sa.text("select catId from Treatment where treatmentid = :t"), {"t":ID_to_update}).fetchall()[0][0])
-    selected_cat_id = st.selectbox("Select Cat ID", cat_ids, index = current_catID - 1)
+    cat_ids = df['CatID'].tolist()
+    with col1:
+        selected_cat_code_id = st.selectbox("Select Cat ID", map(lambda x: f"PR-{str(x).zfill(5)}", cat_ids), index = current_catID - 1)
+        selected_cat_id = extract_cat_number(selected_cat_code_id)
+
+    with col2:
+        with engine.begin() as conn:
+            name = conn.execute(sa.text("select catName from Cats where catID= :catID"), {"catID": selected_cat_id}).fetchall()[0][0]
+        st.text_input('Cat Name', value = name)
 
     col1, col2 = st.columns(2)
         
@@ -246,12 +255,15 @@ def update_treatment(ID_to_update):
 
 @st.experimental_dialog("Delete Treatment")
 def delete_treatment(Id_to_delete):
-    st.write('Are you sure you want to delete treatment of ID:', f"PR-{str(Id_to_delete).zfill(5)}", '?')
+    
+    with engine.begin() as conn:
+        current_catID = int(conn.execute(sa.text("select catId from Treatment where treatmentid = :t"), {"t":Id_to_delete}).fetchall()[0][0])
+
+    st.write('Are you sure you want to delete this treatment of ID:', f"PR-{str(current_catID).zfill(5)}", '?')
 
     blank, col1, col2 = st.columns([3,1,1])
     if col1.button("Yes", use_container_width=True):
         with engine.begin() as conn:
-            # conn.execute(sa.text("update Treatment set catID = NULL, temperature = NULL, dateTime = NULL, treatment = NULL FROM Treatment where treatmentID = :treatmentID"), {"treatmentID": Id_to_delete})
             conn.execute(sa.text("update Treatment set catID = NULL, userID = NULL, dateTime = NULL, temperature = NULL, treatment = NULL where treatmentID = :treatmentID"), {"treatmentID": Id_to_delete})
         st.rerun()
 

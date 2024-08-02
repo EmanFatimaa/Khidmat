@@ -130,10 +130,10 @@ with login:
     # elif not logged_in: # change condition...smth like wronguser name or wrong password ka check ho then aye ye msg.. u can copy opar container wala method for time delay
     #     st.info('Please enter your correct username and password')     
         
-    forget_button = st.button("Forgot Password?")
+    # forget_button = st.button("Forgot Password?")
     
-    if forget_button:
-        reset_pass_dialog()
+    # if forget_button:
+    #     reset_pass_dialog()
 
 # TODO:
 # Do something about the forgotten password thingy ; maybe..

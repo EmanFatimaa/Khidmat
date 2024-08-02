@@ -369,7 +369,7 @@ with Donations:
                 delete_donation(row_selected)
     else:
         # Display the Table
-        donation_table = st.dataframe(filtered_df, width=1500, height=600, hide_index = True, use_container_width=True)
+        donation_table = st.dataframe(filtered_df, width=1500, height=600, hide_index = True, use_container_width=True, column_order = ('Donor Name', 'Contact Number', 'Amount', 'Mode','Date'))
 
 # --------------------------------------------------------------------------------------------------------------------------- #
 
