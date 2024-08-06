@@ -21,9 +21,9 @@ import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
 
-# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -86,17 +86,22 @@ def delete_treatment_dialog():
     st.session_state.show_delete_treatment_dialog = True
 
 @st.experimental_dialog("Add Treatment")
-def add_treatment():
+def add_treatment(ID_to_add=None):
 
     with engine.begin() as conn:
         treatmentid = int(pd.read_sql_query(sa.text("SELECT TOP 1 treatmentID FROM Treatment ORDER BY treatmentID DESC"), conn).iat[0,0]) + 1
         df = pd.read_sql_query("SELECT catID FROM Cats where catID IS NOT NULL", conn)
-        df['catID'] = df['catID'].apply(lambda x: f"PR-{str(x).zfill(5)}")
-        catcode_id = df['catID'].tolist()
+        if ID_to_add is None:
+            current_catID = 1
+        else:
+            current_catID = int(conn.execute(sa.text("select catId from Treatment where treatmentid = :t"), {"t":ID_to_add}).fetchall()[0][0])
+
+    df['catID'] = df['catID'].apply(lambda x: f"PR-{str(x).zfill(5)}")
+    catcode_id = df['catID'].tolist()
 
     col1, col2 = st.columns(2)
     with col1:
-        selected_cat_id = st.selectbox("Select CatID", catcode_id)
+        selected_cat_id = st.selectbox("Select CatID", catcode_id, index = current_catID - 1)
         selected_cat_id = extract_cat_number(selected_cat_id)
 
     with col2:
@@ -167,7 +172,6 @@ def add_treatment():
 @st.experimental_dialog("Update Treatment")
 def update_treatment(ID_to_update):
 
-
     col1, col2 = st.columns(2)
 
     with engine.begin() as conn:
@@ -206,7 +210,7 @@ def update_treatment(ID_to_update):
     with col2:
         with engine.begin() as conn:
             user_value = conn.execute(sa.text("select userName from Users where userID = (select userID from Treatment where treatmentID = :treatmentID)"), {"treatmentID": ID_to_update}).fetchall()[0][0]
-            df = pd.read_sql_query("SELECT userName FROM Users", conn)
+            df = pd.read_sql_query("SELECT userName FROM Users where userName is not NULL", conn)
             update_user = df['userName'].tolist()
 
         final_user_index = update_user.index(user_value)
@@ -221,7 +225,6 @@ def update_treatment(ID_to_update):
     treatment = st.text_area("Treatment Details", value=treatment_value)
 
     update_treatment_button = st.button("Save Changes", key = 'update_treatment')
-
 
     if update_treatment_button:
         # check other individual fields for errors as well.
@@ -300,8 +303,6 @@ with engine.begin() as conn:
         Cats, Treatment, Users, Cage, Ward
         where Treatment.CatID = Cats.CatID and Treatment.UserID = Users.UserID and
         Cage.cageID = Cats.cageID and Cage. wardID = ward.wardID 
-
-    
     """), conn)
 
 # ----------------------------------------------------------- #
@@ -313,12 +314,13 @@ treatment_table_df['Date'] = pd.to_datetime(treatment_table_df['Date']).dt.date
 
 st.write('##### :orange[Filters:]')
 
-
 dates = treatment_table_df['Date'].unique()
 cat_id = treatment_table_df['CatID'].unique()
 
 min_date = min(dates)
 max_date = max(dates)
+
+# reset_filters = st.button("Reset Filters")
 
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -328,24 +330,14 @@ with col2:
 with col3:
     selected_cat_id = st.selectbox("Select CatID", options=["No Filters"] + list(cat_id), index=0, placeholder='Choose an option')
 
-
-reset_filters = st.button("Reset Filters")
-
-
-if reset_filters:
-    start_date = min_date
-    end_date = max_date
-    selected_cat_id = "No Filters"
-    filtered_df = treatment_table_df
+# Filter DataFrame based on the selected dates and CatID
+if start_date and end_date:
+    filtered_df = treatment_table_df[(treatment_table_df['Date'] >= start_date) & (treatment_table_df['Date'] <= end_date)]
 else:
-    # Filter DataFrame based on the selected dates and CatID
-    if start_date and end_date:
-        filtered_df = treatment_table_df[(treatment_table_df['Date'] >= start_date) & (treatment_table_df['Date'] <= end_date)]
-    else:
-        filtered_df = treatment_table_df
+    filtered_df = treatment_table_df
 
-    if selected_cat_id != 'No Filters':
-        filtered_df = filtered_df[filtered_df['CatID'] == selected_cat_id]
+if selected_cat_id != 'No Filters':
+    filtered_df = filtered_df[filtered_df['CatID'] == selected_cat_id]
 
 st.divider()
 
@@ -355,27 +347,34 @@ col1, col2, col3, col4, col5, col6 = st.columns([2,2,2,1,1,1.4])
 st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
 new_transaction = col6.button("✙ New Treatment", on_click=add_treatment_dialog, use_container_width=True)
 
+# Convert 'Admitted On' to datetime and format as "date month year"
+filtered_df['Date'] = pd.to_datetime(filtered_df['Date']).dt.strftime('%d %b %Y')
+
 # Display the filtered table
-if st.session_state.role == 'Administrator':
-    treatment_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, column_order = ("CatID", "Name", "CageNo", "Temperature", "Treatment", "Time", "Date", "GivenBy"), on_select='rerun', selection_mode='single-row', use_container_width=True)
+try:
+    if st.session_state.role == 'Administrator':
+        treatment_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, column_order = ("CatID", "Name", "CageNo", "Temperature", "Treatment", "Time", "Date", "GivenBy"), on_select='rerun', selection_mode='single-row', use_container_width=True)
 
-    if treatment_table["selection"]["rows"]: # if a row is selected
-        
-        row_selected = int(filtered_df.iat[treatment_table['selection']['rows'][0], 0])
-        # print(treatment_table_df)
+        if treatment_table["selection"]["rows"]: # if a row is selected
+            
+            row_selected = int(filtered_df.iat[treatment_table['selection']['rows'][0], 0])
+            # print(treatment_table_df)
 
-        update_button = col4.button("Update", on_click = update_treatment_dialog, use_container_width=True)
-        delete_button = col5.button("Delete", on_click = delete_treatment_dialog, use_container_width=True)
+            update_button = col4.button("Update", on_click = update_treatment_dialog, use_container_width=True)
+            delete_button = col5.button("Delete", on_click = delete_treatment_dialog, use_container_width=True)
 
-        if st.session_state.show_update_treatment_dialog:
-            update_treatment(row_selected)
+            if st.session_state.show_add_treatment_dialog:
+                add_treatment(row_selected)
 
-        if st.session_state.show_delete_treatment_dialog:
-            delete_treatment(row_selected)
-else:
-    treatment_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, column_order = ("CatID", "Name", "CageNo", "Temperature", "Treatment", "Time", "Date", "GivenBy"), use_container_width=True)
+            if st.session_state.show_update_treatment_dialog:
+                update_treatment(row_selected)
 
-# filtered_df.style.applymap(lambda x: 'background-color : orange')
+            if st.session_state.show_delete_treatment_dialog:
+                delete_treatment(row_selected)
+    else:
+        treatment_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, column_order = ("CatID", "Name", "CageNo", "Temperature", "Treatment", "Time", "Date", "GivenBy"), use_container_width=True)
+except:
+    pass
 if st.session_state.show_add_treatment_dialog:
     add_treatment()
 
