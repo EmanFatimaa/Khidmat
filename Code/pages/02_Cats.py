@@ -692,11 +692,14 @@ if cat_table["selection"]["rows"]: #if a row is selected
     view = col4.button("View", on_click= view_cat_dialog, use_container_width=True) # 👀 🧐
 
     # Admin Rights here
-    if st.session_state.role == 'Administrator':
-        update = col5.button("Update", on_click= update_cat_dialog, use_container_width=True) # 📝
-    else:
-        col5.button("Update", on_click= update_cat_dialog, use_container_width=True, disabled = True)
-
+    try:
+        if st.session_state.role == 'Administrator':
+            update = col5.button("Update", on_click= update_cat_dialog, use_container_width=True) # 📝
+        else:
+            col5.button("Update", on_click= update_cat_dialog, use_container_width=True, disabled = True)
+    except:
+        pass
+    
     if st.session_state.show_view_cat_dialog:
         view_cat(selectedRow)
         

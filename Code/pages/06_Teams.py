@@ -73,15 +73,18 @@ def delete_team_dialog():
     st.session_state.show_add_team_dialog = False
     st.session_state.show_edit_team_dialog = False
     st.session_state.show_delete_team_dialog = True
-
-if st.session_state.role == 'Administrator':
-    col1, blank, col2, col3 = st.columns([1,1.9,1,1])
-    with col2:
-        delete_button = st.button('Delete Member', on_click=delete_team_dialog, use_container_width=True)
-    with col1:
-        add_button = st.button("✙ New Member", on_click=add_team_dialog, use_container_width=True)
-    with col3:
-        update_button = st.button("Update Details", on_click = edit_team_dialog, use_container_width=True)
+    
+try:
+    if st.session_state.role == 'Administrator':
+        col1, blank, col2, col3 = st.columns([1,1.9,1,1])
+        with col2:
+            delete_button = st.button('Delete Member', on_click=delete_team_dialog, use_container_width=True)
+        with col1:
+            add_button = st.button("✙ New Member", on_click=add_team_dialog, use_container_width=True)
+        with col3:
+            update_button = st.button("Update Details", on_click = edit_team_dialog, use_container_width=True)
+except:
+    pass
 
 query = "SELECT userName, email, roleDesc, picture FROM Users inner join InternalRole on InternalRole.internalRoleID = Users.internalRoleID"  # Adjust the query to your database structure
 with engine.begin() as conn:

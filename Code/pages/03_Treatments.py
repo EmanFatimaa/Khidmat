@@ -21,6 +21,7 @@ import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
 
+# database information ; will change when db hosting
 server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
@@ -32,26 +33,29 @@ engine = create_engine(connection_url)
 
 st.set_page_config(page_title="Treatments", page_icon="💊", initial_sidebar_state="expanded", layout="wide")
 
+def implement_markdown():
+    # Button Styling
+    st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
+
+    st.markdown(
+            """
+        <style>
+        [data-testid="stSidebar"][aria-expanded="true"]{
+            min-width: 250px;
+            max-width: 250px;
+        }
+        """,
+            unsafe_allow_html=True,
+    )
+
+    # Sidebar better
+    st.sidebar.markdown(""" <style> [data-testid='stSidebarNav'] > ul { min-height: 54vh; } </style> """, unsafe_allow_html=True) 
+
 # logo
 logo = Image.open("assets/logo.png")
 st.logo(logo)
 
-# Button Styling
-st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
-
-st.markdown(
-        """
-       <style>
-       [data-testid="stSidebar"][aria-expanded="true"]{
-           min-width: 250px;
-           max-width: 250px;
-       }
-       """,
-        unsafe_allow_html=True,
-)
-
-# Sidebar better
-st.sidebar.markdown(""" <style> [data-testid='stSidebarNav'] > ul { min-height: 54vh; } </style> """, unsafe_allow_html=True) 
+implement_markdown()
 
 hide_pages(["Login"])
 
@@ -169,7 +173,7 @@ def add_treatment(ID_to_add=None):
     st.session_state.show_add_treatment_dialog = False
     st.caption('_:orange[Press Esc to Cancel]_')
 
-@st.experimental_dialog("Update Treatment")
+@st.experimental_dialog("Update Treatment") # , width='large')
 def update_treatment(ID_to_update):
 
     col1, col2 = st.columns(2)
@@ -320,19 +324,27 @@ cat_id = treatment_table_df['CatID'].unique()
 min_date = min(dates)
 max_date = max(dates)
 
+start_date_value = min_date
+end_date_value = max_date
+
 # reset_filters = st.button("Reset Filters")
 
+# if reset_filters:
+#     start_date_value = min_date
+#     end_date_value = max_date
+#     selected_cat_id = 'No Filters'
+    
 col1, col2, col3 = st.columns(3)
 with col1:
-    start_date = st.date_input("Select From Date", min_value=min_date, max_value=max_date, value=min_date)
+    start_date_value = st.date_input("Select From Date", min_value=min_date, max_value=max_date, value=start_date_value)
 with col2:
-    end_date = st.date_input("Select To Date", min_value=min_date, max_value=max_date, value=max_date)
+    end_date_value = st.date_input("Select To Date", min_value=min_date, max_value=max_date, value=end_date_value)
 with col3:
     selected_cat_id = st.selectbox("Select CatID", options=["No Filters"] + list(cat_id), index=0, placeholder='Choose an option')
 
 # Filter DataFrame based on the selected dates and CatID
-if start_date and end_date:
-    filtered_df = treatment_table_df[(treatment_table_df['Date'] >= start_date) & (treatment_table_df['Date'] <= end_date)]
+if start_date_value and end_date_value:
+    filtered_df = treatment_table_df[(treatment_table_df['Date'] >= start_date_value) & (treatment_table_df['Date'] <= end_date_value)]
 else:
     filtered_df = treatment_table_df
 
@@ -375,6 +387,7 @@ try:
         treatment_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, column_order = ("CatID", "Name", "CageNo", "Temperature", "Treatment", "Time", "Date", "GivenBy"), use_container_width=True)
 except:
     pass
+
 if st.session_state.show_add_treatment_dialog:
     add_treatment()
 
