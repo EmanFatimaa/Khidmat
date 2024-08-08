@@ -323,24 +323,24 @@ cat_id = treatment_table_df['CatID'].unique()
 
 min_date = min(dates)
 max_date = max(dates)
-
-start_date_value = min_date
-end_date_value = max_date
-
-# reset_filters = st.button("Reset Filters")
-
-# if reset_filters:
-#     start_date_value = min_date
-#     end_date_value = max_date
-#     selected_cat_id = 'No Filters'
     
 col1, col2, col3 = st.columns(3)
 with col1:
-    start_date_value = st.date_input("Select From Date", min_value=min_date, max_value=max_date, value=start_date_value)
+    start_date_value = st.date_input("Select From Date", min_value=min_date, max_value=max_date, value=min_date, key = 'start_date_filter')
 with col2:
-    end_date_value = st.date_input("Select To Date", min_value=min_date, max_value=max_date, value=end_date_value)
+    end_date_value = st.date_input("Select To Date", min_value=min_date, max_value=max_date, value=max_date, key = 'end_date_filter')
 with col3:
-    selected_cat_id = st.selectbox("Select CatID", options=["No Filters"] + list(cat_id), index=0, placeholder='Choose an option')
+    selected_cat_id = st.selectbox("Select CatID", options=["No Filters"] + list(cat_id), index=0, placeholder='Choose an option', key = 'cat_id_filter')
+
+# Reset Filters Button (Do it exactly like this in every page :)
+def reset_filters_function():
+    st.session_state.start_date_filter = min_date
+    st.session_state.end_date_filter = max_date
+    st.session_state.cat_id_filter = 'No Filters'
+
+blank, blank, blank, blank, blank, reset = st.columns([3,1,1,1,1,1])
+
+reset_filter_button = reset.button("Reset Filters", on_click=reset_filters_function, use_container_width=True)
 
 # Filter DataFrame based on the selected dates and CatID
 if start_date_value and end_date_value:

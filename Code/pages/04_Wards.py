@@ -55,6 +55,16 @@ implement_markdown()
 
 hide_pages(["Login"])
 
+#Funciton to extract number from cat id
+def extract_cat_number(cat_id_str):
+    # Remove the prefix "PA-"
+    numberStr = cat_id_str.replace("PR-", "")
+    
+    # Convert to integer
+    numberInt = int(numberStr)
+    
+    return numberInt
+
 # Define the dialog for adding a new ward
 def add_ward_dialog():
     st.session_state.show_add_ward_dialog = True # True
@@ -335,15 +345,94 @@ def delete_ward():
 #     st.session_state.show_add_cages_dialog = False
 #     st.caption('_:orange[Press Esc to Cancel]_')
 
+# Free -> Occupied by putting a Cat in that Cage and making that Cage free. 
+# Occupied -> Free by removing the Cat from that Cage and putting it elsewhere.
 @st.experimental_dialog("Update Cages")
-def update_cages(id_to_update, code_to_update):
-    st.write(id_to_update, code_to_update)
+def update_cages(new_id_update, code_to_update, availability):
 
-    if st.button("Update Cages", key='update_cages'):
-        st.rerun()
+    if availability == 'Free':
 
-    st.session_state.show_update_cages_dialog = False
-    st.caption('_:orange[Press Esc to Cancel]_')
+        st.write(f"### Transferring a cat to: :orange[{code_to_update}]")
+
+        col1, col2 = st.columns(2)
+
+        with engine.begin() as conn:
+            df = pd.read_sql_query("SELECT CatID FROM Cats where cageID is not NULL", conn)
+        cat_ids = df['CatID'].tolist()
+        
+        with col1:
+            selected_cat_code_id = st.selectbox("New Cat ID", map(lambda x: f"PR-{str(x).zfill(5)}", cat_ids))
+            selected_cat_id = extract_cat_number(selected_cat_code_id)
+
+        with engine.begin() as conn:
+            name = conn.execute(sa.text("select catName from Cats where catID= :catID"), {"catID": selected_cat_id}).fetchall()[0][0]
+            old_cage_id = conn.execute(sa.text("select cageID from Cats where catID= :catID"), {"catID": selected_cat_id}).fetchall()[0][0]
+            old_cage_code = conn.execute(sa.text("select code from Ward where wardID = (select wardID from Cage where cageID = :cageID)"), {"cageID": old_cage_id}).fetchall()[0][0]
+            old_cage_no = conn.execute(sa.text("select cageNo from Cage where cageID = :cageID"), {"cageID": old_cage_id}).fetchall()[0][0]
+                
+        with col2:
+            st.text_input('Cat Name', value = name, disabled=True)
+        
+        old_cage_id_code = f"{old_cage_code}-C-{str(old_cage_no).zfill(2)}"
+        st.write(f"#### The old cage will be made free after the transfer. (:orange[{old_cage_id_code}])")
+
+        blank, yes, no = st.columns([3,1,1])
+        yes_button = yes.button("Yes", key='yes', use_container_width=True)
+        no_button = no.button("No", key='no', use_container_width=True)
+
+        if yes_button:
+            with engine.begin() as conn:
+                conn.execute(sa.text("update Cats set cageID = :new_id_update where catID = :selected_cat_id"), {"new_id_update": new_id_update, "selected_cat_id": selected_cat_id})
+                conn.execute(sa.text("update Cage set cageStatusID = 1 where cageID = :new_id_update"), {"new_id_update": new_id_update})
+                conn.execute(sa.text("update Cage set cageStatusID = 2 where cageID = :old_cage_id"), {"old_cage_id": old_cage_id})
+            st.rerun()
+        
+        elif no_button:
+            st.session_state.show_delete_cages_dialog = False
+            st.rerun()
+
+        st.session_state.show_update_cages_dialog = False
+        return
+    
+    elif availability == 'Occupied':
+        
+        with engine.begin() as conn:
+            df = conn.execute(sa.text("SELECT CatID from Cats where cageID = :cageID"), {'cageID':new_id_update}).fetchone()[0]
+        cat_transferred = f"PR-{str(df).zfill(5)}"
+
+        st.write(f"### Transferring the cat :orange[{cat_transferred}] from :orange[{code_to_update}] to:")
+
+        # Cage no field
+        with engine.begin() as conn:
+            cage_code_id_df = pd.read_sql_query(sa.text("select cage.cageID, code, cageNo from ward, cage where ward.wardID = cage.wardID and cageStatusID = 2"), conn)
+
+        cage_code_id_df["cagecodeID"] = cage_code_id_df.apply(lambda row: f"{row['code']}-C-{str(row['cageNo']).zfill(2)}", axis=1)
+        cage_code_id_df = cage_code_id_df._append({"cagecodeID": code_to_update, "cageID": new_id_update}, ignore_index = True)
+        cageID_list = cage_code_id_df["cagecodeID"].tolist()
+
+        cageCode = st.selectbox("New Cage ID", cageID_list, index=cageID_list.index(code_to_update))
+        cageID = int(cage_code_id_df.iat[cageID_list.index(cageCode),0])
+
+        st.write(f"##### The old cage will be made free after the transfer.")
+
+        blank, yes, no = st.columns([3,1,1])
+        yes_button = yes.button("Yes", key='yes', use_container_width=True)
+        no_button = no.button("No", key='no', use_container_width=True)
+
+        if yes_button:
+            with engine.begin() as conn:
+                conn.execute(sa.text("update Cats set cageID = :cageID where catID = :catID"), {"cageID": cageID, "catID": df})
+                conn.execute(sa.text("update Cage set cageStatusID = 1 where cageID = :cageID"), {"cageID": cageID})
+                conn.execute(sa.text("update Cage set cageStatusID = 2 where cageID = :new_id_update"), {"new_id_update": new_id_update})
+            st.rerun()
+        
+        elif no_button:
+            st.session_state.show_delete_cages_dialog = False
+            st.rerun()
+
+        st.session_state.show_update_cages_dialog = False
+        return
+
     
 @st.experimental_dialog("Delete Cages")
 def delete_cages(id_to_delete, code_to_delete):
@@ -531,10 +620,10 @@ for index, row in wards_df.iterrows():
                         disabled_delete = True
 
                     with col5:
-                        update_button = col5.button("Transfer", key=str(index)+'update_cages', use_container_width=True, disabled=disabled_delete)
+                        update_button = col5.button("Transfer", key=str(index)+'update_cages', use_container_width=True)
                         if update_button:
                             st.session_state.show_update_cages_dialog = True
-                            update_cages(cage_id, cage_id_selected)
+                            update_cages(cage_id, cage_id_selected, availability)
 
                     with col6:
                         delete_button = col6.button("Delete", key = str(index)+'delete_cages', use_container_width=True, disabled=disabled_delete)
@@ -581,7 +670,3 @@ if st.sidebar.button("🔓 Logout"):
 
     authenticator.logout(location = "unrendered")
     st.switch_page("LoginScreen.py")
-
-# TODO:
-# Transfer: Free -> Occupied by putting a Cat in that Cage and making that Cage free. 
-#           Occupied -> Free by removing the Cat from that Cage and putting it elsewhere.
