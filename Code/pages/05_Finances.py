@@ -22,9 +22,9 @@ import yaml
 from yaml.loader import SafeLoader
 
 # database information ; will change when db hosting
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -316,23 +316,40 @@ with Donations:
                     from Donations, Externals where Donations.donorID = Externals.externalID"""), conn)
     
 
-    donation_table_df['Date'] = pd.to_datetime(donation_table_df['Date']).dt.strftime('%d %b %Y')
+    # donation_table_df['Date'] = pd.to_datetime(donation_table_df['Date']).dt.strftime('%d %b %Y')
+
+    donation_table_df['Date'] = pd.to_datetime(donation_table_df['Date']).dt.date
 
     st.write('##### :orange[Filters:]')
     dates = donation_table_df['Date'].unique()
     modes = donation_table_df['Mode'].unique()
 
-    col1, col2 = st.columns(2)
+    min_date = min(dates)
+    max_date = max(dates)
+
+    col1, col2, col3 = st.columns(3)
     with col1:
-        selected_date = st.selectbox("Select Date", options=["No Filters"] + list(dates), index=0, placeholder='Choose an option', key='donation_date_filter')
+        start_date_value = st.date_input("Select From Date", min_value=min_date, max_value=max_date, value=min_date, key = 'start_date_filter')
     with col2:
+        end_date_value = st.date_input("Select To Date", min_value=min_date, max_value=max_date, value=max_date, key = 'end_date_filter')
+    with col3:
         selected_mode = st.selectbox("Select Mode", options=["No Filters"] + list(modes), index=0, placeholder='Choose an option', key='donation_mode_filter')
 
+    # Reset Filters Button (Do it exactly like this in every page :)
+    def reset_filters_function():
+        st.session_state.start_date_filter = min_date
+        st.session_state.end_date_filter = max_date
+        st.session_state.donation_mode_filter = 'No Filters'
+
+    blank, blank, blank, blank, blank, reset = st.columns([3,1,1,1,1,1])
+
+    reset_filter_button = reset.button("Reset Filters", on_click=reset_filters_function, use_container_width=True)
+
     # Apply filters
-    if selected_date == 'No Filters':
-        filtered_df = donation_table_df
+    if start_date_value and end_date_value:
+        filtered_df = donation_table_df[(donation_table_df['Date'] >= start_date_value) & (donation_table_df['Date'] <= end_date_value)]
     else:
-        filtered_df = donation_table_df[donation_table_df['Date'] == selected_date]
+        filtered_df = donation_table_df
 
     if selected_mode != "No Filters":
         filtered_df = filtered_df[filtered_df['Mode'] == selected_mode]
@@ -344,6 +361,8 @@ with Donations:
     # Add a New Donation Button
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
     new_donation = col6.button("✙ New Donation", on_click = add_donation_dialog, use_container_width=True)
+
+    filtered_df['Date'] = pd.to_datetime(filtered_df['Date']).dt.strftime('%d %b %Y')
 
     if st.session_state.show_add_donation_dialog:
         add_donation()
@@ -634,24 +653,39 @@ with Revenue:
     
     revenue_table_df['Date'] = pd.to_datetime(revenue_table_df['Date']).dt.strftime('%d %b %Y')
 
+    revenue_table_df['Date'] = pd.to_datetime(revenue_table_df['Date']).dt.date
+
     # Filtering and Final Table
     st.write('##### :orange[Filters:]')
     dates = revenue_table_df['Date'].unique()
     modes = revenue_table_df['Mode'].unique()
 
-    col1, col2 = st.columns(2)
+    min_date = min(dates)
+    max_date = max(dates)
+
+    col1, col2, col3 = st.columns(3)
 
     with col1:
-        selected_date = st.selectbox("Select Date", options=["No Filters"] + list(dates), index=0, placeholder='Choose a Date')
-
+        start_date_value = st.date_input("Select From Date", min_value=min_date, max_value=max_date, value=min_date, key = 'revenue_start_date_filter')
     with col2:
-        selected_mode = st.selectbox("Select Mode", options=["No Filters"] + list(modes), index=0, placeholder='Choose a Mode')
+        end_date_value = st.date_input("Select To Date", min_value=min_date, max_value=max_date, value=max_date, key = 'revenue_end_date_filter')
+    with col3:
+        selected_mode = st.selectbox("Select Mode", options=["No Filters"] + list(modes), index=0, placeholder='Choose a Mode', key = 'revenue_mode_filter')
+
+    def reset_filters_function():
+        st.session_state.revenue_start_date_filter = min_date
+        st.session_state.revenue_end_date_filter = max_date
+        st.session_state.revenue_mode_filter = 'No Filters'
+
+    blank, blank, blank, blank, blank, reset = st.columns([3,1,1,1,1,1])
+
+    reset_filter_button = reset.button("Reset Filters", on_click=reset_filters_function, use_container_width=True, key = 'revenue_reset')
 
     # Apply filters
-    if selected_date == 'No Filters':
-        filtered_df = revenue_table_df
+    if start_date_value and end_date_value:
+        filtered_df =revenue_table_df[(revenue_table_df['Date'] >= start_date_value) & (revenue_table_df['Date'] <= end_date_value)]
     else:
-        filtered_df = revenue_table_df[revenue_table_df['Date'] == selected_date]
+        filtered_df = revenue_table_df
 
     if selected_mode!='No Filters':
         filtered_df = filtered_df[filtered_df['Mode'] == selected_mode]
@@ -664,6 +698,8 @@ with Revenue:
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
     new_revenue = col6.button("✙ New Revenue", on_click=add_revenue_dialog, key = "add_revenue", use_container_width=True)
 
+    filtered_df['Date'] = pd.to_datetime(filtered_df['Date']).dt.strftime('%d %b %Y')
+    
     if st.session_state.show_add_revenue_dialog:
         add_revenue()
     try:
@@ -903,21 +939,37 @@ with Transactions:
 
     transaction_table_df['Date'] = pd.to_datetime(transaction_table_df['Date']).dt.strftime('%d %b %Y')
 
+    transaction_table_df['Date'] = pd.to_datetime(transaction_table_df['Date']).dt.date
+
     # Filtering and Final Table
     st.write('##### :orange[Filters:]')
     dates2 = transaction_table_df['Date'].unique()
     modes2 = transaction_table_df['Mode'].unique()
 
-    col1, col2 = st.columns(2)
-    with col1:
-        selected_date2 = st.selectbox("Select Date", options=["No Filters"] + list(dates2), index=0, placeholder='Choose a Date', key='date_filter')
-    with col2:
-        selected_mode2 = st.selectbox("Select Mode", options=["No Filters"] + list(modes2), index=0, placeholder='Choose a Mode', key='mode_filter')
+    min_date = min(dates2)
+    max_date = max(dates2)
 
-    if selected_date2 =='No Filters':
-        filtered_df = transaction_table_df
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        start_date_value = st.date_input("Select From Date", min_value=min_date, max_value=max_date, value=min_date, key = 'tran_start_date_filter')
+    with col2:
+        end_date_value = st.date_input("Select To Date", min_value=min_date, max_value=max_date, value=max_date, key = 'tran_end_date_filter')
+    with col3:
+        selected_mode2 = st.selectbox("Select Mode", options=["No Filters"] + list(modes2), index=0, placeholder='Choose a Mode', key='trans_mode_filter')
+
+    def reset_filters_function():
+        st.session_state.tran_start_date_filter = min_date
+        st.session_state.tran_end_date_filter = max_date
+        st.session_state.trans_mode_filter = 'No Filters'
+
+    blank, blank, blank, blank, blank, reset = st.columns([3,1,1,1,1,1])
+
+    reset_filter_button = reset.button("Reset Filters", on_click=reset_filters_function, use_container_width=True, key = 'tran_reset')
+
+    if start_date_value and end_date_value:
+        filtered_df = transaction_table_df[(transaction_table_df['Date'] >= start_date_value) & (transaction_table_df['Date'] <= end_date_value)]
     else:
-        filtered_df = transaction_table_df[transaction_table_df['Date'] == selected_date2]
+        filtered_df = transaction_table_df
 
     if selected_mode2 != 'No Filters':
         filtered_df = filtered_df[filtered_df['Mode'] == selected_mode2]
@@ -929,6 +981,8 @@ with Transactions:
     # Add a New Transaction Button
     st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500; color: black}</style>', unsafe_allow_html=True)
     new_transaction = col6.button("✙ New Transaction", on_click=add_transaction_dialog , key = "add_transaction", use_container_width=True)
+
+    filtered_df['Date'] = pd.to_datetime(filtered_df['Date']).dt.strftime('%d %b %Y')
 
     if st.session_state.show_add_transaction_dialog:
         add_transaction()

@@ -17,9 +17,9 @@ import yaml
 from yaml.loader import SafeLoader
 
 # database information ; will change when db hosting
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -579,26 +579,43 @@ for index, row in wards_df.iterrows():
             except:
                 return x
         result['Cat ID'] = result['Cat ID'].apply(lambda x: generate_cat_id(x))
+        result['Date'] = pd.to_datetime(result['Date']).dt.date
 
         st.write('##### :orange[Filters:]')
         dates2 = result['Date'].unique()
         status_id = result['Status'].unique()
 
-        col1, col2 = st.columns(2)
+        min_date = min(dates2)
+        max_date = max(dates2)
+
+        col1, col2, col3 = st.columns(3)
         with col1:
-            selected_date2 = st.selectbox("Select Date", options=["No Filters"] + list(dates2), index=0, placeholder='Choose an option')
+            start_date_value = st.date_input("Select From Date", min_value=min_date, max_value=max_date, value=min_date, key=f"{ward_name}_start_date_filter")
         with col2:
+            end_date_value = st.date_input("Select To Date", min_value=min_date, max_value=max_date, value=max_date, key=f"{ward_name}_end_date_filter")
+        with col3:
             selected_status2 = st.selectbox("Select Status", options=["No Filters"] + list(status_id), index=0, placeholder='Choose an option', key=f"{ward_name}_status")
 
-        if selected_date2 == 'No Filters':
-            filtered_df = result
+        def reset_filters_function():
+            st.session_state[f"{ward_name}_start_date_filter"] = min_date
+            st.session_state[f"{ward_name}_end_date_filter"] = max_date
+            st.session_state[f"{ward_name}_status"] = 'No Filters'
+            print("Filters have been reset")  
+
+        blank, blank, blank, blank, blank, reset = st.columns([3,1,1,1,1,1])
+        reset_filter_button = reset.button("Reset Filters", on_click=reset_filters_function, use_container_width=True, key=f"{ward_name}_reset_button")
+
+        if start_date_value and end_date_value:
+            filtered_df = result[(result['Date'] >= start_date_value) & (result['Date'] <= end_date_value)]
         else:
-            filtered_df = result[result['Date'] == selected_date2]
+            filtered_df = result
 
         if selected_status2 != 'No Filters':
             filtered_df = filtered_df[filtered_df['Status'] == selected_status2]
 
         st.divider()
+
+        filtered_df['Date'] = pd.to_datetime(filtered_df['Date']).dt.strftime('%d %b %Y')
             
         try:
             if st.session_state.role == 'Administrator':

@@ -22,9 +22,9 @@ import yaml
 from yaml.loader import SafeLoader
 
 # database information ; will change when db hosting
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
-# server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
+server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
@@ -646,24 +646,42 @@ cat_table_df.drop(columns=['Ward Code'], inplace=True)
 
 # st.info("Add, view, delete are done (conditions done in add and update), thora sa update left...")
 
+cat_table_df['Admitted On'] = pd.to_datetime(cat_table_df['Admitted On']).dt.date
+
 st.write(" ")
 st.write('##### :orange[Filters:]')
 dates2 = cat_table_df['Admitted On'].unique()
 status = cat_table_df['Status'].unique()
 owner = cat_table_df['Owner/Reporter'].unique()
 
-col1, col2, col3 = st.columns(3)
+min_date = min(dates2)
+max_date = max(dates2)
+
+col1, col2, col3, col4 = st.columns(4)
 with col1:
-    selected_date2 = st.selectbox(":white[Select Date:]", options=["No Filters"] + list(dates2), index=0, placeholder='Choose an option', key='cat_date_filter')
+    start_date_value = st.date_input("Select From Date", min_value=min_date, max_value=max_date, value=min_date, key = 'start_date_filter')
 with col2:
-    selected_status = st.selectbox(":white[Select Status:]", options=["No Filters"] + list(status), index=0, placeholder='Choose an option', key='cat_status_filter')
+    end_date_value = st.date_input("Select To Date", min_value=min_date, max_value=max_date, value=max_date, key = 'end_date_filter')
 with col3:
+    selected_status = st.selectbox(":white[Select Status:]", options=["No Filters"] + list(status), index=0, placeholder='Choose an option', key='cat_status_filter')
+with col4:
     selected_owner = st.selectbox(":white[Select Owner/Reporter:]", options= ["No Filters"] + list(owner), index=0, placeholder='Choose an option', key='cat_owner_filter')
 
-if selected_date2 == 'No Filters':
-    filtered_df = cat_table_df
+# Reset Filters Button (Do it exactly like this in every page :)
+def reset_filters_function():
+    st.session_state.start_date_filter = min_date
+    st.session_state.end_date_filter = max_date
+    st.session_state.cat_status_filter = 'No Filters'
+    st.session_state.cat_owner_filter = 'No Filters'
+
+blank, blank, blank, blank, blank, reset = st.columns([3,1,1,1,1,1])
+
+reset_filter_button = reset.button("Reset Filters", on_click=reset_filters_function, use_container_width=True)
+
+if start_date_value and end_date_value:
+    filtered_df = cat_table_df[(cat_table_df['Admitted On'] >= start_date_value) & (cat_table_df['Admitted On'] <= end_date_value)]
 else:
-    filtered_df = cat_table_df[cat_table_df['Admitted On'] == selected_date2]
+    filtered_df = cat_table_df
 
 if selected_status!='No Filters':
     filtered_df = filtered_df[filtered_df['Status'] == selected_status]
@@ -680,7 +698,9 @@ st.markdown('<style>div.stButton > button:first-child {background-color: #FFA500
 new_cat = col6.button("✙ New Cat", on_click = add_cat_dialog, use_container_width=True) # ✙, ⊹, ➕
 
 # Display the DataFrame
+filtered_df['Admitted On'] = pd.to_datetime(filtered_df['Admitted On']).dt.strftime('%d %b %Y')
 cat_table = st.dataframe(filtered_df, width=1500, height=600, hide_index=True, on_select="rerun", selection_mode="single-row", use_container_width=True)
+
 
 # UPDATE AND DELETE BUTTONS
 if cat_table["selection"]["rows"]: #if a row is selected
