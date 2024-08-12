@@ -321,24 +321,24 @@ with Donations:
     donation_table_df['Date'] = pd.to_datetime(donation_table_df['Date']).dt.date
 
     st.write('##### :orange[Filters:]')
-    dates = donation_table_df['Date'].unique()
+    dates1 = donation_table_df['Date'].unique()
     modes = donation_table_df['Mode'].unique()
 
-    min_date = min(dates)
-    max_date = max(dates)
+    donation_min_date = min(dates1)
+    donation_max_date = max(dates1)
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        start_date_value = st.date_input("Select From Date", min_value=min_date, max_value=max_date, value=min_date, key = 'start_date_filter')
+        start_date_value = st.date_input("Select From Date", min_value=donation_min_date, max_value= donation_max_date, value=donation_min_date, key = 'donation_start_date_filter')
     with col2:
-        end_date_value = st.date_input("Select To Date", min_value=min_date, max_value=max_date, value=max_date, key = 'end_date_filter')
+        end_date_value = st.date_input("Select To Date", min_value=donation_min_date, max_value= donation_max_date, value= donation_max_date, key = 'donation_end_date_filter')
     with col3:
         selected_mode = st.selectbox("Select Mode", options=["No Filters"] + list(modes), index=0, placeholder='Choose an option', key='donation_mode_filter')
 
     # Reset Filters Button (Do it exactly like this in every page :)
     def reset_filters_function():
-        st.session_state.start_date_filter = min_date
-        st.session_state.end_date_filter = max_date
+        st.session_state.donation_start_date_filter = donation_min_date
+        st.session_state.donation_end_date_filter =  donation_max_date
         st.session_state.donation_mode_filter = 'No Filters'
 
     blank, blank, blank, blank, blank, reset = st.columns([3,1,1,1,1,1])
@@ -657,24 +657,24 @@ with Revenue:
 
     # Filtering and Final Table
     st.write('##### :orange[Filters:]')
-    dates = revenue_table_df['Date'].unique()
-    modes = revenue_table_df['Mode'].unique()
+    dates2 = revenue_table_df['Date'].unique()
+    modes1 = revenue_table_df['Mode'].unique()
 
-    min_date = min(dates)
-    max_date = max(dates)
+    rev_min_date = min(dates2)
+    rev_max_date = max(dates2)
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        start_date_value = st.date_input("Select From Date", min_value=min_date, max_value=max_date, value=min_date, key = 'revenue_start_date_filter')
+        start_date_value = st.date_input("Select From Date", min_value=rev_min_date, max_value=rev_max_date, value=rev_min_date, key = 'revenue_start_date_filter')
     with col2:
-        end_date_value = st.date_input("Select To Date", min_value=min_date, max_value=max_date, value=max_date, key = 'revenue_end_date_filter')
+        end_date_value = st.date_input("Select To Date", min_value=rev_min_date, max_value=rev_max_date, value=rev_max_date, key = 'revenue_end_date_filter')
     with col3:
-        selected_mode = st.selectbox("Select Mode", options=["No Filters"] + list(modes), index=0, placeholder='Choose a Mode', key = 'revenue_mode_filter')
+        selected_mode = st.selectbox("Select Mode", options=["No Filters"] + list(modes1), index=0, placeholder='Choose a Mode', key = 'revenue_mode_filter')
 
     def reset_filters_function():
-        st.session_state.revenue_start_date_filter = min_date
-        st.session_state.revenue_end_date_filter = max_date
+        st.session_state.revenue_start_date_filter = rev_min_date
+        st.session_state.revenue_end_date_filter = rev_max_date
         st.session_state.revenue_mode_filter = 'No Filters'
 
     blank, blank, blank, blank, blank, reset = st.columns([3,1,1,1,1,1])
@@ -943,11 +943,11 @@ with Transactions:
 
     # Filtering and Final Table
     st.write('##### :orange[Filters:]')
-    dates2 = transaction_table_df['Date'].unique()
+    dates3 = transaction_table_df['Date'].unique()
     modes2 = transaction_table_df['Mode'].unique()
 
-    min_date = min(dates2)
-    max_date = max(dates2)
+    min_date = min(dates3)
+    max_date = max(dates3)
 
     col1, col2, col3 = st.columns(3)
     with col1:
