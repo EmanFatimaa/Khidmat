@@ -58,6 +58,12 @@ hide_pages(["Login"])
 
 st.header("Finances", divider='orange')
 
+# Function to format contact number
+def format_contact_number(contact):
+    if '-' in contact:
+        return contact
+    return contact[:4] + '-' + contact[4:] if len(contact) > 4 else contact
+
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
@@ -159,12 +165,12 @@ with Donations:
 
             # Check if the contact number is valid
             try:
-                if len(contact) != 12 and contact[4] != '-' and all(x.isnumeric() or x == '-' for x in contact):
-                    st.error("Please enter a valid contact number. (include - after 4th digit)")
+                if len(contact) != 11 and contact.isnumeric() : #if len(contact) != 12 and contact[4] != '-' and all(x.isnumeric() or x == '-' for x in contact):
+                    st.error("Please enter a valid contact number!")
                 else:
                     valid_contact = True
             except:
-                st.error("Please enter a valid contact number. (include - after 4th digit)")
+                st.error("Please enter a valid contact number.")
             
             # Check if the donation ID is valid
             if amount.isnumeric() == False:
@@ -319,6 +325,9 @@ with Donations:
     # donation_table_df['Date'] = pd.to_datetime(donation_table_df['Date']).dt.strftime('%d %b %Y')
 
     donation_table_df['Date'] = pd.to_datetime(donation_table_df['Date']).dt.date
+    # Format the contact number to insert a hyphen after the first four digits
+    donation_table_df['Contact Number'] = donation_table_df['Contact Number'].apply(format_contact_number)
+
 
     st.write('##### :orange[Filters:]')
     dates1 = donation_table_df['Date'].unique()
