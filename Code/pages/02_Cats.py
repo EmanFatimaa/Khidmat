@@ -27,6 +27,8 @@ server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
+# database = 'SchemaPawRescue'
+
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
 engine = create_engine(connection_url)
@@ -119,7 +121,10 @@ def add_cat():
         
         #Cat ID Field
         with engine.begin()as conn:
-            currentCatID = int(pd.read_sql_query(sa.text("select top 1 catID from Cats order by catID desc"), conn).iat[0,0]) + 1
+            try:
+                currentCatID = int(pd.read_sql_query(sa.text("select top 1 catID from Cats order by catID desc"), conn).iat[0,0]) + 1
+            except:
+                currentCatID = 1
             #TODO:
             catCodestr = "PR-" + str(currentCatID).zfill(5) # catCodestr = "PA-000" + str(currentCatID) #need to fix this logic , explore prettify
         st.text_input("Cat ID", value = catCodestr, disabled= True)
@@ -148,8 +153,11 @@ def add_cat():
         cage_code_id_df["cagecodeID"] = cage_code_id_df.apply(lambda row: f"{row['code']}-C-{str(row['cageNo']).zfill(2)}", axis=1)
         cageID_list = cage_code_id_df["cagecodeID"].tolist()
 
-        cageNum = st.selectbox("Cage Number", cageID_list)  # This should also show which Ward it is in and that Cage is free or not ofc.
-        cageID = int(cage_code_id_df.iat[cageID_list.index(cageNum),0])
+        try:
+            cageNum = st.selectbox("Cage Number", cageID_list)  # This should also show which Ward it is in and that Cage is free or not ofc.
+            cageID = int(cage_code_id_df.iat[cageID_list.index(cageNum),0])
+        except:
+            pass
         
     with engine.begin() as conn:
         statusSelection = pd.read_sql_query(sa.text("SELECT statusType FROM CatStatus"), conn)
@@ -231,7 +239,7 @@ def add_cat():
         else:
             st.error("Please enter a valid Owner name.")
 
-        if len(ownerContact)>0 and len(ownerContact)<12 and ownerContact.isnumeric:
+        if len(ownerContact)>0 and len(ownerContact)<=12 and ownerContact.isnumeric:
             valid_contact = True
         else:
             st.error("Please enter a valid contact number.")
@@ -418,7 +426,7 @@ def update_cat(id):
         else:
             st.error("Please enter a valid Owner name.")
 
-        if len(ownerContact)>0 and len(ownerContact)<12 and ownerContact.isnumeric:
+        if len(ownerContact)>0 and len(ownerContact)<=12 and ownerContact.isnumeric:
             valid_contact = True
         else:
             st.error("Please enter a valid contact number.")
@@ -660,6 +668,9 @@ cat_table_df['Admitted On'] = pd.to_datetime(cat_table_df['Admitted On']).dt.dat
 st.write(" ")
 st.write('##### :orange[Filters:]')
 dates2 = cat_table_df['Admitted On'].unique()
+# if dates2 is empty, then the date filter will not work
+if len(dates2) == 0:
+    dates2 = [datetime.date.today()]
 status = cat_table_df['Status'].unique()
 owner = cat_table_df['Owner/Reporter'].unique()
 
@@ -748,6 +759,8 @@ authenticator = stauth.Authenticate(
 
 name, logged_in, user_name = authenticator.login()
 
+st.sidebar.write("Press 🐾 *Cats* to fix the site.")
+
 st.sidebar.write(f"Logged in as: _:orange[{name}]_")
 
 if name is not None:
@@ -756,11 +769,6 @@ if name is not None:
     st.sidebar.write(f"Role: _:orange[{role}]_")
 else:
     st.switch_page("LoginScreen.py")
-
-# empty
-st.sidebar.write(" ")
-st.sidebar.write(" ")
-st.sidebar.write(" ")
 
 if st.sidebar.button("🔓 Logout"):
     with st.sidebar:

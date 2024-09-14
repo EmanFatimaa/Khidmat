@@ -27,6 +27,8 @@ server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
+# database = 'SchemaPawRescue'
+
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
 engine = create_engine(connection_url)
@@ -58,6 +60,19 @@ st.markdown(
        """,
         unsafe_allow_html=True,
 )
+
+with open('../config.yaml') as file:
+    config = yaml.load(file, Loader=SafeLoader)
+
+authenticator = stauth.Authenticate(
+    config['credentials'],
+    config['cookie']['name'],
+    config['cookie']['key'],
+    config['cookie']['expiry_days'],
+    config['pre-authorized']
+)
+
+name, logged_in, user_name = authenticator.login()
 
 def add_team_dialog():
     st.session_state.show_add_team_dialog = True
@@ -302,10 +317,12 @@ def delete_team():
         df = pd.read_sql_query("SELECT userName FROM Users where userName is NOT NULL", conn)
         user = df['userName'].tolist()
     member = st.selectbox("Member", user)
-
     delete = st.button('Delete Member', key = 'delete')
 
     if delete:
+        if member == name:
+            st.error("You cannot delete yourself.")
+            return
         with engine.begin() as conn:
             conn.execute(sa.text("update Users set userName = NULL, email = NULL, password = NULL, picture = NULL, internalRoleID = NULL where userName = :userName"), {"userName": member})
 
@@ -343,18 +360,7 @@ if st.session_state.show_edit_team_dialog:
 if st.session_state.show_delete_team_dialog:
     delete_team()
 
-with open('../config.yaml') as file:
-    config = yaml.load(file, Loader=SafeLoader)
-
-authenticator = stauth.Authenticate(
-    config['credentials'],
-    config['cookie']['name'],
-    config['cookie']['key'],
-    config['cookie']['expiry_days'],
-    config['pre-authorized']
-)
-
-name, logged_in, user_name = authenticator.login()
+st.sidebar.write("Press 👥 *Teams* to fix the site.")
 
 st.sidebar.write(f"Logged in as: _:orange[{name}]_")
 
@@ -364,11 +370,6 @@ if name is not None:
     st.sidebar.write(f"Role: _:orange[{role}]_")
 else:
     st.switch_page("LoginScreen.py")
-
-# empty
-st.sidebar.write(" ")
-st.sidebar.write(" ")
-st.sidebar.write(" ")
 
 if st.sidebar.button("🔓 Logout"):
     with st.sidebar:

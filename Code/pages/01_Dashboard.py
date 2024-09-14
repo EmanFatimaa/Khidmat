@@ -28,6 +28,8 @@ server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
+# database = 'SchemaPawRescue'
+
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
 engine = create_engine(connection_url)
@@ -313,7 +315,6 @@ st.header("Dashboard", divider='orange')
 # Filter selection
 time_filter = st.selectbox(":orange[Select Time Period:]", ["Last Week", "Last Month", "Last Six Months","Last Year"])
 
-
 end_date = datetime.now()
 
 # Calculate date range based on selection
@@ -422,7 +423,10 @@ with engine.begin() as conn:
 
 # Fill missing months with 0 donations
 full_months = pd.DataFrame({"Month": range(1, 13)})  # All months from 1 (Jan) to 12 (Dec)
+# donations_data = pd.merge(full_months, donations_data, on="Month", how="left").fillna(0) # giving an error
 donations_data = pd.merge(full_months, donations_data, on="Month", how="left").fillna(0)
+donations_data = donations_data.infer_objects(copy=False)
+pd.set_option('future.no_silent_downcasting', True)
 
 # Map the Month numbers to short month names
 donations_data["Month"] = donations_data["Month"].apply(lambda x: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][x-1])
@@ -503,6 +507,8 @@ authenticator = stauth.Authenticate(
 
 name, logged_in, user_name = authenticator.login()
 
+st.sidebar.write("Press 📊 *Dashboard* to fix the site.")
+
 st.sidebar.write(f"Logged in as: _:orange[{name}]_")
 
 if name is not None:
@@ -511,10 +517,6 @@ if name is not None:
     st.sidebar.write(f"Role: _:orange[{role}]_")
 else:
     st.switch_page("LoginScreen.py")
-
-# Empty space in sidebar
-st.sidebar.write(" ")
-st.sidebar.write(" ")
 
 if st.sidebar.button("🔓 Logout"):
     with st.sidebar:

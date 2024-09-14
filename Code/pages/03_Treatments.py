@@ -27,6 +27,8 @@ server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
+# database = 'SchemaPawRescue'
+
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
 engine = create_engine(connection_url)
@@ -93,7 +95,10 @@ def delete_treatment_dialog():
 def add_treatment(ID_to_add=None):
 
     with engine.begin() as conn:
-        treatmentid = int(pd.read_sql_query(sa.text("SELECT TOP 1 treatmentID FROM Treatment ORDER BY treatmentID DESC"), conn).iat[0,0]) + 1
+        try:
+            treatmentid = int(pd.read_sql_query(sa.text("SELECT TOP 1 treatmentID FROM Treatment ORDER BY treatmentID DESC"), conn).iat[0,0]) + 1
+        except:
+            treatmentid = 1
         df = pd.read_sql_query("SELECT catID FROM Cats where catID IS NOT NULL", conn)
         if ID_to_add is None:
             current_catID = 1
@@ -105,13 +110,18 @@ def add_treatment(ID_to_add=None):
 
     col1, col2 = st.columns(2)
     with col1:
-        selected_cat_id = st.selectbox("Select CatID", catcode_id, index = current_catID - 1)
-        selected_cat_id = extract_cat_number(selected_cat_id)
-
+        try:
+            selected_cat_id = st.selectbox("Select CatID", catcode_id, index = current_catID - 1)
+            selected_cat_id = extract_cat_number(selected_cat_id)
+        except:
+            pass
     with col2:
-        with engine.begin() as conn:
-            name = conn.execute(sa.text("select catName from Cats where catID= :catID"), {"catID": selected_cat_id}).fetchall()[0][0]
-        selected_cat_name = st.text_input('Cat Name', value = name)
+        try:
+            with engine.begin() as conn:
+                name = conn.execute(sa.text("select catName from Cats where catID= :catID"), {"catID": selected_cat_id}).fetchall()[0][0]
+            selected_cat_name = st.text_input('Cat Name', value = name, disabled=True)
+        except:
+            pass
 
     col1, col2 = st.columns(2)
     
@@ -139,7 +149,7 @@ def add_treatment(ID_to_add=None):
         print("button pressed")
         # check other individual fields for errors as well.
         everything_filled = False
-        valid_treatment =   False
+        valid_treatment = False
 
         if all(x.isalpha() or x.isspace() or x=='.' for x in treatment_details):
             valid_treatment = True
@@ -319,6 +329,9 @@ treatment_table_df['Date'] = pd.to_datetime(treatment_table_df['Date']).dt.date
 st.write('##### :orange[Filters:]')
 
 dates = treatment_table_df['Date'].unique()
+# # if dates is empty, then the date filter will not work
+if len(dates) == 0:
+    dates = [date.today()]
 cat_id = treatment_table_df['CatID'].unique()
 
 min_date = min(dates)
@@ -404,6 +417,8 @@ authenticator = stauth.Authenticate(
 
 name, logged_in, user_name = authenticator.login()
 
+st.sidebar.write("Press 💊 *Treatments* to fix the site.")
+
 st.sidebar.write(f"Logged in as: _:orange[{name}]_")
 
 if name is not None:
@@ -412,11 +427,6 @@ if name is not None:
     st.sidebar.write(f"Role: _:orange[{role}]_")
 else:
     st.switch_page("LoginScreen.py")
-
-# empty
-st.sidebar.write(" ")
-st.sidebar.write(" ")
-st.sidebar.write(" ")
 
 if st.sidebar.button("🔓 Logout"):
     with st.sidebar:

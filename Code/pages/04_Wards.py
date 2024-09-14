@@ -22,6 +22,8 @@ server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
+# database = 'SchemaPawRescue'
+
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
 engine = create_engine(connection_url)
@@ -116,9 +118,11 @@ def delete_cages_dialog():
 
 @st.experimental_dialog("Add New Ward")
 def add_ward():
-    with engine.begin() as conn:
-            current_wardid = int(pd.read_sql_query(sa.text("select top 1 wardID from Ward order by wardID desc"), conn).iloc[0][0]) + 1
-
+    try:
+        with engine.begin() as conn:
+                current_wardid = int(pd.read_sql_query(sa.text("select top 1 wardID from Ward order by wardID desc"), conn).iloc[0][0]) + 1
+    except:
+        current_wardid = 1
     # new_id = st.text_input("Ward ID", value = current_wardid, disabled=True)
     new_name = st.text_input("Ward Name", placeholder="Enter Ward Name")
     new_code = st.text_input("Ward Cage Code", placeholder="Enter Code for Cage e.g GW")
@@ -162,8 +166,10 @@ def add_ward():
                     values (:wardID, :name, :code, :CapacityCages)
                 """), {"wardID": current_wardid, "name": new_name, "code": new_code, "CapacityCages": new_cage})
 
-                cage_id = int(pd.read_sql_query(sa.text("select top 1 cageID from Cage order by cageID desc"), conn).iloc[0][0]) + 1
-
+                try:
+                    cage_id = int(pd.read_sql_query(sa.text("select top 1 cageID from Cage order by cageID desc"), conn).iloc[0][0]) + 1
+                except:
+                    cage_id = 1
                 for i in range(new_cage):
                     
                     # Adding new cages to the Cage table
@@ -493,27 +499,30 @@ combined_wards_df = pd.concat([existing_wards, st.session_state.wards_df]).drop_
 
 st.header("Wards", divider='orange')
 
+# Display the ward information
+wards_df = combined_wards_df
+
 # "Add Ward" button
 col1, col2, col3, col4, col5, col6 = st.columns([1,1,1,2.5,2,1])
 try:
     if st.session_state.role == 'Administrator':
         with col1:
-            updateWard = st.button("Edit Ward", on_click=update_ward_dialog, use_container_width=True)
+            updateWard = st.button("Edit Ward", on_click=update_ward_dialog, use_container_width=True, disabled=len(wards_df)==0)
 
         with col2:
-            deleteWard = st.button("Delete Ward", on_click=delete_ward_dialog, use_container_width=True)
+            deleteWard = st.button("Delete Ward", on_click=delete_ward_dialog, use_container_width=True, disabled=len(wards_df)==0)
 except:
     pass
-
-# with col5:
-#     deleteWard = st.button("Increase Cages", on_click=add_cages_dialog)
 
 with col6:
     newWard = st.button("✙ New Ward", on_click=add_ward_dialog, use_container_width=True)
 
-# Display the ward information
-wards_df = combined_wards_df
-
+def reset_filters_function(a):
+    st.session_state[f"{a}_start_date_filter"] = min_date
+    st.session_state[f"{a}_end_date_filter"] = max_date
+    st.session_state[f"{a}_status"] = 'No Filters'
+    
+# Main Loop
 for index, row in wards_df.iterrows():
 
     ward_name = row['name']
@@ -583,6 +592,8 @@ for index, row in wards_df.iterrows():
 
         st.write('##### :orange[Filters:]')
         dates2 = result['Date'].unique()
+        if len(dates2) == 0:
+            dates2 = [datetime.date.today()]
         status_id = result['Status'].unique()
 
         min_date = min(dates2)
@@ -596,14 +607,8 @@ for index, row in wards_df.iterrows():
         with col3:
             selected_status2 = st.selectbox("Select Status", options=["No Filters"] + list(status_id), index=0, placeholder='Choose an option', key=f"{ward_name}_status")
 
-        def reset_filters_function():
-            st.session_state[f"{ward_name}_start_date_filter"] = min_date
-            st.session_state[f"{ward_name}_end_date_filter"] = max_date
-            st.session_state[f"{ward_name}_status"] = 'No Filters'
-            print("Filters have been reset")  
-
         blank, blank, blank, blank, blank, reset = st.columns([3,1,1,1,1,1])
-        reset_filter_button = reset.button("Reset Filters", on_click=reset_filters_function, use_container_width=True, key=f"{ward_name}_reset_button")
+        reset_filter_button = reset.button("Reset Filters", on_click=reset_filters_function, args = (ward_name, ), use_container_width=True, key=f"{ward_name}_reset_button")
 
         if start_date_value and end_date_value:
             filtered_df = result[(result['Date'] >= start_date_value) & (result['Date'] <= end_date_value)]
@@ -666,6 +671,8 @@ authenticator = stauth.Authenticate(
 
 name, logged_in, user_name = authenticator.login()
 
+st.sidebar.write("Press 🛏️ *Wards* to fix the site.")
+
 st.sidebar.write(f"Logged in as: _:orange[{name}]_")
 
 if name is not None:
@@ -674,11 +681,6 @@ if name is not None:
     st.sidebar.write(f"Role: _:orange[{role}]_")
 else:
     st.switch_page("LoginScreen.py")
-
-# empty
-st.sidebar.write(" ")
-st.sidebar.write(" ")
-st.sidebar.write(" ")
 
 if st.sidebar.button("🔓 Logout"):
     with st.sidebar:

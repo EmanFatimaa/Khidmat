@@ -27,6 +27,8 @@ server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
+# database = 'SchemaPawRescue'
+
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
 engine = create_engine(connection_url)
@@ -66,28 +68,37 @@ def format_contact_number(contact):
 
 col1, col2, col3, col4 = st.columns(4)
 
-with col1:
-    with st.container(border=True):
-        # everything indented is communicating with the database ; closes automatically
-        with engine.begin() as conn:
-            total_donations = pd.read_sql_query(sa.text("select sum(amount) from Donations"), conn)
-        st.metric(label="Total Donations", value = prettify(int(total_donations.iat[0,0])) + " PKR")
-
-with col2:
-    with st.container(border=True):
-        with engine.begin() as conn:
-            total_revenue = pd.read_sql_query(sa.text("select sum(amount) from Revenue"), conn)
-        st.metric(label="Total Revenue", value = prettify(int(total_revenue.iat[0,0])) + " PKR")
-
-with col3:
-    with st.container(border=True):
-        with engine.begin() as conn:
-            total_trans = pd.read_sql_query(sa.text("select sum(amount) from Transactions"), conn)
-        st.metric(label="Total Transactions", value = prettify(int(total_trans.iat[0,0])) + " PKR")
-
-with col4:
-    with st.container(border=True):
-        st.metric(label="Remaining Balance", value= prettify(int(total_donations.iat[0,0]) + int(total_revenue.iat[0,0]) - int(total_trans.iat[0,0])) + " PKR")
+try:
+    with col1:
+        with st.container(border=True):
+            # everything indented is communicating with the database ; closes automatically
+            with engine.begin() as conn:
+                total_donations = pd.read_sql_query(sa.text("select sum(amount) from Donations"), conn)
+            st.metric(label="Total Donations", value = prettify(int(total_donations.iat[0,0])) + " PKR")
+except:
+    pass
+try:
+    with col2:
+        with st.container(border=True):
+            with engine.begin() as conn:
+                total_revenue = pd.read_sql_query(sa.text("select sum(amount) from Revenue"), conn)
+            st.metric(label="Total Revenue", value = prettify(int(total_revenue.iat[0,0])) + " PKR")
+except:
+    pass
+try:
+    with col3:
+        with st.container(border=True):
+            with engine.begin() as conn:
+                total_trans = pd.read_sql_query(sa.text("select sum(amount) from Transactions"), conn)
+            st.metric(label="Total Transactions", value = prettify(int(total_trans.iat[0,0])) + " PKR")
+except:
+    pass
+try:
+    with col4:
+        with st.container(border=True):
+            st.metric(label="Remaining Balance", value= prettify(int(total_donations.iat[0,0]) + int(total_revenue.iat[0,0]) - int(total_trans.iat[0,0])) + " PKR")
+except:
+    pass
 
 Donations, Revenue, Transactions = st.tabs(["📦 Donations", "💹 Revenue", "💰 Transactions"])
 
@@ -121,8 +132,11 @@ with Donations:
         with col1:
             donor_name = st.text_input("Donor Name", placeholder="Enter Donor Name")
 
-            with engine.begin() as conn:
-                current_donationid = int(pd.read_sql_query(sa.text("select top 1 donationID from Donations order by donationID desc"), conn).iat[0,0]) + 1
+            try:
+                with engine.begin() as conn:
+                    current_donationid = int(pd.read_sql_query(sa.text("select top 1 donationID from Donations order by donationID desc"), conn).iat[0,0]) + 1
+            except:
+                current_donationid = 1
             donor_ID = st.text_input("Donation ID", value = current_donationid, disabled = True)
         
             with engine.begin() as conn:
@@ -331,6 +345,9 @@ with Donations:
 
     st.write('##### :orange[Filters:]')
     dates1 = donation_table_df['Date'].unique()
+    # if dates2 is empty, then the date filter will not work
+    if len(dates1) == 0:
+        dates1 = [datetime.date.today()]
     modes = donation_table_df['Mode'].unique()
 
     donation_min_date = min(dates1)
@@ -433,8 +450,11 @@ with Revenue:
         with col1:
             rev_name = st.text_input("Name", placeholder="Enter Name")
 
-            with engine.begin() as conn:
-                current_revenueid = int(pd.read_sql_query(sa.text("select top 1 revenueID from Revenue order by revenueID desc"), conn).iat[0,0]) + 1
+            try:
+                with engine.begin() as conn:
+                    current_revenueid = int(pd.read_sql_query(sa.text("select top 1 revenueID from Revenue order by revenueID desc"), conn).iat[0,0]) + 1
+            except:
+                current_revenueid = 1
             rev_ID = st.text_input("Revenue ID", value = current_revenueid, disabled = True)
         
             with engine.begin() as conn:
@@ -664,9 +684,14 @@ with Revenue:
 
     revenue_table_df['Date'] = pd.to_datetime(revenue_table_df['Date']).dt.date
 
+    revenue_table_df['Contact Number'] = revenue_table_df['Contact Number'].apply(format_contact_number)
+
     # Filtering and Final Table
     st.write('##### :orange[Filters:]')
     dates2 = revenue_table_df['Date'].unique()
+    # if dates2 is empty, then the date filter will not work
+    if len(dates2) == 0:
+        dates2 = [datetime.date.today()]
     modes1 = revenue_table_df['Mode'].unique()
 
     rev_min_date = min(dates2)
@@ -769,9 +794,15 @@ with Transactions:
         col3, col4 = st.columns(2)
         
         with col3:
+            try:
+                with engine.begin() as conn:
+                    current_transid = int(pd.read_sql_query(sa.text("select top 1 transactionID from Transactions order by transactionID desc"), conn).iat[0,0]) + 1
+            except:
+                current_transid = 1
+
             with engine.begin() as conn:
                 trans_mode = pd.read_sql_query(sa.text("select mode from Mode"), conn)
-                current_transid = int(pd.read_sql_query(sa.text("select top 1 transactionID from Transactions order by transactionID desc"), conn).iat[0,0]) + 1
+
             mode = st.selectbox("Transaction Mode", trans_mode["mode"].tolist())
             trans_ID = st.text_input("Transaction ID", value = current_transid, disabled = True)
         
@@ -953,6 +984,9 @@ with Transactions:
     # Filtering and Final Table
     st.write('##### :orange[Filters:]')
     dates3 = transaction_table_df['Date'].unique()
+    # if dates3 is empty, then the date filter will not work
+    if len(dates3) == 0:
+        dates3 = [datetime.date.today()]
     modes2 = transaction_table_df['Mode'].unique()
 
     min_date = min(dates3)
@@ -1034,6 +1068,7 @@ authenticator = stauth.Authenticate(
 
 name, logged_in, user_name = authenticator.login()
 
+st.sidebar.write("Press 💰 *Finances* to fix the site.")
 st.sidebar.write(f"Logged in as: _:orange[{name}]_")
 
 if name is not None:
@@ -1042,11 +1077,6 @@ if name is not None:
     st.sidebar.write(f"Role: _:orange[{role}]_")
 else:
     st.switch_page("LoginScreen.py")
-
-# empty
-st.sidebar.write(" ")
-st.sidebar.write(" ")
-st.sidebar.write(" ")
 
 if st.sidebar.button("🔓 Logout"):
     with st.sidebar:
