@@ -22,8 +22,8 @@ import yaml
 from yaml.loader import SafeLoader
 
 # database information ; will change when db hosting
-# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
-server = 'DESKTOP-HT3NB74' # EMAN
+server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
 database = 'DummyPawRescue'
@@ -88,6 +88,8 @@ def load_css(file_name):
 
 # Function to format contact number
 def format_contact_number(contact):
+    if contact == 'No Contact':
+        return contact
     if '-' in contact:
         return contact
     return contact[:4] + '-' + contact[4:] if len(contact) > 4 else contact
@@ -157,13 +159,15 @@ def add_cat():
     date = st.date_input('Date', value=datetime.date.today(), disabled=False)
 
     # Owner related info (in the form)
+    no_owner_check = st.checkbox("No Owner", key="no_owner_checkbox")
+
     st.write(" :orange[Owner related details]")
 
     col1, col2 = st.columns(2)  # redefining to enter owner related details after cat details
 
     with col1:
         # Owner name text input
-        ownerName = st.text_input("Owner's Name", placeholder="Enter Owner's Name")
+        ownerName = st.text_input("Owner's Name", placeholder="Enter Owner's Name", disabled=no_owner_check)
 
     with col2:
         contactFromDB = ''
@@ -175,7 +179,7 @@ def add_cat():
 
         # Owner contact text input
         # contactFromDB = format_contact_number(contactFromDB)
-        ownerContact = st.text_input("Owner's Contact", value=contactFromDB, placeholder="0300-7413639")
+        ownerContact = st.text_input("Owner's Contact", value=contactFromDB, placeholder="0300-7413639", disabled=no_owner_check)
 
     # Address text area
     addressFromDB = ''
@@ -184,7 +188,7 @@ def add_cat():
             fetchall = conn.execute(sa.text("Select address from externals where name = :name"), {"name": ownerName}).fetchall()
             if fetchall:
                 addressFromDB = fetchall[0][0]
-    address = st.text_area("Address", value = addressFromDB , placeholder = "Enter your address" )
+    address = st.text_area("Address", value = addressFromDB , placeholder = "Enter your address", disabled=no_owner_check)
 
     # Submit and Cancel buttons
     st.caption(':orange[Press Esc to Cancel]')
@@ -201,6 +205,11 @@ def add_cat():
         valid_address = False
 
         # Check if any of the fields are left unfilled
+        if no_owner_check: # externalID 1 is saved for no Owners.
+            ownerName = "No Owner"
+            ownerContact = "No Contact"
+            address = "No Address"
+        
         if not (age and type and name and gender and cageID and status and ownerName and ownerContact and address):
             st.error("Please fill in all the fields before submitting.")
             print("Please fill in all the fields.")
@@ -232,7 +241,7 @@ def add_cat():
         else:
             st.error("Please enter a valid address.")
 
-        if (everythingFilled and valid_catname and valid_age and valid_ownername and valid_contact and valid_address):
+        if (everythingFilled and valid_catname and valid_age and valid_ownername and valid_contact and valid_address):  
             with engine.begin() as conn:
                 conn.execute(sa.text(""" 
                 IF NOT EXISTS (SELECT externalID FROM Externals WHERE name = :name)
@@ -251,9 +260,9 @@ def add_cat():
                 (SELECT externalID FROM Externals WHERE name = :name), 
                 (SELECT statusID FROM CatStatus WHERE statusType = :status), 
                 :admittedOn)
-                                     
+                                    
                 update cage set cageStatusID = 1 where cageID = :cageID -- updating the cage status as well while adding the cat
-                                     """),
+                                    """),
                 {
                     "catID": currentCatID, "catName": name, "age": age, "gender": gender, 
                     "type": type, "cageID": cageID, "name": ownerName, 
@@ -622,8 +631,8 @@ with engine.begin() as conn:
                         select catID as 'Cat ID', catName as 'Cat Name', Externals.name as 'Owner/Reporter', Externals.contactNum as 'Contact Number', admittedOn as 'Admitted On',
                                 Type.type as 'Type', cage.cageNo as 'Cage ID', ward.code as 'Ward Code', CatStatus.statusType as 'Status'
 
-                        from Cats, Externals, Type, Cage, ward, CatStatus
-                        where Cats.externalID = Externals.externalID and 
+                        from Cats LEFT JOIN Externals on Cats.externalID = Externals.externalID, Type, Cage, ward, CatStatus
+                        where  
                         Type.typeID = Cats.typeID and 
                         Cage.cageID = Cats.cageID and
                         Cage. wardID = ward.wardID and
