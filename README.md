@@ -24,12 +24,12 @@
    ```
 
 2. **Start MSSQL Server**:
-   - Open MSSQL Server and import the `SchemaPawRescue.sql` file provided in the `BuildDB` Folder.
+   - Open MSSQL Server and run the `SchemaPawRescue.sql` file provided in the `BuildDB` Folder.
    - Alternatively, you can use the `DummyPawRescue.sql` file to populate the tables with some sample data.
    - If MSSQL Server is not installed, download and install it from [here](https://www.microsoft.com/en-us/sql-server/sql-server-downloads).
 
 3. **Change the server name**:
-   - Update the server name in all Python files in the `Code` Folder to match the server name your computer is using.
+   - Update the server name in all Python files in the `Code` and `pages` Folder to match the server name your computer is using.
 
 4. **Install Python and libraries**:
    - Download and install Python (if not already installed).
