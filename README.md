@@ -33,13 +33,13 @@
 
 4. **Install Python and libraries**:
    - Download and install Python (if not already installed).
-   - Install the required libraries by running the command:
+   - Navigate to the `Khidmat` Folder and install the required libraries by running the command:
      ```bash
      pip install -r requirements.txt
      ```
 
 5. **Run the application**:
-   - Navigate to the directory containing the Python files.
+   - Navigate to the `Code` Folder which contains the Python files.
    - Run the following command to start the application:
      ```bash
      streamlit run LoginScreen.py
