@@ -46,7 +46,7 @@
      ```
 
 6. **Login to the application**:
-   - Use the following dummy credentials to log in:
+   - Use the following dummy credentials to log in (only on `DummyPawRescue.sql` database):
      - **Username**: Ahmed Bilal
      - **Password**: bilal
 
