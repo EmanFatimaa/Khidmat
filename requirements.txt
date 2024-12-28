@@ -6,3 +6,5 @@ plotly
 millify
 streamlit-authenticator
 PyYAML
+st-pages
+pyodbc
