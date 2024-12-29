@@ -22,15 +22,23 @@ import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
 
-# database information ; will change when db hosting
-server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
+# Database Information
+
+# Windows
+# server = 'DESKTOP-67BT6TD\\FONTAINE' # IBAD
 # server = 'DESKTOP-HT3NB74' # EMAN
 # server = 'DESKTOP-HPUUN98\SPARTA' # FAKEHA
 
-database = 'DummyPawRescue'
+# database = 'DummyPawRescue'
 # database = 'SchemaPawRescue'
 
-connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
+# connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
+
+# Linux
+server = '127.0.0.1'
+database = 'DummyPawRescue'
+connection_string = f'DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={server};DATABASE={database};UID=sa;PWD=PawRescue!1;TrustServerCertificate=yes;'
+
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
 engine = create_engine(connection_url)
 
