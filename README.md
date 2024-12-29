@@ -95,6 +95,13 @@
       sudo /opt/mssql/bin/mssql-conf set sqlagent.enabled true
       sudo systemctl restart mssql-server
       ```
+   - Additionally, you can use these commands to start/stop and check the status of the SQL Server.
+      ```bash
+      Status: sudo systemctl status mssql-server
+      Start: sudo systemctl start mssql-server
+      Stop: sudo systemctl stop mssql-server
+      Restart: sudo systemctl restart mssql-server
+      ```
 
 4. **Install ODBC Drivers**:
    - Run the following commands
